@@ -1,0 +1,118 @@
+const tl = {
+  common: {
+    signIn: 'Mag-sign In',
+    signOut: 'Mag-sign Out',
+    loading: 'Naglo-load...',
+    error: 'Error',
+    save: 'I-save',
+    cancel: 'Kanselahin',
+    confirm: 'Kumpirmahin',
+    reset: 'I-reset',
+    settings: 'Mga Setting',
+    dashboard: 'Dashboard',
+    about: 'Tungkol',
+    welcome: 'Maligayang pagdating',
+    beta: 'Beta'
+  },
+  auth: {
+    welcomeBack: 'Maligayang pagbabalik',
+    signInSubtitle: 'Mag-sign in sa iyong AionX workspace',
+    username: 'Username',
+    password: 'Password',
+    usernamePlaceholder: 'Ilagay ang iyong username',
+    passwordPlaceholder: 'Ilagay ang iyong password',
+    demo: 'Demo: anumang username + 4-character na password',
+    usernameRequired: 'Kailangan ang username.',
+    passwordMinLength: 'Ang password ay dapat hindi bababa sa 4 na character.'
+  },
+  dashboard: {
+    title: 'Dashboard',
+    subtitle: 'Maligayang pagbabalik. Narito ang nangyayari ngayon.',
+    refresh: 'I-refresh',
+    newReport: 'Bagong Ulat',
+    live: 'Live',
+    vsLastMonth: 'kumpara sa nakaraang buwan',
+    totalUsers: 'Kabuuang Mga User',
+    revenue: 'Kita',
+    activeSessions: 'Aktibong Mga Session',
+    uptime: 'Uptime',
+    recentActivity: 'Kamakailang Aktibidad',
+    quickActions: 'Mabilis na Aksyon',
+    newProject: 'Bagong Proyekto',
+    exportData: 'I-export ang Data',
+    syncNow: 'I-sync Ngayon',
+    alerts: 'Mga Alerto'
+  },
+  settings: {
+    title: 'Mga Setting',
+    subtitle: 'I-customize ang iyong karanasan sa AionX.',
+    appearance: 'Hitsura',
+    appearanceDesc: 'I-customize ang hitsura at pakiramdam',
+    darkMode: 'Dark Mode',
+    darkModeDesc: 'Lumipat sa pagitan ng madilim at maliwanag na interface',
+    accentColor: 'Accent Color',
+    accentColorDesc: 'Piliin ang iyong pangunahing kulay ng interface',
+    fontSize: 'Laki ng Font',
+    fontSizeDesc: 'Ayusin ang laki ng base font para sa kakayahang mabasa',
+    compactMode: 'Compact Mode',
+    compactModeDesc: 'Bawasan ang espasyo para sa mas siksik na display ng impormasyon',
+    language: 'Wika',
+    notifications: 'Mga Notipikasyon',
+    notificationsDesc: 'Kontrolin ang mga notipikasyong natatanggap mo',
+    enableNotifications: 'Paganahin ang Mga Notipikasyon',
+    enableNotificationsDesc:
+      'Magpakita ng mga notipikasyon ng system para sa mahahalagang kaganapan',
+    soundAlerts: 'Mga Sound Alert',
+    soundAlertsDesc: 'Mag-play ng tunog kapag dumating ang mga notipikasyon',
+    updateNotifications: 'Mga Update na Notipikasyon',
+    updateNotificationsDesc: 'Ipaalam kapag may bagong bersyon',
+    securityAlerts: 'Mga Security Alert',
+    securityAlertsDesc: 'Mag-alerto sa kahina-hinalang aktibidad',
+    marketingEmails: 'Mga Marketing Email',
+    marketingEmailsDesc: 'Tumanggap ng mga update ng produkto at anunsyo',
+    privacy: 'Privacy',
+    privacyDesc: 'Pamahalaan ang iyong data at mga kagustuhan sa privacy',
+    dataCollection: 'Usage Analytics',
+    dataCollectionDesc:
+      'Tulungan na mapabuti ang AionX sa pamamagitan ng pagbabahagi ng anonymized na data',
+    crashReports: 'Mga Crash Report',
+    crashReportsDesc:
+      'Awtomatikong magpadala ng mga crash report para makatulong sa pag-aayos ng mga bug',
+    telemetry: 'Telemetry',
+    telemetryDesc: 'Ibahagi ang mga sukatan ng pagganap sa team',
+    advanced: 'Advanced',
+    advancedDesc: 'Mga setting ng developer at maintenance',
+    resetSettings: 'I-reset ang mga Setting',
+    resetSettingsDesc: 'I-reset ang lahat ng setting sa mga default na halaga',
+    resetConfirmTitle: 'I-reset ang mga Setting',
+    resetConfirmDesc:
+      'Ire-reset nito ang lahat ng setting sa kanilang mga default. Hindi maaaring i-undo ang aksyong ito.',
+    dark: 'Madilim',
+    light: 'Maliwanag'
+  },
+  about: {
+    tagline:
+      'Futuristic na Electron Vite Boilerplate — handa sa produksyon, napakabilis, magandang ginawa.',
+    github: 'GitHub',
+    documentation: 'Dokumentasyon',
+    techStack: 'Tech Stack',
+    buildInfo: 'Impormasyon ng Build',
+    buildTool: 'Build Tool',
+    nodeTarget: 'Node Target',
+    rendererTarget: 'Renderer Target',
+    architecture: 'Arkitektura',
+    license: 'Lisensya'
+  },
+  updates: {
+    checking: 'Sinusuri ang mga update...',
+    available: 'Available ang update',
+    notAvailable: 'Updated na ang iyong app',
+    downloading: 'Dina-download ang update...',
+    downloaded: 'Na-download na ang update',
+    readyToInstall: 'I-restart para i-install ang update',
+    error: 'Error sa update',
+    installNow: 'I-install Ngayon'
+  }
+} as const
+
+export default tl
