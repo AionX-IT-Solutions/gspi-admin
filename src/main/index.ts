@@ -160,6 +160,9 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
     log.info('Main window shown')
+    if (isDev) {
+      mainWindow.webContents.openDevTools({ mode: 'undocked' })
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
