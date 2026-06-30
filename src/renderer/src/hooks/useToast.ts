@@ -60,6 +60,21 @@ export function useToast() {
   }
 }
 
+/** Standalone function — checks securityAlerts setting before showing. Safe to call outside React. */
+export function notifySecurityAlert(message: string, opts?: ToastOptions) {
+  const { securityAlerts, notificationsEnabled, soundEnabled, addNotification } =
+    useAppStore.getState()
+  addNotification({ type: 'warning', message })
+  if (!securityAlerts || !notificationsEnabled) return
+  toast.warning(message, { description: opts?.description, duration: opts?.duration ?? 6000 })
+  if (opts?.native) {
+    window.api?.notification
+      .show({ title: opts.nativeTitle ?? 'AionX Security', body: message, type: 'warning' })
+      .catch(() => {})
+  }
+  if (soundEnabled) playNotificationSound('warning')
+}
+
 function playNotificationSound(type: ToastType) {
   try {
     const ctx = new AudioContext()

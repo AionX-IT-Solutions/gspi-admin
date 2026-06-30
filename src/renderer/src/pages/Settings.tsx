@@ -4,10 +4,12 @@ import * as Slider from '@radix-ui/react-slider'
 import * as Select from '@radix-ui/react-select'
 import { useState, useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
+import { Tooltip } from '../components/ui/Tooltip'
 import { useAppStore, type AccentColor } from '../store/app.store'
 import {
   Palette,
@@ -187,27 +189,30 @@ function AccentPicker() {
   return (
     <div style={{ display: 'flex', gap: '8px' }}>
       {accentOptions.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => setAccentColor(opt.value)}
-          title={opt.label}
-          style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '50%',
-            background: opt.color,
-            border: accentColor === opt.value ? `3px solid white` : '3px solid transparent',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: accentColor === opt.value ? `0 0 12px ${opt.color}80` : 'none',
-            transition: 'all 0.15s ease',
-            outline: 'none'
-          }}
-        >
-          {accentColor === opt.value && <Check size={12} color="white" strokeWidth={3} />}
-        </button>
+        <Tooltip key={opt.value} content={opt.label} side="top">
+          <button
+            onClick={() => {
+              setAccentColor(opt.value)
+              toast.success(`Accent: ${opt.label}`)
+            }}
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              background: opt.color,
+              border: accentColor === opt.value ? `3px solid white` : '3px solid transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: accentColor === opt.value ? `0 0 12px ${opt.color}80` : 'none',
+              transition: 'all 0.15s ease',
+              outline: 'none'
+            }}
+          >
+            {accentColor === opt.value && <Check size={12} color="white" strokeWidth={3} />}
+          </button>
+        </Tooltip>
       ))}
     </div>
   )
@@ -217,17 +222,26 @@ function AccentPicker() {
 interface StyledSliderProps {
   value: number[]
   onValueChange: (value: number[]) => void
+  onValueCommit?: (value: number[]) => void
   min?: number
   max?: number
   step?: number
 }
 
-function StyledSlider({ value, onValueChange, min = 10, max = 20, step = 1 }: StyledSliderProps) {
+function StyledSlider({
+  value,
+  onValueChange,
+  onValueCommit,
+  min = 10,
+  max = 20,
+  step = 1
+}: StyledSliderProps) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '200px' }}>
       <Slider.Root
         value={value}
         onValueChange={onValueChange}
+        onValueCommit={onValueCommit}
         min={min}
         max={max}
         step={step}
@@ -308,22 +322,29 @@ export function Settings() {
     setLanguage,
     notificationsEnabled,
     soundEnabled,
+    updateNotifs,
+    securityAlerts,
     dataCollection,
     crashReports,
     compactMode,
     fontSize,
     setNotificationsEnabled,
     setSoundEnabled,
+    setUpdateNotifs,
+    setSecurityAlerts,
     setDataCollection,
     setCrashReports,
     setCompactMode,
     setFontSize
   } = useAppStore()
 
-  const [updateNotifs, setUpdateNotifs] = useState(true)
-  const [securityAlerts, setSecurityAlerts] = useState(true)
-  const [marketingNotifs, setMarketingNotifs] = useState(false)
   const [resetModalOpen, setResetModalOpen] = useState(false)
+  const [draftFontSize, setDraftFontSize] = useState(fontSize)
+
+  // Keep draft in sync if fontSize changes externally (e.g. reset)
+  useEffect(() => {
+    setDraftFontSize(fontSize)
+  }, [fontSize])
 
   // Inform main process whenever crash-reporting preference changes
   useEffect(() => {
@@ -334,14 +355,14 @@ export function Settings() {
     setTheme('dark')
     setNotificationsEnabled(true)
     setSoundEnabled(false)
+    setUpdateNotifs(true)
+    setSecurityAlerts(true)
     setDataCollection(false)
     setCompactMode(false)
     setFontSize([14])
-    setUpdateNotifs(true)
-    setSecurityAlerts(true)
-    setMarketingNotifs(false)
     setCrashReports(true)
     setResetModalOpen(false)
+    toast.success('Settings reset to defaults')
   }
 
   return (
@@ -388,37 +409,45 @@ export function Settings() {
           >
             <div>
               <SettingRow label={t('settings.darkMode')} description={t('settings.darkModeDesc')}>
-                <button
-                  onClick={toggleTheme}
-                  title={theme === 'dark' ? t('settings.light') : t('settings.dark')}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '7px',
-                    padding: '5px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-default)',
-                    background: theme === 'dark' ? 'rgba(99,102,241,0.1)' : 'rgba(251,191,36,0.1)',
-                    color: theme === 'dark' ? 'var(--accent-primary)' : '#f59e0b',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    transition: 'all 0.2s ease',
-                    outline: 'none'
-                  }}
+                <Tooltip
+                  content={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                  side="top"
                 >
-                  {theme === 'dark' ? (
-                    <>
-                      <Moon size={13} />
-                      {t('settings.dark')}
-                    </>
-                  ) : (
-                    <>
-                      <Sun size={13} />
-                      {t('settings.light')}
-                    </>
-                  )}
-                </button>
+                  <button
+                    onClick={() => {
+                      toggleTheme()
+                      toast.success(`Switched to ${theme === 'dark' ? 'Light' : 'Dark'} mode`)
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '7px',
+                      padding: '5px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-default)',
+                      background:
+                        theme === 'dark' ? 'rgba(99,102,241,0.1)' : 'rgba(251,191,36,0.1)',
+                      color: theme === 'dark' ? 'var(--accent-primary)' : '#f59e0b',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                  >
+                    {theme === 'dark' ? (
+                      <>
+                        <Moon size={13} />
+                        {t('settings.dark')}
+                      </>
+                    ) : (
+                      <>
+                        <Sun size={13} />
+                        {t('settings.light')}
+                      </>
+                    )}
+                  </button>
+                </Tooltip>
               </SettingRow>
 
               <SettingRow
@@ -430,8 +459,12 @@ export function Settings() {
 
               <SettingRow label={t('settings.fontSize')} description={t('settings.fontSizeDesc')}>
                 <StyledSlider
-                  value={fontSize}
-                  onValueChange={setFontSize}
+                  value={draftFontSize}
+                  onValueChange={setDraftFontSize}
+                  onValueCommit={(v) => {
+                    setFontSize(v)
+                    toast.success(`Font size: ${v[0]}px`)
+                  }}
                   min={10}
                   max={20}
                   step={1}
@@ -443,11 +476,23 @@ export function Settings() {
                 description={t('settings.compactModeDesc')}
                 badge={t('common.beta')}
               >
-                <StyledSwitch checked={compactMode} onCheckedChange={setCompactMode} />
+                <StyledSwitch
+                  checked={compactMode}
+                  onCheckedChange={(v) => {
+                    setCompactMode(v)
+                    toast.success(v ? 'Compact mode ON' : 'Compact mode OFF')
+                  }}
+                />
               </SettingRow>
 
               <SettingRow label={t('settings.language')}>
-                <Select.Root value={language} onValueChange={setLanguage}>
+                <Select.Root
+                  value={language}
+                  onValueChange={(v) => {
+                    setLanguage(v as 'en' | 'tl')
+                    toast.success('Language updated')
+                  }}
+                >
                   <Select.Trigger
                     style={{
                       display: 'inline-flex',
@@ -550,32 +595,47 @@ export function Settings() {
               >
                 <StyledSwitch
                   checked={notificationsEnabled}
-                  onCheckedChange={setNotificationsEnabled}
+                  onCheckedChange={(v) => {
+                    setNotificationsEnabled(v)
+                    toast.success(v ? 'Notifications enabled' : 'Notifications disabled')
+                  }}
                 />
               </SettingRow>
               <SettingRow
                 label={t('settings.soundAlerts')}
                 description={t('settings.soundAlertsDesc')}
               >
-                <StyledSwitch checked={soundEnabled} onCheckedChange={setSoundEnabled} />
+                <StyledSwitch
+                  checked={soundEnabled}
+                  onCheckedChange={(v) => {
+                    setSoundEnabled(v)
+                    toast.success(v ? 'Sound alerts ON' : 'Sound alerts OFF')
+                  }}
+                />
               </SettingRow>
               <SettingRow
                 label={t('settings.updateNotifications')}
                 description={t('settings.updateNotificationsDesc')}
               >
-                <StyledSwitch checked={updateNotifs} onCheckedChange={setUpdateNotifs} />
+                <StyledSwitch
+                  checked={updateNotifs}
+                  onCheckedChange={(v) => {
+                    setUpdateNotifs(v)
+                    toast.success(v ? 'Update notifications ON' : 'Update notifications OFF')
+                  }}
+                />
               </SettingRow>
               <SettingRow
                 label={t('settings.securityAlerts')}
                 description={t('settings.securityAlertsDesc')}
               >
-                <StyledSwitch checked={securityAlerts} onCheckedChange={setSecurityAlerts} />
-              </SettingRow>
-              <SettingRow
-                label={t('settings.marketingEmails')}
-                description={t('settings.marketingEmailsDesc')}
-              >
-                <StyledSwitch checked={marketingNotifs} onCheckedChange={setMarketingNotifs} />
+                <StyledSwitch
+                  checked={securityAlerts}
+                  onCheckedChange={(v) => {
+                    setSecurityAlerts(v)
+                    toast.success(v ? 'Security alerts ON' : 'Security alerts OFF')
+                  }}
+                />
               </SettingRow>
             </div>
           </Card>
@@ -602,13 +662,25 @@ export function Settings() {
                 label={t('settings.dataCollection')}
                 description={t('settings.dataCollectionDesc')}
               >
-                <StyledSwitch checked={dataCollection} onCheckedChange={setDataCollection} />
+                <StyledSwitch
+                  checked={dataCollection}
+                  onCheckedChange={(v) => {
+                    setDataCollection(v)
+                    toast.success(v ? 'Data collection ON' : 'Data collection OFF')
+                  }}
+                />
               </SettingRow>
               <SettingRow
                 label={t('settings.crashReports')}
                 description={t('settings.crashReportsDesc')}
               >
-                <StyledSwitch checked={crashReports} onCheckedChange={setCrashReports} />
+                <StyledSwitch
+                  checked={crashReports}
+                  onCheckedChange={(v) => {
+                    setCrashReports(v)
+                    toast.success(v ? 'Crash reports ON' : 'Crash reports OFF')
+                  }}
+                />
               </SettingRow>
             </div>
           </Card>

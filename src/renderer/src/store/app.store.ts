@@ -22,6 +22,8 @@ interface AppState {
   notifications: Notification[]
   notificationsEnabled: boolean
   soundEnabled: boolean
+  updateNotifs: boolean
+  securityAlerts: boolean
   dataCollection: boolean
   crashReports: boolean
   compactMode: boolean
@@ -40,6 +42,8 @@ interface AppState {
   clearNotifications: () => void
   setNotificationsEnabled: (enabled: boolean) => void
   setSoundEnabled: (enabled: boolean) => void
+  setUpdateNotifs: (enabled: boolean) => void
+  setSecurityAlerts: (enabled: boolean) => void
   setDataCollection: (enabled: boolean) => void
   setCrashReports: (enabled: boolean) => void
   setCompactMode: (enabled: boolean) => void
@@ -58,6 +62,8 @@ export const useAppStore = create<AppState>()(
       notifications: [],
       notificationsEnabled: true,
       soundEnabled: false,
+      updateNotifs: true,
+      securityAlerts: true,
       dataCollection: false,
       crashReports: true,
       compactMode: false,
@@ -95,6 +101,8 @@ export const useAppStore = create<AppState>()(
       clearNotifications: () => set({ notifications: [] }),
       setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
+      setUpdateNotifs: (updateNotifs) => set({ updateNotifs }),
+      setSecurityAlerts: (securityAlerts) => set({ securityAlerts }),
       setDataCollection: (dataCollection) => set({ dataCollection }),
       setCrashReports: (crashReports) => set({ crashReports }),
       setCompactMode: (compactMode) => set({ compactMode }),
@@ -110,6 +118,8 @@ export const useAppStore = create<AppState>()(
         accentColor: state.accentColor,
         notificationsEnabled: state.notificationsEnabled,
         soundEnabled: state.soundEnabled,
+        updateNotifs: state.updateNotifs,
+        securityAlerts: state.securityAlerts,
         dataCollection: state.dataCollection,
         crashReports: state.crashReports,
         compactMode: state.compactMode,

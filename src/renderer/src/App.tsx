@@ -4,10 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { TitleBar } from './components/layout/TitleBar'
 import { Sidebar } from './components/layout/Sidebar'
 import { StatusBar } from './components/layout/StatusBar'
+import { Breadcrumb } from './components/ui/Breadcrumb'
 import { Toaster } from './components/ui/Toaster'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { useTheme } from './hooks/useTheme'
 import { useAnalytics } from './hooks/useAnalytics'
+import { useUpdateStatus } from './hooks/useUpdateStatus'
 import { useAppStore } from './store/app.store'
 
 // Lazy-loaded views — each view is a separate chunk
@@ -51,6 +53,7 @@ function AuthenticatedShell() {
       <div className="app-body">
         <Sidebar />
         <main className="app-content">
+          <Breadcrumb />
           <AnimatePresence mode="wait">
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -87,6 +90,7 @@ function UnauthenticatedShell() {
 function AppInner() {
   useTheme()
   useAnalytics()
+  useUpdateStatus()
   const isAuthenticated = useAppStore((s) => s.isAuthenticated)
 
   return (

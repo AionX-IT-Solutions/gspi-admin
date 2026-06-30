@@ -34,6 +34,7 @@ export function useTheme() {
   const theme = useAppStore((s) => s.theme)
   const fontSize = useAppStore((s) => s.fontSize)
   const language = useAppStore((s) => s.language)
+  const compactMode = useAppStore((s) => s.compactMode)
 
   // Sync persisted language to i18n on mount + change
   useEffect(() => {
@@ -72,5 +73,15 @@ export function useTheme() {
     })
   }, [fontSize])
 
-  return { accentColor, theme, fontSize, language }
+  // Apply compact mode
+  useEffect(() => {
+    const root = document.documentElement
+    if (compactMode) {
+      root.classList.add('compact')
+    } else {
+      root.classList.remove('compact')
+    }
+  }, [compactMode])
+
+  return { accentColor, theme, fontSize, language, compactMode }
 }
