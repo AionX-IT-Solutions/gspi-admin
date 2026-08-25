@@ -1,6 +1,6 @@
 {
   "name": "electron-vite-boilerplate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Futuristic Electron Vite Boilerplate",
   "main": "out/main/index.js",
   "scripts": {
