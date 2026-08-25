@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { Toaster as SonnerToaster } from 'sonner'
 import { useAppStore } from '@/app/store/app.store'
 
@@ -6,7 +7,10 @@ export { toast } from 'sonner'
 export function Toaster() {
   const theme = useAppStore((s) => s.theme)
 
-  return (
+  // #root has `isolation: isolate` (see globals.css), which traps a normally-rendered
+  // Toaster's stacking context below Radix Dialog.Portal content (modals render straight
+  // into document.body). Portal it out to body so toasts can stack above open modals.
+  return createPortal(
     <SonnerToaster
       theme={theme}
       position="bottom-right"
@@ -29,6 +33,7 @@ export function Toaster() {
       richColors
       closeButton
       gap={8}
-    />
+    />,
+    document.body
   )
 }

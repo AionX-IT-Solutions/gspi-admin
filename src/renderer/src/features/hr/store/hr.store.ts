@@ -247,9 +247,17 @@ export const useHRStore = create<HRState>()((set, get) => ({
   },
   deleteEmployee: (id) => {
     const emp = get().employees.find((e) => e.id === id)
-    set((s) => ({ employees: s.employees.filter((e) => e.id !== id) }))
+    const docs = get().employeeDocuments.filter((d) => d.employeeId === id)
+    set((s) => ({
+      employees: s.employees.filter((e) => e.id !== id),
+      employeeDocuments: s.employeeDocuments.filter((d) => d.employeeId !== id)
+    }))
     deleteDocById('employees', id)
     if (emp?.photoStoragePath) deleteFile(emp.photoStoragePath)
+    for (const document of docs) {
+      deleteDocById('employeeDocuments', document.id)
+      deleteFile(document.storagePath)
+    }
     appendAuditLog({
       action: 'employee_deleted',
       actorName: actorName(),

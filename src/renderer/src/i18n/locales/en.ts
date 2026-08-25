@@ -703,6 +703,10 @@ const en = {
       pending: 'Pending',
       paid: 'Paid'
     },
+    filters: {
+      allYears: 'All years',
+      allPeriods: 'All periods'
+    },
     table: {
       payrollNumber: 'Payroll #',
       employee: 'Employee',

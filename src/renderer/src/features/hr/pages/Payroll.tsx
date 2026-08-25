@@ -8,6 +8,8 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
 import { DataTable, type Column } from '@/shared/components/ui/DataTable'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
+import { FieldSelect } from '@/shared/components/ui/FormField'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
 import type { PayrollStatus } from '../types/hr.types'
 import { PayrollExportMenu } from '../components/PayrollExportMenu'
@@ -37,6 +39,12 @@ export function Payroll() {
     loading,
     rows,
     totals,
+    yearFilter,
+    setYearFilter,
+    periodFilter,
+    setPeriodFilter,
+    availableYears,
+    availablePeriods,
     showDialog,
     setShowDialog,
     advanceTarget,
@@ -169,6 +177,27 @@ export function Payroll() {
           <p style={{ fontSize: 20, fontWeight: 700, color: '#34d399' }}>{totals.paid}</p>
         </Card>
       </div>
+
+      <TableToolbar count={rows.length}>
+        <FieldSelect
+          value={yearFilter}
+          onChange={(e) => setYearFilter(e.target.value)}
+          options={[
+            { value: 'all', label: t('payroll.filters.allYears') },
+            ...availableYears.map((y) => ({ value: y, label: y }))
+          ]}
+          style={{ width: 140 }}
+        />
+        <FieldSelect
+          value={periodFilter}
+          onChange={(e) => setPeriodFilter(e.target.value)}
+          options={[
+            { value: 'all', label: t('payroll.filters.allPeriods') },
+            ...availablePeriods.map((p) => ({ value: p.value, label: p.label }))
+          ]}
+          style={{ width: 220 }}
+        />
+      </TableToolbar>
 
       <Card padding="0px">
         <DataTable

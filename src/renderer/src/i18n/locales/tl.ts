@@ -710,6 +710,10 @@ const tl = {
       pending: 'Nakabinbin',
       paid: 'Bayad na'
     },
+    filters: {
+      allYears: 'Lahat ng taon',
+      allPeriods: 'Lahat ng period'
+    },
     table: {
       payrollNumber: 'Payroll #',
       employee: 'Empleyado',

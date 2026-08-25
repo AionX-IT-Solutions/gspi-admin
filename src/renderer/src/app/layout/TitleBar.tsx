@@ -518,7 +518,7 @@ function NotificationBell() {
 
 export function TitleBar() {
   const { t } = useTranslation()
-  const { minimize, maximize, close } = useElectron()
+  const { minimize, maximize, close, appVersion } = useElectron()
   const theme = useAppStore((s) => s.theme)
   const isDark = theme === 'dark'
 
@@ -577,7 +577,7 @@ export function TitleBar() {
             fontFamily: "'JetBrains Mono', monospace"
           }}
         >
-          v1.0.0
+          v{appVersion}
         </span>
       </div>
 
