@@ -1,0 +1,72 @@
+import { create } from 'zustand'
+import { persistDoc, hydrateCollection, reportHydrateFailure } from '@/shared/lib/firestoreSync'
+import { appendAuditLog } from '@/app/store/auditLog.store'
+import { useAppStore } from '@/app/store/app.store'
+import type { Voucher, VoucherStatus } from '../types/vouchers.types'
+
+function actorName() {
+  return useAppStore.getState().currentUser?.fullName ?? 'System'
+}
+
+interface VouchersState {
+  vouchers: Voucher[]
+  hydrated: boolean
+  hydrate: (force?: boolean) => Promise<void>
+  addVoucher: (voucher: Omit<Voucher, 'id' | 'status' | 'createdAt' | 'createdBy'>) => void
+  decideVoucher: (id: string, status: VoucherStatus) => void
+}
+
+export const useVouchersStore = create<VouchersState>()((set, get) => ({
+  vouchers: [],
+  hydrated: false,
+
+  hydrate: async (force = false) => {
+    if (get().hydrated && !force) return
+    try {
+      const vouchers = await hydrateCollection<Voucher>('vouchers')
+      set({ vouchers, hydrated: true })
+    } catch (err) {
+      reportHydrateFailure('[vouchers.store] Failed to hydrate', err)
+    }
+  },
+
+  addVoucher: (voucher) => {
+    const created: Voucher = {
+      ...voucher,
+      id: crypto.randomUUID(),
+      status: 'pending',
+      createdBy: actorName(),
+      createdAt: new Date().toISOString()
+    }
+    set((s) => ({ vouchers: [created, ...s.vouchers] }))
+    persistDoc('vouchers', created.id, created)
+    appendAuditLog({
+      action: 'voucher_created',
+      actorName: actorName(),
+      entityType: 'voucher',
+      summary: `${created.voucherNumber} created for ${created.payee}.`
+    })
+  },
+
+  decideVoucher: (id, status) => {
+    set((s) => ({
+      vouchers: s.vouchers.map((v) =>
+        v.id === id
+          ? {
+              ...v,
+              status,
+              approvedBy: status === 'approved' || status === 'posted' ? actorName() : v.approvedBy
+            }
+          : v
+      )
+    }))
+    const voucher = get().vouchers.find((v) => v.id === id)
+    if (voucher) persistDoc('vouchers', id, voucher)
+    appendAuditLog({
+      action: 'voucher_status_updated',
+      actorName: actorName(),
+      entityType: 'voucher',
+      summary: `${voucher?.voucherNumber ?? id} marked as ${status}.`
+    })
+  }
+}))

@@ -16,7 +16,7 @@
     "noUnusedParameters": true,
     "noImplicitAny": false,
     "noImplicitReturns": true,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
       "@renderer/*": ["src/renderer/src/*"],

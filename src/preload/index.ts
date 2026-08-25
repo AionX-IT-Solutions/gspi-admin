@@ -1,6 +1,27 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { IPC_CHANNELS, type UpdateStatus, type NotificationPayload } from '../shared/ipc-types'
+import {
+  IPC_CHANNELS,
+  type UpdateStatus,
+  type NotificationPayload,
+  type FileDownloadRequest,
+  type FileDownloadResult
+} from '../shared/ipc-types'
+import type {
+  HikvisionAttendanceEvent,
+  HikvisionDeviceConfigInput,
+  HikvisionDeviceConfigSummary,
+  HikvisionEnrollFacePayload,
+  HikvisionEventSearchRange,
+  HikvisionResult,
+  HikvisionStatus
+} from '../shared/hikvision-types'
+import type {
+  PrinterConfig,
+  PrinterInfo,
+  SilentPrintRequest,
+  SilentPrintResult
+} from '../shared/printing-types'
 
 const api = {
   getAppVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.APP_VERSION),
@@ -15,6 +36,11 @@ const api = {
   shell: {
     openExternal: (url: string): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_EXTERNAL, url)
+  },
+
+  file: {
+    download: (payload: FileDownloadRequest): Promise<FileDownloadResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.FILE_DOWNLOAD, payload)
   },
 
   setZoomFactor: (factor: number): Promise<void> =>
@@ -45,6 +71,42 @@ const api = {
     const listener = (_: unknown, key: string) => cb(key)
     ipcRenderer.on(IPC_CHANNELS.SHORTCUT_TRIGGERED, listener)
     return () => ipcRenderer.removeListener(IPC_CHANNELS.SHORTCUT_TRIGGERED, listener)
+  },
+
+  hikvision: {
+    getConfig: (): Promise<HikvisionDeviceConfigSummary | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.HIKVISION_GET_CONFIG),
+    saveConfig: (config: HikvisionDeviceConfigInput): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.HIKVISION_SAVE_CONFIG, config),
+    testConnection: (config?: HikvisionDeviceConfigInput): Promise<HikvisionResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.HIKVISION_TEST_CONNECTION, config),
+    connect: (): Promise<HikvisionResult> => ipcRenderer.invoke(IPC_CHANNELS.HIKVISION_CONNECT),
+    disconnect: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.HIKVISION_DISCONNECT),
+    getStatus: (): Promise<HikvisionStatus> =>
+      ipcRenderer.invoke(IPC_CHANNELS.HIKVISION_GET_STATUS),
+    searchEvents: (range: HikvisionEventSearchRange): Promise<HikvisionAttendanceEvent[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.HIKVISION_SEARCH_EVENTS, range),
+    enrollFace: (payload: HikvisionEnrollFacePayload): Promise<HikvisionResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.HIKVISION_ENROLL_FACE, payload),
+    onStatus: (cb: (status: HikvisionStatus) => void): (() => void) => {
+      const listener = (_: unknown, status: HikvisionStatus) => cb(status)
+      ipcRenderer.on(IPC_CHANNELS.HIKVISION_STATUS_PUSH, listener)
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.HIKVISION_STATUS_PUSH, listener)
+    },
+    onAttendanceEvent: (cb: (event: HikvisionAttendanceEvent) => void): (() => void) => {
+      const listener = (_: unknown, event: HikvisionAttendanceEvent) => cb(event)
+      ipcRenderer.on(IPC_CHANNELS.HIKVISION_EVENT_PUSH, listener)
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.HIKVISION_EVENT_PUSH, listener)
+    }
+  },
+
+  printer: {
+    list: (): Promise<PrinterInfo[]> => ipcRenderer.invoke(IPC_CHANNELS.PRINTER_LIST),
+    getConfig: (): Promise<PrinterConfig> => ipcRenderer.invoke(IPC_CHANNELS.PRINTER_GET_CONFIG),
+    saveConfig: (patch: Partial<PrinterConfig>): Promise<PrinterConfig> =>
+      ipcRenderer.invoke(IPC_CHANNELS.PRINTER_SAVE_CONFIG, patch),
+    silentPrint: (request: SilentPrintRequest): Promise<SilentPrintResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.PRINTER_SILENT_PRINT, request)
   }
 }
 

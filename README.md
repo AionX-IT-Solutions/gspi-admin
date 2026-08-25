@@ -172,7 +172,26 @@ npm run dist:linux  # Linux AppImage
 
 Artifacts are output to `dist/`.
 
-For auto-updates, set `VITE_UPDATE_FEED_URL` to your GitHub Releases URL and push a `v*` tag — `build.yml` will produce signed artifacts automatically.
+### Auto-updates
+
+The app checks GitHub Releases for updates on launch (`electron-updater`, wired up in
+`src/main/index.ts`) — no separate feed URL to configure. `package.json`'s `build.publish`
+block points it at `AionX-IT-Solutions/electron-vite`; update that if the repo is ever
+renamed or moved.
+
+To ship a release:
+
+1. Bump `"version"` in `package.json` and commit.
+2. Tag it and push: `git tag v1.2.3 && git push origin v1.2.3`.
+3. `build.yml` builds each platform and publishes a **draft** GitHub Release with the
+   installer + `latest.yml`/`latest-mac.yml`/`latest-linux.yml` (electron-updater reads
+   these to know a newer version exists).
+4. Review the draft release on GitHub and publish it — installed apps pick it up on their
+   next launch (or immediately, if already running, via the in-app update check).
+
+Publishing needs `contents: write` on the workflow's `GITHUB_TOKEN` (already set in
+`build.yml`) — without it, the upload fails with a 403 and only the plain build artifact
+(not a real release) ends up attached to the Actions run.
 
 ---
 

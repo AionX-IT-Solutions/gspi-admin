@@ -5,7 +5,9 @@ import windowStateKeeper from 'electron-window-state'
 import { autoUpdater } from 'electron-updater'
 import { registerIpcHandlers } from './ipc'
 import { initSentryMain, captureException } from './sentry'
+import { hikvisionService } from './services/hikvision/HikvisionService'
 import { IPC_CHANNELS, type UpdateStatus } from '../shared/ipc-types'
+import type { HikvisionAttendanceEvent, HikvisionStatus } from '../shared/hikvision-types'
 
 // Sentry must be initialized BEFORE anything else can crash
 initSentryMain()
@@ -23,13 +25,30 @@ process.on('uncaughtException', (err) => {
 
 log.info('AionX starting up', { version: app.getVersion(), isDev })
 
-// ── Auto-updater setup (production only) ──────────────────────────────────────
-function sendUpdateStatus(status: UpdateStatus): void {
+function broadcast(channel: string, payload: unknown): void {
   BrowserWindow.getAllWindows().forEach((win) => {
     if (!win.isDestroyed()) {
-      win.webContents.send(IPC_CHANNELS.UPDATE_STATUS, status)
+      win.webContents.send(channel, payload)
     }
   })
+}
+
+// ── Auto-updater setup (production only) ──────────────────────────────────────
+function sendUpdateStatus(status: UpdateStatus): void {
+  broadcast(IPC_CHANNELS.UPDATE_STATUS, status)
+}
+
+// ── Hikvision biometric terminal ────────────────────────────────────────────
+function setupHikvisionBridge(): void {
+  hikvisionService.on('status', (status: HikvisionStatus) =>
+    broadcast(IPC_CHANNELS.HIKVISION_STATUS_PUSH, status)
+  )
+  hikvisionService.on('attendance-event', (event: HikvisionAttendanceEvent) =>
+    broadcast(IPC_CHANNELS.HIKVISION_EVENT_PUSH, event)
+  )
+  hikvisionService
+    .connectIfConfigured()
+    .catch((err) => log.error('[hikvision] Startup connect failed:', err))
 }
 
 function setupAutoUpdater(): void {
@@ -207,6 +226,7 @@ app.whenReady().then(() => {
   })
 
   registerIpcHandlers()
+  setupHikvisionBridge()
   createWindow()
 
   // Global shortcuts

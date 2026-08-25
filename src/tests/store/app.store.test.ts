@@ -1,9 +1,28 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { useAppStore } from '../../renderer/src/store/app.store'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { useAppStore } from '../../renderer/src/app/store/app.store'
+
+const signInMock = vi.fn()
+const signOutMock = vi.fn()
+const getDocMock = vi.fn()
+
+vi.mock('@/shared/lib/firebase', () => ({ auth: {}, db: {} }))
+vi.mock('firebase/auth', () => ({
+  signInWithEmailAndPassword: (...args: unknown[]) => signInMock(...args),
+  signOut: (...args: unknown[]) => signOutMock(...args)
+}))
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  getDoc: (...args: unknown[]) => getDocMock(...args)
+}))
 
 beforeEach(() => {
+  signInMock.mockReset()
+  signOutMock.mockReset().mockResolvedValue(undefined)
+  getDocMock.mockReset()
   useAppStore.setState({
     isAuthenticated: false,
+    currentUser: null,
+    authLoading: false,
     theme: 'dark',
     language: 'en',
     accentColor: 'indigo',
@@ -24,28 +43,51 @@ describe('app.store', () => {
       expect(useAppStore.getState().isAuthenticated).toBe(false)
     })
 
-    it('login with valid credentials sets isAuthenticated', () => {
-      const ok = useAppStore.getState().login('admin', 'pass1')
-      expect(ok).toBe(true)
+    it('login with a valid account sets isAuthenticated', async () => {
+      signInMock.mockResolvedValue({
+        user: { uid: 'u1', email: 'admin@gspi.test', displayName: null }
+      })
+      getDocMock.mockResolvedValue({
+        data: () => ({ fullName: 'Admin User', role: 'admin', isActive: true })
+      })
+
+      const result = await useAppStore.getState().login('admin@gspi.test', 'correct-password')
+
+      expect(result.ok).toBe(true)
       expect(useAppStore.getState().isAuthenticated).toBe(true)
+      expect(useAppStore.getState().currentUser?.role).toBe('admin')
     })
 
-    it('login with empty username returns false', () => {
-      const ok = useAppStore.getState().login('', 'pass1')
-      expect(ok).toBe(false)
+    it('login with wrong credentials returns ok:false and stays unauthenticated', async () => {
+      signInMock.mockRejectedValue({ code: 'auth/invalid-credential' })
+
+      const result = await useAppStore.getState().login('admin@gspi.test', 'wrong-password')
+
+      expect(result.ok).toBe(false)
       expect(useAppStore.getState().isAuthenticated).toBe(false)
     })
 
-    it('login with short password returns false', () => {
-      const ok = useAppStore.getState().login('user', 'abc')
-      expect(ok).toBe(false)
+    it('login for a disabled profile signs the user back out', async () => {
+      signInMock.mockResolvedValue({
+        user: { uid: 'u2', email: 'disabled@gspi.test', displayName: null }
+      })
+      getDocMock.mockResolvedValue({ data: () => ({ isActive: false }) })
+
+      const result = await useAppStore.getState().login('disabled@gspi.test', 'password')
+
+      expect(result.ok).toBe(false)
+      expect(signOutMock).toHaveBeenCalled()
       expect(useAppStore.getState().isAuthenticated).toBe(false)
     })
 
     it('logout clears isAuthenticated', () => {
-      useAppStore.getState().login('admin', 'pass1')
+      useAppStore.setState({
+        isAuthenticated: true,
+        currentUser: { id: 'u1', email: 'a@b.c', fullName: 'A', role: 'admin' }
+      })
       useAppStore.getState().logout()
       expect(useAppStore.getState().isAuthenticated).toBe(false)
+      expect(signOutMock).toHaveBeenCalled()
     })
   })
 

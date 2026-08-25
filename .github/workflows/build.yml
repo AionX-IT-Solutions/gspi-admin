@@ -13,6 +13,11 @@ on:
         type: choice
         options: [all, windows, mac, linux]
 
+# electron-builder publishes a GitHub Release (draft, on a `v*` tag push) using this
+# workflow's own GITHUB_TOKEN — needs contents:write or the upload gets a silent 403.
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build — ${{ matrix.os }}

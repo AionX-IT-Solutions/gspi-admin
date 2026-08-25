@@ -88,7 +88,6 @@
 
   /* Layout */
   --titlebar-height: 40px;
-  --statusbar-height: 28px;
 
   /* Radius */
   --radius-sm: 6px;
@@ -1073,6 +1072,62 @@ body {
   letter-spacing: 0.08em;
   margin-bottom: 6px;
   color: var(--c-text-3);
+}
+
+/* ============================================================
+   MODAL LIGHT THEME — white card with indigo top accent
+   Overrides --c-* tokens so .input-field / .label inside the
+   modal render correctly on a white background regardless of
+   the host app's dark/light mode setting.
+   ============================================================ */
+.modal-light {
+  --c-input-bg: #f8f8ff;
+  --c-input-border: rgba(0, 0, 0, 0.13);
+  --c-text-1: #12122a;
+  --c-text-2: #4b5563;
+  --c-text-3: #6b7280;
+  --c-surface-solid: #ffffff;
+  --border-focus: rgba(99, 102, 241, 0.45);
+  --c-accent-glow: rgba(99, 102, 241, 0.25);
+
+  /* Also override the raw global tokens (--text-primary, --glass-bg, etc.)
+     so page content written for the dark theme — Card, DataTable, and any
+     inline var(--text-*) usage — still reads correctly on this white card,
+     regardless of the host app's dark/light mode setting. */
+  --text-primary: #12122a;
+  --text-secondary: #555577;
+  --text-muted: #9999bb;
+  --text-disabled: #ccccdd;
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-default: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-bg-hover: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --bg-base: #f0f0f8;
+  --bg-elevated: #ffffff;
+  --bg-overlay: #e8e8f4;
+  --bg-surface: #f8f8ff;
+  --shadow-card:
+    0 3px 12px rgba(0, 0, 0, 0.09), 0 1px 4px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-card-hover:
+    0 4px 16px rgba(0, 0, 0, 0.09), 0 0 12px var(--accent-primary-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.modal-light .input-field {
+  color: #12122a;
+}
+
+.modal-light .input-field::placeholder {
+  color: #9ca3af;
+}
+
+.modal-light .input-field:focus {
+  background: rgba(99, 102, 241, 0.04);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 /* Animation helpers */

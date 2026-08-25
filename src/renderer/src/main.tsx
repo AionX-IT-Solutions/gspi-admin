@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
+import App from './app/App'
 import './i18n'
 import './styles/globals.css'
 import '@fontsource/inter/400.css'

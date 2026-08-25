@@ -1,7 +1,21 @@
-import { ipcMain, BrowserWindow, app, shell, Notification } from 'electron'
+import { ipcMain, BrowserWindow, app, dialog, shell, Notification } from 'electron'
+import { writeFile } from 'node:fs/promises'
 import log from 'electron-log'
 import { autoUpdater } from 'electron-updater'
-import { IPC_CHANNELS, type NotificationPayload } from '../shared/ipc-types'
+import {
+  IPC_CHANNELS,
+  type NotificationPayload,
+  type FileDownloadRequest,
+  type FileDownloadResult
+} from '../shared/ipc-types'
+import { hikvisionService } from './services/hikvision/HikvisionService'
+import { printerService } from './services/printing/PrinterService'
+import type {
+  HikvisionDeviceConfigInput,
+  HikvisionEnrollFacePayload,
+  HikvisionEventSearchRange
+} from '../shared/hikvision-types'
+import type { PrinterConfig, SilentPrintRequest } from '../shared/printing-types'
 
 export function registerIpcHandlers(): void {
   // ── App ──────────────────────────────────────────────────────────────────────
@@ -34,6 +48,26 @@ export function registerIpcHandlers(): void {
     shell.openExternal(url)
   })
 
+  // ── File downloads ───────────────────────────────────────────────────────────
+  // Fetched here (not the renderer) since remote storage URLs don't send the
+  // CORS headers a renderer-side fetch needs to read the response body.
+  ipcMain.handle(
+    IPC_CHANNELS.FILE_DOWNLOAD,
+    async (event, { url, filename }: FileDownloadRequest): Promise<FileDownloadResult> => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const { canceled, filePath } = await (win
+        ? dialog.showSaveDialog(win, { defaultPath: filename })
+        : dialog.showSaveDialog({ defaultPath: filename }))
+      if (canceled || !filePath) return { canceled: true }
+
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`Failed to download file: ${res.status}`)
+      const buffer = Buffer.from(await res.arrayBuffer())
+      await writeFile(filePath, buffer)
+      return { canceled: false, filePath }
+    }
+  )
+
   // ── Zoom ─────────────────────────────────────────────────────────────────────
   ipcMain.handle(IPC_CHANNELS.ZOOM_SET, (event, factor: number) => {
     const clamped = Math.max(0.5, Math.min(2.0, factor))
@@ -64,4 +98,32 @@ export function registerIpcHandlers(): void {
   ipcMain.on(IPC_CHANNELS.UPDATE_INSTALL, () => {
     autoUpdater.quitAndInstall()
   })
+
+  // ── Hikvision biometric terminal ────────────────────────────────────────────
+  ipcMain.handle(IPC_CHANNELS.HIKVISION_GET_CONFIG, () => hikvisionService.getConfigSummary())
+  ipcMain.handle(IPC_CHANNELS.HIKVISION_SAVE_CONFIG, (_, config: HikvisionDeviceConfigInput) =>
+    hikvisionService.saveConfig(config)
+  )
+  ipcMain.handle(IPC_CHANNELS.HIKVISION_TEST_CONNECTION, (_, config?: HikvisionDeviceConfigInput) =>
+    hikvisionService.testConnection(config)
+  )
+  ipcMain.handle(IPC_CHANNELS.HIKVISION_CONNECT, () => hikvisionService.connect())
+  ipcMain.handle(IPC_CHANNELS.HIKVISION_DISCONNECT, () => hikvisionService.disconnect())
+  ipcMain.handle(IPC_CHANNELS.HIKVISION_GET_STATUS, () => hikvisionService.getStatus())
+  ipcMain.handle(IPC_CHANNELS.HIKVISION_SEARCH_EVENTS, (_, range: HikvisionEventSearchRange) =>
+    hikvisionService.searchAttendanceEvents(range)
+  )
+  ipcMain.handle(IPC_CHANNELS.HIKVISION_ENROLL_FACE, (_, payload: HikvisionEnrollFacePayload) =>
+    hikvisionService.enrollFace(payload)
+  )
+
+  // ── Receipt printer & cash drawer ───────────────────────────────────────────
+  ipcMain.handle(IPC_CHANNELS.PRINTER_LIST, () => printerService.listPrinters())
+  ipcMain.handle(IPC_CHANNELS.PRINTER_GET_CONFIG, () => printerService.getConfig())
+  ipcMain.handle(IPC_CHANNELS.PRINTER_SAVE_CONFIG, (_, patch: Partial<PrinterConfig>) =>
+    printerService.saveConfig(patch)
+  )
+  ipcMain.handle(IPC_CHANNELS.PRINTER_SILENT_PRINT, (_, request: SilentPrintRequest) =>
+    printerService.silentPrint(request)
+  )
 }

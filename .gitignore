@@ -35,3 +35,12 @@ desktop.ini
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Firebase
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+.firebase/
+functions/lib/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

@@ -1,0 +1,45 @@
+rules_version = '2';
+
+// Mirrors the role model in firestore.rules — see that file's header comment for the
+// full explanation. `role` is a custom claim set only by the Admin SDK CLI scripts.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return request.auth.token.role;
+    }
+
+    function hasAnyRole(roles) {
+      return isSignedIn() && role() in roles;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Employee profile photos and HR documents (resume, transcript, certifications) —
+    // same role set as the `employees` / `employeeDocuments` Firestore collections.
+    match /employeePhotos/{employeeId}/{fileName} {
+      allow read: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+      allow write: if hasAnyRole(['super_admin', 'admin', 'hr']);
+    }
+    match /employeeDocuments/{employeeId}/{fileName} {
+      allow read: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+      allow write: if hasAnyRole(['super_admin', 'admin', 'hr']);
+    }
+
+    // A user's own profile photo — self-service, mirroring the narrow `isActive`
+    // exception on the `users/{uid}` Firestore document.
+    match /userPhotos/{uid}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid) || hasAnyRole(['super_admin', 'admin']);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

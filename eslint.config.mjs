@@ -56,7 +56,9 @@ export default [
         URLSearchParams: 'readonly',
         localStorage: 'readonly',
         sessionStorage: 'readonly',
+        crypto: 'readonly',
         navigator: 'readonly',
+        createImageBitmap: 'readonly',
         location: 'readonly',
         history: 'readonly',
         alert: 'readonly',
@@ -135,7 +137,13 @@ export default [
 
   // Node / Electron main process — relax browser globals
   {
-    files: ['src/main/**/*.ts', 'src/preload/**/*.ts', 'electron.vite.config.ts', '*.config.*', 'scripts/**/*.js'],
+    files: [
+      'src/main/**/*.ts',
+      'src/preload/**/*.ts',
+      'electron.vite.config.ts',
+      '*.config.*',
+      'scripts/**/*.{js,mjs}'
+    ],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
