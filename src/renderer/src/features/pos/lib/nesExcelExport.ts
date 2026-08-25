@@ -729,7 +729,7 @@ export async function exportMonthlyInventoryReportPdf(
     startY: y,
     head: [inventoryReportCols],
     body: rows,
-    foot: totalsRow,
+    foot: [totalsRow],
     columnStyles: Object.fromEntries(
       Array.from({ length: 11 }, (_, i) => [i + 1, { halign: 'right' as const }])
     )

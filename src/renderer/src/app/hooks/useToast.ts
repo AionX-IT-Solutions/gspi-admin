@@ -3,7 +3,7 @@ import { useAppStore } from '../store/app.store'
 
 type ToastType = 'info' | 'success' | 'warning' | 'error'
 
-interface ToastOptions {
+export interface ToastOptions {
   description?: string
   duration?: number
   /** Also show a native OS notification (respects notificationsEnabled) */

@@ -38,7 +38,7 @@ export async function compressPdf(file: File): Promise<File> {
     const pages = await dst.copyPages(src, src.getPageIndices())
     pages.forEach((p) => dst.addPage(p))
     const pdfBytes = await dst.save({ useObjectStreams: false })
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' })
     return new File([blob], file.name, { type: 'application/pdf' })
   } catch (err) {
     console.warn('compressPdf failed, returning original file', err)

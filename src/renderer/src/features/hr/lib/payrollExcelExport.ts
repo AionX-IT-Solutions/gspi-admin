@@ -278,7 +278,7 @@ export async function exportPayrollRegisterPdf(
     startY: y,
     head: [payrollCols],
     body: rows,
-    foot: totalsRow,
+    foot: [totalsRow],
     columnStyles: Object.fromEntries(
       Array.from({ length: 10 }, (_, i) => [i + 3, { halign: 'right' as const }])
     )

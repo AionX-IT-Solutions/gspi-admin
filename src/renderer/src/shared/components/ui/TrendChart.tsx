@@ -6,7 +6,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  type TooltipProps
+  type TooltipContentProps
 } from 'recharts'
 
 export interface TrendChartSeries {
@@ -28,7 +28,7 @@ function ChartTooltip({
   payload,
   label,
   valueFormatter
-}: TooltipProps<number, string> & { valueFormatter?: (value: number) => string }) {
+}: Partial<TooltipContentProps<number, string>> & { valueFormatter?: (value: number) => string }) {
   if (!active || !payload?.length) return null
   return (
     <div
