@@ -6,8 +6,6 @@ export function useNotificationsSection() {
   const setNotificationsEnabled = useAppStore((s) => s.setNotificationsEnabled)
   const soundEnabled = useAppStore((s) => s.soundEnabled)
   const setSoundEnabled = useAppStore((s) => s.setSoundEnabled)
-  const updateNotifs = useAppStore((s) => s.updateNotifs)
-  const setUpdateNotifs = useAppStore((s) => s.setUpdateNotifs)
   const securityAlerts = useAppStore((s) => s.securityAlerts)
   const setSecurityAlerts = useAppStore((s) => s.setSecurityAlerts)
 
@@ -21,11 +19,6 @@ export function useNotificationsSection() {
     toast.success(v ? 'Sound alerts ON' : 'Sound alerts OFF')
   }
 
-  function handleUpdateNotifsChange(v: boolean) {
-    setUpdateNotifs(v)
-    toast.success(v ? 'Update notifications ON' : 'Update notifications OFF')
-  }
-
   function handleSecurityAlertsChange(v: boolean) {
     setSecurityAlerts(v)
     toast.success(v ? 'Security alerts ON' : 'Security alerts OFF')
@@ -34,11 +27,9 @@ export function useNotificationsSection() {
   return {
     notificationsEnabled,
     soundEnabled,
-    updateNotifs,
     securityAlerts,
     handleNotificationsChange,
     handleSoundChange,
-    handleUpdateNotifsChange,
     handleSecurityAlertsChange
   }
 }

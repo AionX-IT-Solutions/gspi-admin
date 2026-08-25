@@ -9,11 +9,9 @@ export function NotificationsSection() {
   const {
     notificationsEnabled,
     soundEnabled,
-    updateNotifs,
     securityAlerts,
     handleNotificationsChange,
     handleSoundChange,
-    handleUpdateNotifsChange,
     handleSecurityAlertsChange
   } = useNotificationsSection()
 
@@ -40,12 +38,6 @@ export function NotificationsSection() {
         </SettingRow>
         <SettingRow label={t('settings.soundAlerts')} description={t('settings.soundAlertsDesc')}>
           <StyledSwitch checked={soundEnabled} onCheckedChange={handleSoundChange} />
-        </SettingRow>
-        <SettingRow
-          label={t('settings.updateNotifications')}
-          description={t('settings.updateNotificationsDesc')}
-        >
-          <StyledSwitch checked={updateNotifs} onCheckedChange={handleUpdateNotifsChange} />
         </SettingRow>
         <SettingRow
           label={t('settings.securityAlerts')}

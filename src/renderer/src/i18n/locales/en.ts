@@ -185,8 +185,6 @@ const en = {
     enableNotificationsDesc: 'Show system notifications for important events',
     soundAlerts: 'Sound Alerts',
     soundAlertsDesc: 'Play a sound when notifications arrive',
-    updateNotifications: 'Update Notifications',
-    updateNotificationsDesc: 'Notify when a new version is available',
     securityAlerts: 'Security Alerts',
     securityAlertsDesc: 'Alert on suspicious activity',
     marketingEmails: 'Marketing Emails',

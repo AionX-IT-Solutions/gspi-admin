@@ -53,6 +53,8 @@ function setupHikvisionBridge(): void {
 
 function setupAutoUpdater(): void {
   autoUpdater.logger = log
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
 
   autoUpdater.on('checking-for-update', () => {
     log.info('Checking for update...')
@@ -239,12 +241,18 @@ app.whenReady().then(() => {
     })
   })
 
-  // Auto-updater (production only)
+  // Auto-updater (production only). checkForUpdates (not checkForUpdatesAndNotify)
+  // since we show our own in-app toast — the "AndNotify" variant also fires a native
+  // OS notification on update-downloaded, which would show twice. Delayed 5s so the
+  // renderer's useUpdateStatus() listener is mounted before the first status event —
+  // otherwise an update found in the first moments of startup fires into nothing.
   if (!isDev) {
     setupAutoUpdater()
-    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-      log.error('Failed to check for updates:', err)
-    })
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch((err) => {
+        log.error('Failed to check for updates:', err)
+      })
+    }, 5000)
   }
 
   app.on('activate', function () {

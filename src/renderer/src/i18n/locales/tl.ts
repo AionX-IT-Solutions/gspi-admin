@@ -186,8 +186,6 @@ const tl = {
       'Magpakita ng mga notipikasyon ng system para sa mahahalagang kaganapan',
     soundAlerts: 'Mga Sound Alert',
     soundAlertsDesc: 'Mag-play ng tunog kapag dumating ang mga notipikasyon',
-    updateNotifications: 'Mga Update na Notipikasyon',
-    updateNotificationsDesc: 'Ipaalam kapag may bagong bersyon',
     securityAlerts: 'Mga Security Alert',
     securityAlertsDesc: 'Mag-alerto sa kahina-hinalang aktibidad',
     marketingEmails: 'Mga Marketing Email',
