@@ -167,7 +167,7 @@ const en = {
   },
   settings: {
     title: 'Settings',
-    subtitle: 'Customize your AionX experience.',
+    subtitle: 'Customize your GSPI Admin experience.',
     appearance: 'Appearance',
     appearanceDesc: 'Customize the look and feel',
     darkMode: 'Dark Mode',
@@ -261,7 +261,7 @@ const en = {
         connectFailed: 'Failed to connect to the device',
         saveFailed: 'Failed to save device settings',
         apiUnavailable:
-          'This feature needs a full app restart to load — close and reopen AionX, then try again.'
+          'This feature needs a full app restart to load — close and reopen GSPI Admin, then try again.'
       }
     },
     receiptPrinter: {
@@ -309,7 +309,7 @@ const en = {
     privacy: 'Privacy',
     privacyDesc: 'Manage your data and privacy preferences',
     dataCollection: 'Usage Analytics',
-    dataCollectionDesc: 'Help improve AionX by sharing anonymized usage data',
+    dataCollectionDesc: 'Help improve GSPI Admin by sharing anonymized usage data',
     crashReports: 'Crash Reports',
     crashReportsDesc: 'Automatically send crash reports to help fix bugs',
     telemetry: 'Telemetry',
@@ -326,7 +326,7 @@ const en = {
   },
   devices: {
     title: 'Devices',
-    subtitle: 'Connect and test hardware used by AionX.'
+    subtitle: 'Connect and test hardware used by GSPI Admin.'
   },
   profile: {
     title: 'My Profile',

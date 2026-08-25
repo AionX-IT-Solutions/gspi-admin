@@ -69,7 +69,7 @@ export function About() {
           >
             <img
               src={`${import.meta.env.BASE_URL}logo.png`}
-              alt="AionX"
+              alt="GSP Ilocos Sur"
               style={{ width: '250px', height: 'auto', objectFit: 'contain', display: 'block' }}
               draggable={false}
               onError={(e) => {

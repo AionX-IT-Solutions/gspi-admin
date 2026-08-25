@@ -167,7 +167,7 @@ const tl = {
   },
   settings: {
     title: 'Mga Setting',
-    subtitle: 'I-customize ang iyong karanasan sa AionX.',
+    subtitle: 'I-customize ang iyong karanasan sa GSPI Admin.',
     appearance: 'Hitsura',
     appearanceDesc: 'I-customize ang hitsura at pakiramdam',
     darkMode: 'Dark Mode',
@@ -266,7 +266,7 @@ const tl = {
         connectFailed: 'Hindi nakakonekta sa device',
         saveFailed: 'Hindi na-save ang settings ng device',
         apiUnavailable:
-          'Kailangan i-restart nang buo ang app para gumana ito — isara at buksan muli ang AionX, subukan ulit.'
+          'Kailangan i-restart nang buo ang app para gumana ito — isara at buksan muli ang GSPI Admin, subukan ulit.'
       }
     },
     receiptPrinter: {
@@ -315,7 +315,7 @@ const tl = {
     privacyDesc: 'Pamahalaan ang iyong data at mga kagustuhan sa privacy',
     dataCollection: 'Usage Analytics',
     dataCollectionDesc:
-      'Tulungan na mapabuti ang AionX sa pamamagitan ng pagbabahagi ng anonymized na data',
+      'Tulungan na mapabuti ang GSPI Admin sa pamamagitan ng pagbabahagi ng anonymized na data',
     crashReports: 'Mga Crash Report',
     crashReportsDesc:
       'Awtomatikong magpadala ng mga crash report para makatulong sa pag-aayos ng mga bug',
@@ -333,7 +333,7 @@ const tl = {
   },
   devices: {
     title: 'Mga Device',
-    subtitle: 'Ikonekta at i-test ang mga hardware na ginagamit ng AionX.'
+    subtitle: 'Ikonekta at i-test ang mga hardware na ginagamit ng GSPI Admin.'
   },
   profile: {
     title: 'Aking Profile',

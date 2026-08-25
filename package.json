@@ -1,7 +1,7 @@
 {
-  "name": "electron-vite-boilerplate",
+  "name": "gspi-admin",
   "version": "1.0.1",
-  "description": "Futuristic Electron Vite Boilerplate",
+  "description": "GSPI Admin — desktop admin app for the Girl Scouts of the Philippines, Ilocos Sur Council",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "node scripts/dev.js",
@@ -97,9 +97,9 @@
     "vitest": "^4.1.8"
   },
   "build": {
-    "appId": "com.aionx.boilerplate",
-    "productName": "AionX",
-    "copyright": "Copyright © 2025 AionX",
+    "appId": "com.gspi.admin",
+    "productName": "GSPI Admin",
+    "copyright": "Copyright © 2026 GSP Ilocos Sur Council",
     "directories": {
       "buildResources": "resources",
       "output": "dist"

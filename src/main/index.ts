@@ -23,7 +23,7 @@ process.on('uncaughtException', (err) => {
   log.error('Uncaught exception:', err)
 })
 
-log.info('AionX starting up', { version: app.getVersion(), isDev })
+log.info('GSPI Admin starting up', { version: app.getVersion(), isDev })
 
 function broadcast(channel: string, payload: unknown): void {
   BrowserWindow.getAllWindows().forEach((win) => {
@@ -95,11 +95,11 @@ function createTray(mainWindow: BrowserWindow): void {
   const icon = nativeImage.createFromDataURL(iconDataUrl)
 
   tray = new Tray(icon)
-  tray.setToolTip('AionX')
+  tray.setToolTip('GSPI Admin')
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show AionX',
+      label: 'Show GSPI Admin',
       click: () => {
         mainWindow.show()
         mainWindow.focus()
@@ -205,7 +205,7 @@ function createWindow(): void {
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
   if (process.platform === 'win32') {
-    app.setAppUserModelId(isDev ? process.execPath : 'com.aionx.boilerplate')
+    app.setAppUserModelId(isDev ? process.execPath : 'com.gspi.admin')
   }
 
   app.on('browser-window-created', (_, window) => {
