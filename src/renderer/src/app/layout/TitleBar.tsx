@@ -1,10 +1,38 @@
-import { Minus, Square, X, Sun, Moon, Bell, Search } from 'lucide-react'
+import {
+  Minus,
+  Square,
+  X,
+  Sun,
+  Moon,
+  Bell,
+  Search,
+  Compass,
+  Users,
+  Truck,
+  FileText,
+  UserCog,
+  Tent,
+  UserCheck,
+  Boxes,
+  Ticket,
+  CalendarOff,
+  Wallet,
+  DoorOpen,
+  UserPlus,
+  Target,
+  ClipboardList,
+  GraduationCap,
+  Receipt,
+  Landmark
+} from 'lucide-react'
 import { useElectron } from '../hooks/useElectron'
 import { useAppStore } from '../store/app.store'
 import { useState, useRef, useEffect, type CSSProperties, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { Tooltip } from '@/shared/components/ui/Tooltip'
+import { useGlobalSearch, type SearchResult, type SearchResultType } from '../hooks/useGlobalSearch'
 
 type ElectronStyle = CSSProperties & { WebkitAppRegion?: 'drag' | 'no-drag' }
 
@@ -109,13 +137,43 @@ function ThemeToggle() {
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
+const searchTypeIcon: Record<SearchResultType, ReactNode> = {
+  module: <Compass size={13} />,
+  customer: <Users size={13} />,
+  vendor: <Truck size={13} />,
+  invoice: <FileText size={13} />,
+  employee: <UserCog size={13} />,
+  troop: <Tent size={13} />,
+  member: <UserCheck size={13} />,
+  product: <Boxes size={13} />,
+  voucher: <Ticket size={13} />,
+  leave: <CalendarOff size={13} />,
+  payroll: <Wallet size={13} />,
+  rental: <DoorOpen size={13} />,
+  visitor: <UserPlus size={13} />,
+  goal: <Target size={13} />,
+  programReport: <ClipboardList size={13} />,
+  trainingReport: <GraduationCap size={13} />,
+  cashReceipt: <Receipt size={13} />,
+  bank: <Landmark size={13} />
+}
+
 function SearchBar() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const isDark = useAppStore((s) => s.theme) === 'dark'
+  const results = useGlobalSearch(value)
+
+  function goTo(result: SearchResult) {
+    navigate(result.path)
+    setOpen(false)
+    setValue('')
+  }
 
   // Ctrl+K / Cmd+K shortcut
   useEffect(() => {
@@ -129,6 +187,10 @@ function SearchBar() {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [])
+
+  useEffect(() => {
+    setActiveIndex(0)
+  }, [value])
 
   useEffect(() => {
     if (open) {
@@ -164,7 +226,7 @@ function SearchBar() {
           <motion.div
             key="input"
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 200, opacity: 1 }}
+            animate={{ width: 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             style={{ overflow: 'hidden', display: 'flex', alignItems: 'center' }}
@@ -178,7 +240,7 @@ function SearchBar() {
                 border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                 borderRadius: 8,
                 padding: '3px 8px',
-                width: 200
+                width: 280
               }}
             >
               <Search size={11} color="var(--text-muted)" style={{ flexShrink: 0 }} />
@@ -186,6 +248,18 @@ function SearchBar() {
                 ref={inputRef}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault()
+                    setActiveIndex((i) => Math.min(i + 1, results.length - 1))
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault()
+                    setActiveIndex((i) => Math.max(i - 1, 0))
+                  } else if (e.key === 'Enter' && results[activeIndex]) {
+                    e.preventDefault()
+                    goTo(results[activeIndex])
+                  }
+                }}
                 placeholder={t('titleBar.searchPlaceholder')}
                 style={{
                   background: 'transparent',
@@ -216,6 +290,7 @@ function SearchBar() {
         ) : (
           <Tooltip key="icon" content={t('titleBar.searchShortcut')} side="bottom">
             <motion.button
+              aria-label={t('titleBar.searchShortcut')}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -244,6 +319,122 @@ function SearchBar() {
           </Tooltip>
         )}
       </AnimatePresence>
+
+      {open && value.trim() && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            width: 320,
+            maxHeight: 360,
+            overflowY: 'auto',
+            background: 'var(--popover-bg)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid var(--popover-border)',
+            borderRadius: 12,
+            boxShadow: 'var(--popover-shadow)',
+            zIndex: 500
+          }}
+        >
+          {results.length === 0 ? (
+            <div
+              style={{
+                padding: '16px 14px',
+                textAlign: 'center',
+                fontSize: 12,
+                color: 'var(--text-muted)'
+              }}
+            >
+              {t('titleBar.noResults')}
+            </div>
+          ) : (
+            results.map((r, i) => (
+              <div
+                key={r.id}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  goTo(r)
+                }}
+                onMouseEnter={() => setActiveIndex(i)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '9px 12px',
+                  cursor: 'pointer',
+                  borderBottom:
+                    i < results.length - 1
+                      ? `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`
+                      : 'none',
+                  background:
+                    i === activeIndex
+                      ? isDark
+                        ? 'rgba(255,255,255,0.06)'
+                        : 'rgba(0,0,0,0.045)'
+                      : 'transparent'
+                }}
+              >
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 24,
+                    height: 24,
+                    borderRadius: 7,
+                    flexShrink: 0,
+                    background: 'var(--accent-primary-subtle)',
+                    color: 'var(--accent-primary)'
+                  }}
+                >
+                  {searchTypeIcon[r.type]}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {r.title}
+                  </div>
+                  {r.subtitle && (
+                    <div
+                      style={{
+                        fontSize: 10.5,
+                        color: 'var(--text-secondary)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {r.subtitle}
+                    </div>
+                  )}
+                </div>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    color: 'var(--text-muted)',
+                    flexShrink: 0
+                  }}
+                >
+                  {t(`titleBar.searchTypes.${r.type}`)}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   )
 }

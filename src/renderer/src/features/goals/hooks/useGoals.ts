@@ -18,7 +18,9 @@ export function useGoals() {
   const goals = useGoalsStore((s) => s.goals)
   const setMonthlyAchieved = useGoalsStore((s) => s.setMonthlyAchieved)
   const deleteGoal = useGoalsStore((s) => s.deleteGoal)
+  const addGoal = useGoalsStore((s) => s.addGoal)
   const deleteObjective = useGoalsStore((s) => s.deleteObjective)
+  const addObjective = useGoalsStore((s) => s.addObjective)
   const sales = usePOSStore((s) => s.sales)
 
   const currentMonthIndex =
@@ -53,15 +55,23 @@ export function useGoals() {
 
   function handleConfirmDeleteGoal() {
     if (!deletingGoal) return
-    deleteGoal(deletingGoal.id)
-    toast.success(t('goals.toast.goalDeleted'))
+    const deleted = deletingGoal
+    deleteGoal(deleted.id)
+    toast.success(t('goals.toast.goalDeleted'), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => addGoal(deleted) }
+    })
     setDeletingGoal(null)
   }
 
   function handleConfirmDeleteObjective() {
     if (!deletingObjective) return
-    deleteObjective(deletingObjective.goalId, deletingObjective.objective.id)
-    toast.success(t('goals.toast.objectiveDeleted'))
+    const { goalId, objective } = deletingObjective
+    deleteObjective(goalId, objective.id)
+    toast.success(t('goals.toast.objectiveDeleted'), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => addObjective(goalId, objective) }
+    })
     setDeletingObjective(null)
   }
 

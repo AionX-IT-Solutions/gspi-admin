@@ -38,6 +38,12 @@ service firebase.storage {
       allow write: if isOwner(uid) || hasAnyRole(['super_admin', 'admin']);
     }
 
+    // Scanned/attached copies of the Daily Cash Collection Report (Reports > Daily
+    // Collections) — same role set as the `dailyCollectionReports` Firestore collection.
+    match /dailyCollectionAttachments/{date}/{fileName} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

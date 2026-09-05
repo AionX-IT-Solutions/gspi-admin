@@ -6,7 +6,13 @@ import { Button } from '@/shared/components/ui/Button'
 import { Modal } from '@/shared/components/ui/Modal'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { FormField, FieldInput } from '@/shared/components/ui/FormField'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { actionsColumn } from '@/shared/lib/columnHelpers'
@@ -29,7 +35,10 @@ export function Members() {
   const { t } = useTranslation()
   const {
     loading,
+    canManage,
     members,
+    search,
+    setSearch,
     showForm,
     setShowForm,
     editTarget,
@@ -70,22 +79,28 @@ export function Members() {
           >
             {t('members.printCardButton')}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
-            <Pencil size={13} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setDeleteTarget(r)}
-            title={t('common.delete')}
-          >
-            <Trash2 size={13} />
-          </Button>
+          {canManage && (
+            <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
+              <Pencil size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDeleteTarget(r)}
+              title={t('common.delete')}
+            >
+              <Trash2 size={13} />
+            </Button>
+          )}
         </div>
       ),
       t('common.actions')
     )
   ]
+
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
 
   return (
     <motion.div
@@ -102,10 +117,22 @@ export function Members() {
         actions={
           <>
             <RefreshButton onRefresh={() => hydrate(true)} />
-            <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
-              {t('members.addButton')}
-            </Button>
+            {canManage && (
+              <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
+                {t('members.addButton')}
+              </Button>
+            )}
           </>
+        }
+      />
+
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('members.searchPlaceholder')}
+        count={members.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
         }
       />
 
@@ -113,6 +140,7 @@ export function Members() {
         <DataTable
           columns={columns}
           data={members}
+          hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('members.table.emptyMessage')}
         />

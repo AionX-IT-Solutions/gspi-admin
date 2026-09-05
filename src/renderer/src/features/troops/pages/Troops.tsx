@@ -18,6 +18,7 @@ import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { statusColumn, actionsColumn } from '@/shared/lib/columnHelpers'
 import type { Troop } from '../types/troop.types'
 import { TroopFormModal } from '../components/TroopFormModal'
+import { TroopsExportMenu } from '../components/TroopsExportMenu'
 import { useTroops } from '../hooks/useTroops'
 import { useTroopsStore } from '../store/troops.store'
 
@@ -37,6 +38,7 @@ export function Troops() {
 
   const {
     loading,
+    canManage,
     search,
     setSearch,
     filteredTroops,
@@ -96,25 +98,31 @@ export function Troops() {
           >
             <Users size={13} />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
-            <Pencil size={13} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setToggleTarget(r)}
-            title={r.isActive ? t('troops.table.deactivate') : t('troops.table.reactivate')}
-          >
-            <UserX size={13} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setDeleteTarget(r)}
-            title={t('common.delete')}
-          >
-            <Trash2 size={13} />
-          </Button>
+          {canManage && (
+            <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
+              <Pencil size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setToggleTarget(r)}
+              title={r.isActive ? t('troops.table.deactivate') : t('troops.table.reactivate')}
+            >
+              <UserX size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDeleteTarget(r)}
+              title={t('common.delete')}
+            >
+              <Trash2 size={13} />
+            </Button>
+          )}
         </div>
       ),
       t('common.actions')
@@ -139,9 +147,18 @@ export function Troops() {
         actions={
           <>
             <RefreshButton onRefresh={() => hydrate(true)} />
-            <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
-              {t('troops.addButton')}
-            </Button>
+            <TroopsExportMenu
+              troops={filteredTroops.map((tr) => ({
+                ...tr,
+                memberCount: rosterStats.get(tr.id)?.total ?? 0
+              }))}
+              membershipYear={currentMembershipYear}
+            />
+            {canManage && (
+              <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
+                {t('troops.addButton')}
+              </Button>
+            )}
           </>
         }
       />

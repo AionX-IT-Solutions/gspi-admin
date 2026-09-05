@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { ExportMenu } from '@/shared/components/ui/ExportMenu'
+import { DocumentPreviewModal } from '@/shared/components/ui/DocumentPreviewModal'
 import { ReportRow } from './ReportRow'
 import { useBalanceSheetTab } from '../hooks/useBalanceSheetTab'
 
@@ -10,14 +11,21 @@ interface BalanceSheetTabProps {
 
 export function BalanceSheetTab({ periodLabel }: BalanceSheetTabProps) {
   const { t } = useTranslation()
-  const { balanceSheet, handleExportExcel, handleExportPdf, handleExportWord } =
-    useBalanceSheetTab(periodLabel)
+  const {
+    balanceSheet,
+    handleView,
+    preview,
+    handleExportExcel,
+    handleExportPdf,
+    handleExportWord
+  } = useBalanceSheetTab(periodLabel)
 
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
         <ExportMenu
           label={t('reports.balanceSheet.exportLabel')}
+          onView={handleView}
           onExportExcel={handleExportExcel}
           onExportPdf={handleExportPdf}
           onExportWord={handleExportWord}
@@ -77,6 +85,16 @@ export function BalanceSheetTab({ periodLabel }: BalanceSheetTabProps) {
           </Card>
         </div>
       </div>
+
+      <DocumentPreviewModal
+        open={preview.open}
+        onClose={preview.closePreview}
+        url={preview.url}
+        title={t('reports.balanceSheet.exportLabel')}
+        onDownloadExcel={handleExportExcel}
+        onDownloadPdf={handleExportPdf}
+        onDownloadWord={handleExportWord}
+      />
     </>
   )
 }

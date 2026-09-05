@@ -5,13 +5,19 @@ import { Card } from '@/shared/components/ui/Card'
 import { FormField, FieldInput, FieldSelect } from '@/shared/components/ui/FormField'
 import { formatCurrency } from '@/shared/lib/utils'
 import { useNewPayrollEntryModal } from '../hooks/useNewPayrollEntryModal'
+import type { PayrollEntry } from '../types/hr.types'
 
 interface NewPayrollEntryModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  editTarget: PayrollEntry | null
 }
 
-export function NewPayrollEntryModal({ open, onOpenChange }: NewPayrollEntryModalProps) {
+export function NewPayrollEntryModal({
+  open,
+  onOpenChange,
+  editTarget
+}: NewPayrollEntryModalProps) {
   const { t } = useTranslation()
   const {
     activeEmployees,
@@ -21,20 +27,18 @@ export function NewPayrollEntryModal({ open, onOpenChange }: NewPayrollEntryModa
     selectEmployee,
     unpaidLeaveDays,
     setUnpaidLeaveDays,
+    isYearEndPeriod,
     netPreview,
     pullFromAttendance,
-    handleSubmit,
-    resetForm
-  } = useNewPayrollEntryModal(onOpenChange)
+    computeYearEndPay,
+    handleSubmit
+  } = useNewPayrollEntryModal(open, onOpenChange, editTarget)
 
   return (
     <Modal
       open={open}
-      onOpenChange={(o) => {
-        onOpenChange(o)
-        if (o) resetForm()
-      }}
-      title={t('payroll.modal.title')}
+      onOpenChange={onOpenChange}
+      title={editTarget ? t('payroll.modal.editTitle') : t('payroll.modal.title')}
       size="lg"
       footer={
         <>
@@ -42,7 +46,7 @@ export function NewPayrollEntryModal({ open, onOpenChange }: NewPayrollEntryModa
             {t('common.cancel')}
           </Button>
           <Button variant="primary" size="sm" onClick={handleSubmit}>
-            {t('payroll.modal.createEntry')}
+            {editTarget ? t('payroll.modal.saveChanges') : t('payroll.modal.createEntry')}
           </Button>
         </>
       }
@@ -168,6 +172,44 @@ export function NewPayrollEntryModal({ open, onOpenChange }: NewPayrollEntryModa
         </FormField>
       </div>
 
+      {isYearEndPeriod && (
+        <Card style={{ marginTop: 14 }} padding="14px">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 12
+            }}
+          >
+            <span style={{ fontSize: 12, fontWeight: 600 }}>{t('payroll.form.yearEndTitle')}</span>
+            <Button variant="outline" size="sm" onClick={computeYearEndPay}>
+              {t('payroll.computeYearEndPay')}
+            </Button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+            <FormField label={t('payroll.form.thirteenthMonthPay')}>
+              <FieldInput
+                type="number"
+                value={form.thirteenthMonthPay}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, thirteenthMonthPay: parseFloat(e.target.value) || 0 }))
+                }
+              />
+            </FormField>
+            <FormField label={t('payroll.form.cashGift')}>
+              <FieldInput
+                type="number"
+                value={form.cashGift}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, cashGift: parseFloat(e.target.value) || 0 }))
+                }
+              />
+            </FormField>
+          </div>
+        </Card>
+      )}
+
       <Card style={{ marginTop: 16 }} padding="14px">
         <div
           style={{
@@ -180,6 +222,34 @@ export function NewPayrollEntryModal({ open, onOpenChange }: NewPayrollEntryModa
           <span style={{ color: 'var(--text-muted)' }}>{t('payroll.preview.basicPay')}</span>
           <span>{formatCurrency(netPreview.basicPay)}</span>
         </div>
+        {netPreview.thirteenthMonthPay > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 13,
+              marginBottom: 4
+            }}
+          >
+            <span style={{ color: 'var(--text-muted)' }}>
+              {t('payroll.form.thirteenthMonthPay')}
+            </span>
+            <span>{formatCurrency(netPreview.thirteenthMonthPay)}</span>
+          </div>
+        )}
+        {netPreview.cashGift > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 13,
+              marginBottom: 4
+            }}
+          >
+            <span style={{ color: 'var(--text-muted)' }}>{t('payroll.form.cashGift')}</span>
+            <span>{formatCurrency(netPreview.cashGift)}</span>
+          </div>
+        )}
         <div
           style={{
             display: 'flex',

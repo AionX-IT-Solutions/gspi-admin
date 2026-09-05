@@ -17,6 +17,10 @@ export interface StaffUser {
   email: string
   fullName: string
   role: RoleId
+  /** Set only when `role` was resolved from a custom role's base role — the custom
+   *  role's own id, for display + desktop permission-checklist lookup. See
+   *  resolveRoleAssignment in app/lib/permissions.ts. */
+  customRoleId?: string
   isActive: boolean
   photoUrl?: string
 }
@@ -28,6 +32,7 @@ function toStaffUser(id: string, data: Partial<StaffUser> & { createdAt?: unknow
     email: data.email ?? '',
     fullName: data.fullName ?? '',
     role: (data.role as RoleId) ?? 'manager',
+    customRoleId: data.customRoleId,
     isActive: data.isActive ?? true,
     photoUrl: data.photoUrl
   }

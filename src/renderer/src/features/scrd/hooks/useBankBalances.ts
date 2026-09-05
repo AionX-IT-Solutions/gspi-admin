@@ -20,6 +20,14 @@ import type { BankAccountBalance } from '../lib/scrdExcelExport'
  * either page using this hook (Dashboard or SCRD, both commonly visited) is
  * open, rather than depending on one specific page.
  */
+/** Guards every raw-record amount against non-numeric/missing data (e.g. a sale
+ *  document written by a stale schema, missing `totalAmount`) — without this, `NaN`
+ *  propagates through every sum it touches and never recovers (NaN + x is always NaN),
+ *  permanently breaking the Dashboard's and SCRD's totals until the bad doc is found. */
+export function safeAmount(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
 export function useBankBalances() {
   const allBanks = useBanksStore((s) => s.banks)
   const setCurrentBalance = useBanksStore((s) => s.setCurrentBalance)
@@ -37,7 +45,7 @@ export function useBankBalances() {
   const receiptsByAccount = useMemo(() => {
     const map = new Map<string, number>()
     const add = (account: string, amount: number) =>
-      map.set(account, (map.get(account) ?? 0) + amount)
+      map.set(account, (map.get(account) ?? 0) + safeAmount(amount))
     cashReceipts.forEach((r) => add(r.bankAccount, r.amount))
     sales.filter((s) => !s.voided).forEach((s) => add('Cash on Hand', s.totalAmount))
     bookings
@@ -53,7 +61,7 @@ export function useBankBalances() {
   const disbursementsByAccount = useMemo(() => {
     const map = new Map<string, number>()
     const add = (account: string, amount: number) =>
-      map.set(account, (map.get(account) ?? 0) + amount)
+      map.set(account, (map.get(account) ?? 0) + safeAmount(amount))
     vouchers
       .filter(
         (v) =>
@@ -68,7 +76,7 @@ export function useBankBalances() {
     () =>
       banks.map((bank) => {
         const displayName = bankDisplayName(bank)
-        const opening = bank.openingBalance
+        const opening = safeAmount(bank.openingBalance)
         const receipts = receiptsByAccount.get(displayName) ?? 0
         const disbursements = disbursementsByAccount.get(displayName) ?? 0
         return {

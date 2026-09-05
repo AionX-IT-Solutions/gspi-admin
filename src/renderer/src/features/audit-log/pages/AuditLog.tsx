@@ -1,10 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ClipboardList } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 import { useAuditLogStore, type AuditLogEntry } from '@/app/store/auditLog.store'
@@ -25,10 +31,23 @@ export function AuditLog() {
   const loading = useSkeletonLoading()
   const entries = useAuditLogStore((s) => s.entries)
   const hydrate = useAuditLogStore((s) => s.hydrate)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     hydrate()
   }, [hydrate])
+
+  const filteredEntries = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return entries
+    return entries.filter(
+      (e) =>
+        e.actorName.toLowerCase().includes(q) ||
+        e.summary.toLowerCase().includes(q) ||
+        e.action.toLowerCase().includes(q) ||
+        e.entityType.toLowerCase().includes(q)
+    )
+  }, [entries, search])
 
   const columns: Column<AuditLogEntry>[] = [
     {
@@ -55,6 +74,8 @@ export function AuditLog() {
     { key: 'summary', header: t('auditLog.table.summary') }
   ]
 
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
+
   return (
     <motion.div
       key="audit-log"
@@ -71,10 +92,21 @@ export function AuditLog() {
         actions={<RefreshButton onRefresh={() => hydrate(true)} />}
       />
 
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('auditLog.searchPlaceholder')}
+        count={filteredEntries.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
+        }
+      />
+
       <Card padding="0px">
         <DataTable
           columns={columns}
-          data={entries}
+          data={filteredEntries}
+          hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('auditLog.emptyMessage')}
         />

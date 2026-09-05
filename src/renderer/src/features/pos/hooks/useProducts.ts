@@ -6,6 +6,7 @@ import { getCategoryById } from '../store/categories.store'
 import { formatCurrency } from '@/shared/lib/utils'
 import { openBarcodeLabelPrintWindow } from '../lib/barcode'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import type { Product } from '../types/pos.types'
 import { emptyProductForm, type ProductFormState } from '../components/ProductFormModal'
 
@@ -13,6 +14,8 @@ export function useProducts() {
   const { t } = useTranslation()
   const loading = useSkeletonLoading()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:products')
   const products = usePOSStore((s) => s.products)
   const sales = usePOSStore((s) => s.sales)
   const purchases = usePOSStore((s) => s.purchases)
@@ -57,6 +60,7 @@ export function useProducts() {
   }
 
   function handleSaveProduct() {
+    if (!canManage) return
     if (!form.sku.trim() || !form.name.trim()) {
       toast.error(t('products.toast.skuNameRequired'))
       return
@@ -99,9 +103,13 @@ export function useProducts() {
   }
 
   function handleConfirmDelete() {
-    if (!deleteTarget) return
-    deleteProduct(deleteTarget.id)
-    toast.success(t('products.toast.deleted', { name: deleteTarget.name }))
+    if (!deleteTarget || !canManage) return
+    const deleted = deleteTarget
+    deleteProduct(deleted.id)
+    toast.success(t('products.toast.deleted', { name: deleted.name }), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => addProduct(deleted) }
+    })
     setDeleteTarget(null)
   }
 
@@ -117,6 +125,7 @@ export function useProducts() {
   }
 
   function handleRestock() {
+    if (!canManage) return
     if (!restockTarget || restockQty <= 0) {
       toast.error(t('products.toast.invalidQuantity'))
       return
@@ -145,6 +154,7 @@ export function useProducts() {
   return {
     loading,
     toast,
+    canManage,
     products,
     sales,
     purchases,

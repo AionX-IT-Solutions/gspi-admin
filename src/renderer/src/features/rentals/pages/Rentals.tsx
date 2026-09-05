@@ -6,7 +6,13 @@ import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
 import type { BookingStatus } from '../types/rentals.types'
@@ -64,10 +70,11 @@ export function Rentals() {
   const { t } = useTranslation()
   const {
     loading,
-    toast,
+    canManage,
     spaces,
     rows,
-    setBookingStatus,
+    search,
+    setSearch,
     showDialog,
     setShowDialog,
     bookingEditTarget,
@@ -79,6 +86,10 @@ export function Rentals() {
     bookingDeleteTarget,
     setBookingDeleteTarget,
     handleConfirmDeleteBooking,
+    statusChangeTarget,
+    setStatusChangeTarget,
+    requestStatusChange,
+    handleConfirmStatusChange,
     showSpaceForm,
     setShowSpaceForm,
     spaceEditTarget,
@@ -151,52 +162,52 @@ export function Rentals() {
       align: 'right',
       render: (r) => (
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
-          {r.status === 'reserved' && (
+          {canManage && r.status === 'reserved' && (
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => {
-                setBookingStatus(r.id, 'confirmed')
-                toast.success(t('rentals.toast.confirmed'))
-              }}
+              onClick={() => requestStatusChange(r, 'confirmed')}
             >
               {t('rentals.confirmButton')}
             </Button>
           )}
-          {r.status === 'confirmed' && (
+          {canManage && r.status === 'confirmed' && (
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => {
-                setBookingStatus(r.id, 'completed')
-                toast.success(t('rentals.toast.completed'))
-              }}
+              onClick={() => requestStatusChange(r, 'completed')}
             >
               {t('rentals.markCompletedButton')}
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => openEditBooking(r)}
-            title={t('common.edit')}
-            style={{ padding: 4 }}
-          >
-            <Pencil size={12} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setBookingDeleteTarget(r)}
-            title={t('common.delete')}
-            style={{ padding: 4 }}
-          >
-            <Trash2 size={12} />
-          </Button>
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => openEditBooking(r)}
+              title={t('common.edit')}
+              style={{ padding: 4 }}
+            >
+              <Pencil size={12} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setBookingDeleteTarget(r)}
+              title={t('common.delete')}
+              style={{ padding: 4 }}
+            >
+              <Trash2 size={12} />
+            </Button>
+          )}
         </div>
       )
     }
   ]
+
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
 
   return (
     <motion.div
@@ -213,22 +224,26 @@ export function Rentals() {
         actions={
           <>
             <RefreshButton onRefresh={() => hydrate(true)} />
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<Plus size={13} />}
-              onClick={openAddSpace}
-            >
-              {t('rentals.addSpaceButton')}
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={13} />}
-              onClick={openAddBooking}
-            >
-              {t('rentals.newBookingButton')}
-            </Button>
+            {canManage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Plus size={13} />}
+                onClick={openAddSpace}
+              >
+                {t('rentals.addSpaceButton')}
+              </Button>
+            )}
+            {canManage && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={13} />}
+                onClick={openAddBooking}
+              >
+                {t('rentals.newBookingButton')}
+              </Button>
+            )}
           </>
         }
       />
@@ -276,26 +291,28 @@ export function Rentals() {
                 }}
               >
                 <p style={{ fontSize: 13, fontWeight: 600 }}>{space.name}</p>
-                <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openEditSpace(space)}
-                    title={t('common.edit')}
-                    style={{ padding: 4 }}
-                  >
-                    <Pencil size={12} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSpaceDeleteTarget(space)}
-                    title={t('common.delete')}
-                    style={{ padding: 4 }}
-                  >
-                    <Trash2 size={12} />
-                  </Button>
-                </div>
+                {canManage && (
+                  <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => openEditSpace(space)}
+                      title={t('common.edit')}
+                      style={{ padding: 4 }}
+                    >
+                      <Pencil size={12} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSpaceDeleteTarget(space)}
+                      title={t('common.delete')}
+                      style={{ padding: 4 }}
+                    >
+                      <Trash2 size={12} />
+                    </Button>
+                  </div>
+                )}
               </div>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
                 {space.description}
@@ -323,10 +340,21 @@ export function Rentals() {
         <CalendarDays size={16} color="var(--accent-primary)" />
         <span style={{ fontWeight: 600, fontSize: 13 }}>{t('rentals.bookingsTitle')}</span>
       </div>
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('rentals.searchPlaceholder')}
+        count={rows.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
+        }
+      />
+
       <Card padding="0px">
         <DataTable
           columns={columns}
           data={rows}
+          hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('rentals.empty')}
         />
@@ -368,6 +396,30 @@ export function Rentals() {
         danger
         onConfirm={handleConfirmDeleteBooking}
         onCancel={() => setBookingDeleteTarget(null)}
+      />
+      <ConfirmDialog
+        open={!!statusChangeTarget}
+        title={
+          statusChangeTarget?.nextStatus === 'confirmed'
+            ? t('rentals.confirmStatusChange.confirmTitle')
+            : t('rentals.confirmStatusChange.completeTitle')
+        }
+        message={
+          statusChangeTarget?.nextStatus === 'confirmed'
+            ? t('rentals.confirmStatusChange.confirmMessage', {
+                name: statusChangeTarget?.booking.renterName ?? ''
+              })
+            : t('rentals.confirmStatusChange.completeMessage', {
+                name: statusChangeTarget?.booking.renterName ?? ''
+              })
+        }
+        confirmLabel={
+          statusChangeTarget?.nextStatus === 'confirmed'
+            ? t('rentals.confirmButton')
+            : t('rentals.markCompletedButton')
+        }
+        onConfirm={handleConfirmStatusChange}
+        onCancel={() => setStatusChangeTarget(null)}
       />
     </motion.div>
   )

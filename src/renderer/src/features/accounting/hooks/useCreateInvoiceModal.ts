@@ -4,6 +4,7 @@ import { toInputDate } from '@/shared/lib/utils'
 import { useAccountingStore } from '../store/accounting.store'
 import { generateInvoiceNumber } from '../lib/invoiceNumber'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import type { Invoice, InvoiceLineItem } from '../types/accounting.types'
 
 function newLine(): InvoiceLineItem {
@@ -13,18 +14,20 @@ function newLine(): InvoiceLineItem {
 export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
   const { t } = useTranslation()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
   const customers = useAccountingStore((s) => s.customers)
-  const items = useAccountingStore((s) => s.items)
   const invoiceList = useAccountingStore((s) => s.invoices)
   const addInvoice = useAccountingStore((s) => s.addInvoice)
 
   const [customerId, setCustomerId] = useState('')
+  const [manualCustomerName, setManualCustomerName] = useState('')
   const [issueDate, setIssueDate] = useState(toInputDate(new Date().toISOString()))
   const [dueDate, setDueDate] = useState('')
   const [lines, setLines] = useState<InvoiceLineItem[]>([newLine()])
 
   function resetForm() {
     setCustomerId('')
+    setManualCustomerName('')
     setIssueDate(toInputDate(new Date().toISOString()))
     setDueDate('')
     setLines([newLine()])
@@ -49,19 +52,15 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
     )
   }
 
-  function applyItem(id: string, itemId: string) {
-    const item = items.find((it) => it.id === itemId)
-    if (!item) return
-    updateLine(id, { description: item.name, rate: item.salesPrice })
-  }
-
   const subtotal = lines.reduce((s, l) => s + l.amount, 0)
   const tax = Math.round(subtotal * 0.12)
   const total = subtotal + tax
 
   function handleSave(status: 'draft' | 'sent') {
+    if (!hasPermission('manage:invoices')) return
     const customer = customers.find((c) => c.id === customerId)
-    if (!customer) {
+    const customerName = customer ? (customer.company ?? customer.name) : manualCustomerName.trim()
+    if (!customerName) {
       toast.error(t('invoices.toast.customerRequired'))
       return
     }
@@ -78,8 +77,8 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
     const newInvoice: Invoice = {
       id: crypto.randomUUID(),
       number: generateInvoiceNumber(invoiceList),
-      customerId: customer.id,
-      customerName: customer.company ?? customer.name,
+      customerId: customer?.id ?? '',
+      customerName,
       issueDate,
       dueDate,
       status,
@@ -103,9 +102,10 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
 
   return {
     customers,
-    items,
     customerId,
     setCustomerId,
+    manualCustomerName,
+    setManualCustomerName,
     issueDate,
     setIssueDate,
     dueDate,
@@ -114,7 +114,6 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
     addLine,
     removeLine,
     updateLine,
-    applyItem,
     subtotal,
     tax,
     total,

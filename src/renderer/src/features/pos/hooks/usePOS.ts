@@ -5,17 +5,20 @@ import { useAppStore } from '@/app/store/app.store'
 import { formatCurrency } from '@/shared/lib/utils'
 import { useToast } from '@/app/hooks/useToast'
 import { useHardwareScanner } from '@/shared/hooks/useHardwareScanner'
+import { useDocumentPreview } from '@/shared/hooks/useDocumentPreview'
 import { silentPrintReceipt } from '../lib/receipt'
 import {
   exportMonthlySalesReport,
   exportMonthlySalesReportPdf,
-  exportMonthlySalesReportDocx
+  exportMonthlySalesReportDocx,
+  buildMonthlySalesReportPdfDoc
 } from '../lib/nesExcelExport'
 import type { PaymentMethod, Sale } from '../types/pos.types'
 
 export function usePOS() {
   const { t } = useTranslation()
   const toast = useToast()
+  const salesReportPreview = useDocumentPreview()
   const currentUser = useAppStore((s) => s.currentUser)
   const products = usePOSStore((s) => s.products)
   const members = usePOSStore((s) => s.members)
@@ -30,6 +33,7 @@ export function usePOS() {
   const voidSale = usePOSStore((s) => s.voidSale)
 
   const [search, setSearch] = useState('')
+  const [historySearch, setHistorySearch] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [lastSale, setLastSale] = useState<Sale | null>(null)
   const [printReceipt, setPrintReceipt] = useState(true)
@@ -51,12 +55,25 @@ export function usePOS() {
       .catch(() => {})
   }, [])
 
+  function handleSetPrintReceipt(value: boolean) {
+    setPrintReceipt(value)
+    window.api?.printer.saveConfig({ autoPrintReceipt: value })
+  }
+
   const activeProducts = products.filter((p) => p.isActive)
   const filtered = activeProducts.filter((p) => {
     if (!search) return true
     const q = search.toLowerCase()
     return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
   })
+
+  const filteredSales = useMemo(() => {
+    const q = historySearch.trim().toLowerCase()
+    if (!q) return sales
+    return sales.filter(
+      (s) => s.saleNumber.toLowerCase().includes(q) || s.cashierName.toLowerCase().includes(q)
+    )
+  }, [sales, historySearch])
 
   const member = members.find((m) => m.id === selectedMemberId)
   const subtotal = cart.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0)
@@ -153,6 +170,15 @@ export function usePOS() {
     if (!result.ok) toast.error(t('pos.toast.silentPrintFailed'))
   }
 
+  async function handleViewSalesReport() {
+    if (sales.length === 0) {
+      toast.error(t('products.toast.noSalesToReport'))
+      return
+    }
+    const month = new Date().toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })
+    salesReportPreview.openPreview(await buildMonthlySalesReportPdfDoc(sales, month))
+  }
+
   function handleExportSalesReport(fmt: 'excel' | 'pdf' | 'word') {
     if (sales.length === 0) {
       toast.error(t('products.toast.noSalesToReport'))
@@ -182,9 +208,11 @@ export function usePOS() {
   return {
     filtered,
     cart,
-    sales,
+    sales: filteredSales,
     search,
     setSearch,
+    historySearch,
+    setHistorySearch,
     handleAddToCart,
     removeFromCart,
     setCartQuantity,
@@ -194,7 +222,7 @@ export function usePOS() {
     paymentMethod,
     setPaymentMethod,
     printReceipt,
-    setPrintReceipt,
+    setPrintReceipt: handleSetPrintReceipt,
     subtotal,
     discount,
     total,
@@ -208,6 +236,8 @@ export function usePOS() {
     closeVoidConfirm,
     handleConfirmVoidSale,
     handlePrintReceipt,
-    handleExportSalesReport
+    handleExportSalesReport,
+    handleViewSalesReport,
+    salesReportPreview
   }
 }

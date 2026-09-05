@@ -10,10 +10,10 @@ interface ModalProps {
   description?: string
   children?: ReactNode
   footer?: ReactNode
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'full'
 }
 
-const sizeWidths = { sm: '400px', md: '520px', lg: '680px' }
+const sizeWidths = { sm: '400px', md: '520px', lg: '680px', full: '92vw' }
 
 export function Modal({
   open,
@@ -75,6 +75,7 @@ export function Modal({
                     position: 'relative',
                     width: sizeWidths[size],
                     maxWidth: '100%',
+                    height: size === 'full' ? 'calc(100vh - 40px)' : undefined,
                     maxHeight: 'calc(100vh - 40px)',
                     display: 'flex',
                     flexDirection: 'column',

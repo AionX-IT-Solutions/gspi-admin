@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Users, Plus } from 'lucide-react'
+import { Users, Plus, Pencil, Eye } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
@@ -13,7 +13,8 @@ import {
 } from '@/shared/components/ui/DataTable'
 import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
-import { avatarColumn, currencyColumn } from '@/shared/lib/columnHelpers'
+import { usePermissions } from '@/app/hooks/usePermissions'
+import { avatarColumn, currencyColumn, actionsColumn } from '@/shared/lib/columnHelpers'
 import type { Customer } from '../types/accounting.types'
 import { CustomerDetailModal } from '../components/CustomerDetailModal'
 import { CreateCustomerModal } from '../components/CreateCustomerModal'
@@ -42,6 +43,8 @@ export function Customers() {
     creating,
     setCreating
   } = useCustomers()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:customers')
   const hydrate = useAccountingStore((s) => s.hydrate)
 
   const columns: Column<Customer>[] = [
@@ -62,7 +65,29 @@ export function Customers() {
           {r.status === 'active' ? t('common.active') : t('common.inactive')}
         </Badge>
       )
-    }
+    },
+    actionsColumn<Customer>((r) => (
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setViewingId(r.id)}
+          title={t('common.view')}
+        >
+          <Eye size={13} />
+        </Button>
+        {canManage && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setViewingId(r.id)}
+            title={t('common.edit')}
+          >
+            <Pencil size={13} />
+          </Button>
+        )}
+      </div>
+    ))
   ]
 
   const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
@@ -82,14 +107,16 @@ export function Customers() {
         actions={
           <>
             <RefreshButton onRefresh={() => hydrate(true)} />
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={13} />}
-              onClick={() => setCreating(true)}
-            >
-              {t('customers.newCustomerButton')}
-            </Button>
+            {canManage && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={13} />}
+                onClick={() => setCreating(true)}
+              >
+                {t('customers.newCustomerButton')}
+              </Button>
+            )}
           </>
         }
       />
@@ -109,7 +136,6 @@ export function Customers() {
           columns={columns}
           data={filteredCustomers}
           hiddenColumns={hiddenColumns}
-          onRowClick={(row) => setViewingId(row.id)}
           loading={loading}
           emptyMessage={t('customers.table.empty')}
         />

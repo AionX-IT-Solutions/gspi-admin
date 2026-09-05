@@ -4,7 +4,7 @@ import { usePermissionsStore } from '@/app/store/permissions.store'
 import { useAppStore } from '@/app/store/app.store'
 import { useAssignableRoleOptions, type RoleOption } from '@/app/hooks/useRoleLabel'
 import { useToast } from '@/app/hooks/useToast'
-import type { RoleId } from '@/app/lib/permissions'
+import { ASSIGNABLE_USER_ROLES, type RoleId, type UserRole } from '@/app/lib/permissions'
 import { useUsersStore } from '../store/users.store'
 
 export interface RoleRow extends RoleOption {
@@ -15,8 +15,10 @@ export function useRolePermissionsSection() {
   const { t } = useTranslation()
   const toast = useToast()
   const rolePermissions = usePermissionsStore((s) => s.rolePermissions)
-  const togglePermission = usePermissionsStore((s) => s.togglePermission)
+  const customRoles = usePermissionsStore((s) => s.customRoles)
+  const setRolePermissions = usePermissionsStore((s) => s.setRolePermissions)
   const addCustomRole = usePermissionsStore((s) => s.addCustomRole)
+  const setCustomRoleBaseRole = usePermissionsStore((s) => s.setCustomRoleBaseRole)
   const deleteCustomRole = usePermissionsStore((s) => s.deleteCustomRole)
   const users = useUsersStore((s) => s.users)
   const currentUserRole = useAppStore((s) => s.currentUser?.role)
@@ -29,18 +31,26 @@ export function useRolePermissionsSection() {
     assignedCount: users.filter((u) => u.role === r.value).length
   }))
 
+  /** Options for a custom role's required "base role" — the real Firestore
+   *  role/claim it resolves to (see resolveRoleAssignment in lib/permissions.ts). */
+  const baseRoleOptions = ASSIGNABLE_USER_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))
+
   const [permTarget, setPermTarget] = useState<RoleId | null>(null)
   const [addRoleOpen, setAddRoleOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<RoleRow | null>(null)
 
-  function handleAddRole(label: string) {
-    const result = addCustomRole(label)
+  function handleAddRole(label: string, baseRole: UserRole) {
+    const result = addCustomRole(label, baseRole)
     if (!result.ok) {
       toast.error(t(result.error))
       return
     }
     setAddRoleOpen(false)
     setPermTarget(result.id)
+  }
+
+  function handleSetBaseRole(id: string, baseRole: UserRole) {
+    setCustomRoleBaseRole(id, baseRole)
   }
 
   function handleConfirmDeleteRole() {
@@ -52,14 +62,17 @@ export function useRolePermissionsSection() {
 
   return {
     rolePermissions,
-    togglePermission,
+    customRoles,
+    setRolePermissions,
     permTarget,
     setPermTarget,
     canManageRoles,
     roleRows,
+    baseRoleOptions,
     addRoleOpen,
     setAddRoleOpen,
     handleAddRole,
+    handleSetBaseRole,
     deleteTarget,
     setDeleteTarget,
     handleConfirmDeleteRole

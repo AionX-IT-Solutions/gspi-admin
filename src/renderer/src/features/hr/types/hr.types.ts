@@ -146,6 +146,14 @@ export interface PayrollEntry {
   overtimePay: number
   cola: number
   representation: number
+  /** Standard PH 13th Month Pay — this employee's total Basic Pay earned across every payroll
+   *  entry within the period's calendar year, divided by 12. Only meaningful on an entry whose
+   *  period falls in November or December; unset otherwise. Computed dynamically from actual
+   *  payroll history (see useNewPayrollEntryModal), never a hardcoded figure. */
+  thirteenthMonthPay?: number
+  /** Annual Cash Gift, defaulted from Settings' council-wide amount (orgSettings.defaultCashGift)
+   *  but editable per entry. Only meaningful on a November/December entry. */
+  cashGift?: number
   sss: number
   philhealth: number
   pagibig: number

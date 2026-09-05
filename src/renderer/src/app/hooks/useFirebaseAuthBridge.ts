@@ -25,7 +25,13 @@ export function useFirebaseAuthBridge() {
       try {
         const profileSnap = await getDoc(doc(db, 'users', firebaseUser.uid))
         const profile = profileSnap.data() as
-          | { fullName?: string; role?: RoleId; isActive?: boolean; photoUrl?: string }
+          | {
+              fullName?: string
+              role?: RoleId
+              customRoleId?: string
+              isActive?: boolean
+              photoUrl?: string
+            }
           | undefined
 
         if (!profile || profile.isActive === false) {
@@ -39,6 +45,7 @@ export function useFirebaseAuthBridge() {
           email: firebaseUser.email ?? '',
           fullName: profile.fullName ?? firebaseUser.displayName ?? firebaseUser.email ?? '',
           role: profile.role ?? 'manager',
+          customRoleId: profile.customRoleId,
           photoUrl: profile.photoUrl
         })
       } catch {

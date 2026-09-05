@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { TrendChart } from '@/shared/components/ui/TrendChart'
 import { ExportMenu } from '@/shared/components/ui/ExportMenu'
+import { DocumentPreviewModal } from '@/shared/components/ui/DocumentPreviewModal'
 import { formatCurrency } from '@/shared/lib/utils'
 import { ReportRow } from './ReportRow'
 import { useIncomeStatementTab } from '../hooks/useIncomeStatementTab'
@@ -12,8 +13,15 @@ interface IncomeStatementTabProps {
 
 export function IncomeStatementTab({ periodLabel }: IncomeStatementTabProps) {
   const { t } = useTranslation()
-  const { pnl, trendData, handleExportExcel, handleExportPdf, handleExportWord } =
-    useIncomeStatementTab(periodLabel)
+  const {
+    pnl,
+    trendData,
+    handleView,
+    preview,
+    handleExportExcel,
+    handleExportPdf,
+    handleExportWord
+  } = useIncomeStatementTab(periodLabel)
 
   return (
     <>
@@ -76,6 +84,7 @@ export function IncomeStatementTab({ periodLabel }: IncomeStatementTabProps) {
             </div>
             <ExportMenu
               label={t('reports.pnl.exportLabel')}
+              onView={handleView}
               onExportExcel={handleExportExcel}
               onExportPdf={handleExportPdf}
               onExportWord={handleExportWord}
@@ -145,6 +154,16 @@ export function IncomeStatementTab({ periodLabel }: IncomeStatementTabProps) {
           </span>
         </div>
       </Card>
+
+      <DocumentPreviewModal
+        open={preview.open}
+        onClose={preview.closePreview}
+        url={preview.url}
+        title={t('reports.pnl.cardTitle')}
+        onDownloadExcel={handleExportExcel}
+        onDownloadPdf={handleExportPdf}
+        onDownloadWord={handleExportWord}
+      />
     </>
   )
 }

@@ -9,6 +9,9 @@ export interface ToastOptions {
   /** Also show a native OS notification (respects notificationsEnabled) */
   native?: boolean
   nativeTitle?: string
+  /** Shows an inline button on the toast itself (e.g. "Undo") — sonner renders
+   *  this natively, no extra plumbing needed. */
+  action?: { label: string; onClick: () => void }
 }
 
 export function useToast() {
@@ -23,7 +26,11 @@ export function useToast() {
     // Only show UI toasts if notifications are enabled
     if (!notificationsEnabled) return
 
-    const options = { description: opts?.description, duration: opts?.duration ?? 4000 }
+    const options = {
+      description: opts?.description,
+      duration: opts?.duration ?? 4000,
+      action: opts?.action
+    }
 
     switch (type) {
       case 'success':

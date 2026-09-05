@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useHRStore } from '../store/hr.store'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import type { Employee } from '../types/hr.types'
 
 const avatarPalette = [
@@ -66,6 +67,7 @@ export function useEmployeeFormModal(
 ) {
   const { t } = useTranslation()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
   const employees = useHRStore((s) => s.employees)
   const addEmployee = useHRStore((s) => s.addEmployee)
   const updateEmployee = useHRStore((s) => s.updateEmployee)
@@ -76,6 +78,7 @@ export function useEmployeeFormModal(
   }, [open, editTarget])
 
   function handleSubmit() {
+    if (!hasPermission('manage:employees')) return
     if (!form.employeeNumber.trim() || !form.fullName.trim() || !form.position.trim()) {
       toast.error(t('employees.toast.validationRequired'))
       return

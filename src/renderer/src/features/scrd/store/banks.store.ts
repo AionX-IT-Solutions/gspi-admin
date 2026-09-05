@@ -1,5 +1,10 @@
 import { create } from 'zustand'
-import { persistDoc, hydrateCollection, reportHydrateFailure } from '@/shared/lib/firestoreSync'
+import {
+  persistDoc,
+  hydrateCollection,
+  reportHydrateFailure,
+  deleteDocById
+} from '@/shared/lib/firestoreSync'
 import { appendAuditLog } from '@/app/store/auditLog.store'
 import { useAppStore } from '@/app/store/app.store'
 import type { Bank } from '../types/bank.types'
@@ -38,6 +43,8 @@ interface BanksState {
     id: string,
     patch: Partial<Pick<Bank, 'name' | 'accountNumber' | 'openingBalance' | 'isActive'>>
   ) => void
+  deleteBank: (id: string) => void
+  restoreBank: (bank: Bank) => void
   /** System-computed, not a user edit — no audit log entry. */
   setCurrentBalance: (id: string, currentBalance: number) => void
 }
@@ -126,6 +133,23 @@ export const useBanksStore = create<BanksState>()((set, get) => ({
         summary: `Bank account "${bankDisplayName(updated)}" updated.`
       })
     }
+  },
+
+  deleteBank: (id) => {
+    const bank = get().banks.find((b) => b.id === id)
+    set((s) => ({ banks: s.banks.filter((b) => b.id !== id) }))
+    deleteDocById('banks', id)
+    appendAuditLog({
+      action: 'bank_deleted',
+      actorName: actorName(),
+      entityType: 'bank',
+      summary: `Bank account "${bank ? bankDisplayName(bank) : id}" removed.`
+    })
+  },
+
+  restoreBank: (bank) => {
+    set((s) => ({ banks: [...s.banks, bank] }))
+    persistDoc('banks', bank.id, bank)
   },
 
   setCurrentBalance: (id, currentBalance) => {

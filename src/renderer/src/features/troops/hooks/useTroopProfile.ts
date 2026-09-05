@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { useOrgSettingsStore } from '@/app/store/orgSettings.store'
 import { useTroopsStore } from '../store/troops.store'
 import { getMembershipYearLabel, isMembershipCurrent } from '../lib/membershipYear'
@@ -9,8 +10,11 @@ import type { ScoutMember, Troop } from '../types/troop.types'
 export function useTroopProfile(troop: Troop | null) {
   const { t } = useTranslation()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:troops')
   const scoutMembers = useTroopsStore((s) => s.scoutMembers)
   const deleteScoutMember = useTroopsStore((s) => s.deleteScoutMember)
+  const addScoutMember = useTroopsStore((s) => s.addScoutMember)
   const updateScoutMember = useTroopsStore((s) => s.updateScoutMember)
   const renewScoutMember = useTroopsStore((s) => s.renewScoutMember)
   const startMonth = useOrgSettingsStore((s) => s.membershipYearStartMonth)
@@ -19,6 +23,7 @@ export function useTroopProfile(troop: Troop | null) {
   const [editTarget, setEditTarget] = useState<ScoutMember | null>(null)
   const [toggleTarget, setToggleTarget] = useState<ScoutMember | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ScoutMember | null>(null)
+  const [search, setSearch] = useState('')
 
   const currentMembershipYear = useMemo(() => getMembershipYearLabel(startMonth), [startMonth])
 
@@ -31,6 +36,17 @@ export function useTroopProfile(troop: Troop | null) {
         : [],
     [scoutMembers, troop]
   )
+
+  const filteredRoster = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return roster
+    return roster.filter(
+      (m) =>
+        m.fullName.toLowerCase().includes(q) ||
+        (m.guardianName?.toLowerCase().includes(q) ?? false) ||
+        (m.level?.toLowerCase().includes(q) ?? false)
+    )
+  }, [roster, search])
 
   function isCurrent(member: ScoutMember) {
     return isMembershipCurrent(member.membershipYear, startMonth)
@@ -47,6 +63,7 @@ export function useTroopProfile(troop: Troop | null) {
   }
 
   function handleRenew(member: ScoutMember) {
+    if (!canManage) return
     renewScoutMember(member.id, currentMembershipYear)
     toast.success(
       t('troops.roster.toast.renewed', { name: member.fullName, year: currentMembershipYear })
@@ -54,7 +71,7 @@ export function useTroopProfile(troop: Troop | null) {
   }
 
   const handleConfirmToggleActive = () => {
-    if (!toggleTarget) return
+    if (!toggleTarget || !canManage) return
     updateScoutMember(toggleTarget.id, { isActive: !toggleTarget.isActive })
     toast.info(
       toggleTarget.isActive
@@ -65,14 +82,22 @@ export function useTroopProfile(troop: Troop | null) {
   }
 
   const handleConfirmDelete = () => {
-    if (!deleteTarget) return
-    deleteScoutMember(deleteTarget.id)
-    toast.success(t('troops.roster.toast.deleted', { name: deleteTarget.fullName }))
+    if (!deleteTarget || !canManage) return
+    const deleted = deleteTarget
+    deleteScoutMember(deleted.id)
+    toast.success(t('troops.roster.toast.deleted', { name: deleted.fullName }), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => addScoutMember(deleted) }
+    })
     setDeleteTarget(null)
   }
 
   return {
+    canManage,
     roster,
+    filteredRoster,
+    search,
+    setSearch,
     currentMembershipYear,
     isCurrent,
     showDialog,

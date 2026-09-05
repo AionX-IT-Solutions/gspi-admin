@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { useRentalsStore } from '../store/rentals.store'
-import type { RentalBooking, RentalSpace } from '../types/rentals.types'
+import type { BookingStatus, RentalBooking, RentalSpace } from '../types/rentals.types'
 import { emptyRentalSpaceForm, type RentalSpaceFormState } from '../components/RentalSpaceFormModal'
 import { emptyBookingForm, type BookingFormState } from '../components/NewBookingModal'
 import { computeBookingAmounts } from '../lib/bookingPricing'
@@ -16,6 +17,8 @@ export function useRentals() {
   const { t } = useTranslation()
   const loading = useSkeletonLoading()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:rentals')
   const spaces = useRentalsStore((s) => s.spaces)
   const bookings = useRentalsStore((s) => s.bookings)
   const addSpace = useRentalsStore((s) => s.addSpace)
@@ -24,17 +27,25 @@ export function useRentals() {
   const addBooking = useRentalsStore((s) => s.addBooking)
   const updateBooking = useRentalsStore((s) => s.updateBooking)
   const deleteBooking = useRentalsStore((s) => s.deleteBooking)
+  const restoreBooking = useRentalsStore((s) => s.restoreBooking)
+  const restoreSpace = useRentalsStore((s) => s.restoreSpace)
   const setBookingStatus = useRentalsStore((s) => s.setBookingStatus)
 
   const [showDialog, setShowDialog] = useState(false)
   const [bookingEditTarget, setBookingEditTarget] = useState<RentalBooking | null>(null)
   const [bookingForm, setBookingForm] = useState<BookingFormState>(emptyBookingForm())
   const [bookingDeleteTarget, setBookingDeleteTarget] = useState<RentalBooking | null>(null)
+  const [statusChangeTarget, setStatusChangeTarget] = useState<{
+    booking: RentalBooking
+    nextStatus: BookingStatus
+  } | null>(null)
 
   const [showSpaceForm, setShowSpaceForm] = useState(false)
   const [spaceEditTarget, setSpaceEditTarget] = useState<RentalSpace | null>(null)
   const [spaceForm, setSpaceForm] = useState<RentalSpaceFormState>(emptyRentalSpaceForm())
   const [spaceDeleteTarget, setSpaceDeleteTarget] = useState<RentalSpace | null>(null)
+
+  const [search, setSearch] = useState('')
 
   const rows: BookingRow[] = useMemo(
     () =>
@@ -46,6 +57,14 @@ export function useRentals() {
         .sort((a, b) => (a.bookingDate < b.bookingDate ? 1 : -1)),
     [bookings, spaces]
   )
+
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter(
+      (r) => r.spaceName.toLowerCase().includes(q) || r.renterName.toLowerCase().includes(q)
+    )
+  }, [rows, search])
 
   function openAddBooking() {
     setBookingEditTarget(null)
@@ -69,6 +88,7 @@ export function useRentals() {
   }
 
   function handleSaveBooking() {
+    if (!canManage) return
     if (!bookingForm.rentalSpaceId || !bookingForm.renterName.trim()) {
       toast.error(t('rentals.toast.validationRequired'))
       return
@@ -101,10 +121,29 @@ export function useRentals() {
   }
 
   function handleConfirmDeleteBooking() {
-    if (!bookingDeleteTarget) return
-    deleteBooking(bookingDeleteTarget.id)
-    toast.success(t('rentals.toast.deleted'))
+    if (!bookingDeleteTarget || !canManage) return
+    const deleted = bookingDeleteTarget
+    deleteBooking(deleted.id)
+    toast.success(t('rentals.toast.deleted'), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => restoreBooking(deleted) }
+    })
     setBookingDeleteTarget(null)
+  }
+
+  function requestStatusChange(booking: RentalBooking, nextStatus: BookingStatus) {
+    if (!canManage) return
+    setStatusChangeTarget({ booking, nextStatus })
+  }
+
+  function handleConfirmStatusChange() {
+    if (!statusChangeTarget || !canManage) return
+    const { booking, nextStatus } = statusChangeTarget
+    setBookingStatus(booking.id, nextStatus)
+    toast.success(
+      t(nextStatus === 'confirmed' ? 'rentals.toast.confirmed' : 'rentals.toast.completed')
+    )
+    setStatusChangeTarget(null)
   }
 
   function openAddSpace() {
@@ -126,6 +165,7 @@ export function useRentals() {
   }
 
   function handleSaveSpace() {
+    if (!canManage) return
     if (!spaceForm.name.trim()) {
       toast.error(t('rentals.toast.nameRequired'))
       return
@@ -143,18 +183,24 @@ export function useRentals() {
   }
 
   function handleConfirmDeleteSpace() {
-    if (!spaceDeleteTarget) return
-    deleteSpace(spaceDeleteTarget.id)
-    toast.success(t('rentals.toast.spaceDeleted', { name: spaceDeleteTarget.name }))
+    if (!spaceDeleteTarget || !canManage) return
+    const deleted = spaceDeleteTarget
+    deleteSpace(deleted.id)
+    toast.success(t('rentals.toast.spaceDeleted', { name: deleted.name }), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => restoreSpace(deleted) }
+    })
     setSpaceDeleteTarget(null)
   }
 
   return {
     loading,
     toast,
+    canManage,
     spaces,
-    rows,
-    setBookingStatus,
+    rows: filteredRows,
+    search,
+    setSearch,
     showDialog,
     setShowDialog,
     bookingEditTarget,
@@ -166,6 +212,10 @@ export function useRentals() {
     bookingDeleteTarget,
     setBookingDeleteTarget,
     handleConfirmDeleteBooking,
+    statusChangeTarget,
+    setStatusChangeTarget,
+    requestStatusChange,
+    handleConfirmStatusChange,
     showSpaceForm,
     setShowSpaceForm,
     spaceEditTarget,

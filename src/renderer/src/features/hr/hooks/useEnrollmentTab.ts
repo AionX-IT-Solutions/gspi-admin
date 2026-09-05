@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 import { useHRStore } from '../store/hr.store'
@@ -40,6 +40,7 @@ export function useEnrollmentTab() {
   const [sendingToDevice, setSendingToDevice] = useState(false)
   const [deviceConnected, setDeviceConnected] = useState(false)
   const [unenrollTarget, setUnenrollTarget] = useState<EnrollmentRow | null>(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     window.api?.hikvision.getStatus().then((s) => setDeviceConnected(s.state === 'connected'))
@@ -102,10 +103,20 @@ export function useEnrollmentTab() {
     }
   })
 
+  const filteredEnrollmentRows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return enrollmentRows
+    return enrollmentRows.filter(
+      (r) => r.fullName.toLowerCase().includes(q) || r.position.toLowerCase().includes(q)
+    )
+  }, [enrollmentRows, search])
+
   return {
     loading,
     employees,
-    enrollmentRows,
+    enrollmentRows: filteredEnrollmentRows,
+    search,
+    setSearch,
     enrollTarget,
     setEnrollTarget,
     enrollMethod,

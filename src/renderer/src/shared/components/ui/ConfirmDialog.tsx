@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Button } from './Button'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -33,7 +34,7 @@ export function ConfirmDialog({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1100,
+        zIndex: 1300,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -45,8 +46,9 @@ export function ConfirmDialog({
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(0,0,0,0.55)',
-          backdropFilter: 'blur(5px)'
+          background: 'rgba(15,15,35,0.55)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)'
         }}
         onClick={onCancel}
       />
@@ -54,23 +56,24 @@ export function ConfirmDialog({
         className="animate-scale-in"
         style={{
           position: 'relative',
-          background: 'var(--bg-elevated)',
-          border: '1px solid var(--border-default)',
-          borderRadius: 18,
+          background: '#ffffff',
+          border: '1px solid rgba(0,0,0,0.09)',
+          borderRadius: '16px',
           overflow: 'hidden',
-          maxWidth: 400,
+          maxWidth: 420,
           width: '100%',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(20px)'
+          boxShadow:
+            '0 24px 80px rgba(0,0,0,0.22), 0 4px 20px rgba(0,0,0,0.1), 0 0 0 1px rgba(99,102,241,0.06)'
         }}
       >
-        {/* Accent top bar */}
+        {/* Indigo gradient top accent */}
         <div
           style={{
-            height: 2,
+            height: 4,
             background: danger
               ? 'linear-gradient(90deg, #ef4444, #dc2626)'
-              : 'linear-gradient(90deg, #f59e0b, #d97706)'
+              : 'linear-gradient(90deg, #6366f1 0%, #818cf8 55%, #a78bfa 100%)',
+            flexShrink: 0
           }}
         />
 
@@ -92,15 +95,16 @@ export function ConfirmDialog({
           <div style={{ flex: 1 }}>
             <h3
               style={{
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: 700,
-                color: 'var(--text-primary)',
-                marginBottom: 6
+                color: '#12122a',
+                marginBottom: 6,
+                margin: 0
               }}
             >
               {title}
             </h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5, margin: 0, marginTop: 6 }}>
               {message}
             </p>
           </div>
@@ -110,21 +114,22 @@ export function ConfirmDialog({
           style={{
             display: 'flex',
             justifyContent: 'flex-end',
-            gap: 8,
-            marginTop: 20,
-            padding: '0 24px 24px'
+            gap: 10,
+            padding: '16px 24px 24px',
+            borderTop: '1px solid rgba(0,0,0,0.07)'
           }}
         >
-          <button className="btn-secondary" onClick={onCancel} disabled={loading}>
+          <Button variant="secondary" size="sm" onClick={onCancel} disabled={loading}>
             {t('common.cancel')}
-          </button>
-          <button
-            className={danger ? 'btn-danger' : 'btn-primary'}
+          </Button>
+          <Button
+            variant={danger ? 'danger' : 'primary'}
+            size="sm"
             onClick={onConfirm}
             disabled={loading}
           >
             {loading ? t('common.processing') : (confirmLabel ?? t('common.confirm'))}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

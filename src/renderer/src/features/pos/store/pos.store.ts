@@ -60,7 +60,7 @@ export const usePOSStore = create<POSState>()((set, get) => ({
       // Now that they do, resume from the highest known number to avoid collisions.
       saleCounter =
         sales.reduce((max, s) => {
-          const n = Number(s.saleNumber.replace('SALE-', ''))
+          const n = Number(s.saleNumber?.replace('SALE-', ''))
           return Number.isFinite(n) ? Math.max(max, n) : max
         }, 999) + 1
       set({ products, members, sales, purchases, hydrated: true })

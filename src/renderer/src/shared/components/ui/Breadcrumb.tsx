@@ -5,9 +5,10 @@ import { Tooltip } from './Tooltip'
 
 const routeLabelKeys: Record<string, string> = {
   dashboard: 'sidebar.nav.dashboard',
+  announcements: 'sidebar.nav.announcements',
+  budget: 'sidebar.nav.budget',
   invoices: 'sidebar.nav.invoices',
   customers: 'sidebar.nav.customers',
-  expenses: 'sidebar.nav.expenses',
   vendors: 'sidebar.nav.vendors',
   items: 'sidebar.nav.items',
   reports: 'sidebar.nav.reports',

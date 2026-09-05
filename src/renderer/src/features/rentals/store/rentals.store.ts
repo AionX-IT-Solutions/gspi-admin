@@ -21,9 +21,13 @@ interface RentalsState {
   addSpace: (space: Omit<RentalSpace, 'id'>) => void
   updateSpace: (id: string, patch: Partial<RentalSpace>) => void
   deleteSpace: (id: string) => void
+  /** Re-inserts an exact previously-deleted space (same id) — used by the Undo toast. */
+  restoreSpace: (space: RentalSpace) => void
   addBooking: (booking: Omit<RentalBooking, 'id' | 'status'>) => void
   updateBooking: (id: string, patch: Partial<Omit<RentalBooking, 'id'>>) => void
   deleteBooking: (id: string) => void
+  /** Re-inserts an exact previously-deleted booking (same id, same status) — used by the Undo toast. */
+  restoreBooking: (booking: RentalBooking) => void
   setBookingStatus: (id: string, status: BookingStatus) => void
 }
 
@@ -81,6 +85,17 @@ export const useRentalsStore = create<RentalsState>()((set, get) => ({
     })
   },
 
+  restoreSpace: (space) => {
+    set((s) => ({ spaces: [space, ...s.spaces] }))
+    persistDoc('rentalSpaces', space.id, space)
+    appendAuditLog({
+      action: 'rental_space_created',
+      actorName: actorName(),
+      entityType: 'rental_space',
+      summary: `Rental space "${space.name}" restored.`
+    })
+  },
+
   addBooking: (booking) => {
     const created: RentalBooking = { ...booking, id: crypto.randomUUID(), status: 'reserved' }
     set((s) => ({ bookings: [created, ...s.bookings] }))
@@ -115,6 +130,17 @@ export const useRentalsStore = create<RentalsState>()((set, get) => ({
       actorName: actorName(),
       entityType: 'rental_booking',
       summary: `Booking for ${booking?.renterName ?? id} removed.`
+    })
+  },
+
+  restoreBooking: (booking) => {
+    set((s) => ({ bookings: [booking, ...s.bookings] }))
+    persistDoc('rentalBookings', booking.id, booking)
+    appendAuditLog({
+      action: 'rental_booking_created',
+      actorName: actorName(),
+      entityType: 'rental_booking',
+      summary: `Booking for ${booking.renterName} restored.`
     })
   },
 

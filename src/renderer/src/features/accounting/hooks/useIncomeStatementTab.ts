@@ -1,19 +1,24 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/app/hooks/useToast'
+import { useDocumentPreview } from '@/shared/hooks/useDocumentPreview'
 import { useAccountingStore } from '../store/accounting.store'
+import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
+import { getExpenseVouchers, voucherCategory } from '@/features/vouchers/lib/expenseVouchers'
 import {
   exportIncomeStatementExcel,
   exportIncomeStatementPdf,
-  exportIncomeStatementDocx
+  exportIncomeStatementDocx,
+  buildIncomeStatementPdfDoc
 } from '../lib/financialReportsExport'
 
 export function useIncomeStatementTab(periodLabel: string) {
   const { t } = useTranslation()
   const toast = useToast()
+  const preview = useDocumentPreview()
   const invoices = useAccountingStore((s) => s.invoices)
-  const expenses = useAccountingStore((s) => s.expenses)
-  const items = useAccountingStore((s) => s.items)
+  const vouchers = useVouchersStore((s) => s.vouchers)
+  const expenses = useMemo(() => getExpenseVouchers(vouchers), [vouchers])
 
   const pnl = useMemo(() => {
     const incomeByAccount = new Map<string, number>()
@@ -21,18 +26,15 @@ export function useIncomeStatementTab(periodLabel: string) {
       .filter((inv) => inv.status === 'paid')
       .forEach((inv) => {
         inv.lineItems.forEach((li) => {
-          const item = items.find((it) => it.name === li.description)
-          const account = item?.incomeAccount ?? 'Other Income'
-          incomeByAccount.set(account, (incomeByAccount.get(account) ?? 0) + li.amount)
+          incomeByAccount.set('Income', (incomeByAccount.get('Income') ?? 0) + li.amount)
         })
       })
 
     const expenseByCategory = new Map<string, number>()
-    expenses
-      .filter((e) => e.status === 'paid')
-      .forEach((e) =>
-        expenseByCategory.set(e.category, (expenseByCategory.get(e.category) ?? 0) + e.amount)
-      )
+    expenses.forEach((e) => {
+      const category = voucherCategory(e)
+      expenseByCategory.set(category, (expenseByCategory.get(category) ?? 0) + e.amount)
+    })
 
     const totalIncome = [...incomeByAccount.values()].reduce((s, v) => s + v, 0)
     const totalExpense = [...expenseByCategory.values()].reduce((s, v) => s + v, 0)
@@ -44,7 +46,7 @@ export function useIncomeStatementTab(periodLabel: string) {
       totalExpense,
       netIncome: totalIncome - totalExpense
     }
-  }, [invoices, expenses, items])
+  }, [invoices, expenses])
 
   const trendData = useMemo(() => {
     const monthCount = 6
@@ -68,13 +70,11 @@ export function useIncomeStatementTab(periodLabel: string) {
         if (income.has(key)) income.set(key, (income.get(key) ?? 0) + inv.total)
       })
 
-    expenses
-      .filter((e) => e.status === 'paid')
-      .forEach((e) => {
-        const d = new Date(e.date)
-        const key = `${d.getFullYear()}-${d.getMonth()}`
-        if (expense.has(key)) expense.set(key, (expense.get(key) ?? 0) + e.amount)
-      })
+    expenses.forEach((e) => {
+      const d = new Date(e.date)
+      const key = `${d.getFullYear()}-${d.getMonth()}`
+      if (expense.has(key)) expense.set(key, (expense.get(key) ?? 0) + e.amount)
+    })
 
     return months.map((m) => ({
       month: m.label,
@@ -82,6 +82,10 @@ export function useIncomeStatementTab(periodLabel: string) {
       expense: expense.get(m.key) ?? 0
     }))
   }, [invoices, expenses])
+
+  async function handleView() {
+    preview.openPreview(await buildIncomeStatementPdfDoc({ periodLabel, ...pnl }))
+  }
 
   function handleExportExcel() {
     exportIncomeStatementExcel({ periodLabel, ...pnl })
@@ -98,5 +102,13 @@ export function useIncomeStatementTab(periodLabel: string) {
     toast.success(t('reports.pnl.toast.word'))
   }
 
-  return { pnl, trendData, handleExportExcel, handleExportPdf, handleExportWord }
+  return {
+    pnl,
+    trendData,
+    handleView,
+    preview,
+    handleExportExcel,
+    handleExportPdf,
+    handleExportWord
+  }
 }

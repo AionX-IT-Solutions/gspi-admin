@@ -3,7 +3,9 @@ import { ArrowRight, FileText, Receipt } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
-import type { Invoice, Expense } from '@/features/accounting/types/accounting.types'
+import type { Invoice } from '@/features/accounting/types/accounting.types'
+import type { Voucher } from '@/features/vouchers/types/vouchers.types'
+import { voucherCategory } from '@/features/vouchers/lib/expenseVouchers'
 import { useRecentActivityCard } from '../hooks/useRecentActivityCard'
 
 interface RecentActivityCardProps {
@@ -73,8 +75,8 @@ export function RecentActivityCard({ loading }: RecentActivityCardProps) {
             const isInvoice = row.kind === 'invoice'
             const title = isInvoice
               ? `${(row.data as Invoice).number} · ${(row.data as Invoice).customerName}`
-              : `${(row.data as Expense).category} · ${(row.data as Expense).vendorName}`
-            const amount = isInvoice ? (row.data as Invoice).total : (row.data as Expense).amount
+              : `${voucherCategory(row.data as Voucher)} · ${(row.data as Voucher).payee}`
+            const amount = isInvoice ? (row.data as Invoice).total : (row.data as Voucher).amount
             return (
               <motion.div
                 key={`${row.kind}-${row.data.id}`}

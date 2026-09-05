@@ -5,6 +5,7 @@ import { PageHeader } from '@/shared/components/ui/PageHeader'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/Tabs'
 import { IncomeStatementTab } from '../components/IncomeStatementTab'
 import { BalanceSheetTab } from '../components/BalanceSheetTab'
+import { DailyCollectionsTab } from '../components/DailyCollectionsTab'
 
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -36,6 +37,9 @@ export function Reports() {
           <TabsList>
             <TabsTrigger value="pnl">{t('reports.tabs.pnl')}</TabsTrigger>
             <TabsTrigger value="balance-sheet">{t('reports.tabs.balanceSheet')}</TabsTrigger>
+            <TabsTrigger value="daily-collections">
+              {t('reports.tabs.dailyCollections')}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -45,6 +49,10 @@ export function Reports() {
 
         <TabsContent value="balance-sheet">
           <BalanceSheetTab periodLabel={periodLabel} />
+        </TabsContent>
+
+        <TabsContent value="daily-collections">
+          <DailyCollectionsTab />
         </TabsContent>
       </Tabs>
     </motion.div>

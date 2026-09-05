@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 import { usePOSStore } from '../store/pos.store'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { openLoyaltyCardPrintWindow } from '../lib/barcode'
 import type { Member } from '../types/pos.types'
 
@@ -14,6 +15,8 @@ export function useMembers() {
   const { t } = useTranslation()
   const loading = useSkeletonLoading()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:members')
   const members = usePOSStore((s) => s.members)
   const addMember = usePOSStore((s) => s.addMember)
   const updateMember = usePOSStore((s) => s.updateMember)
@@ -25,6 +28,18 @@ export function useMembers() {
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null)
   const [printTarget, setPrintTarget] = useState<Member | null>(null)
   const [printQty, setPrintQty] = useState(1)
+  const [search, setSearch] = useState('')
+
+  const filteredMembers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return members
+    return members.filter(
+      (m) =>
+        m.code.toLowerCase().includes(q) ||
+        m.name.toLowerCase().includes(q) ||
+        (m.email?.toLowerCase().includes(q) ?? false)
+    )
+  }, [members, search])
 
   function openAdd() {
     setEditTarget(null)
@@ -57,6 +72,7 @@ export function useMembers() {
   }
 
   function handleSave() {
+    if (!canManage) return
     if (!form.code.trim() || !form.name.trim()) {
       toast.error(t('members.toast.codeNameRequired'))
       return
@@ -80,15 +96,22 @@ export function useMembers() {
   }
 
   function handleConfirmDelete() {
-    if (!deleteTarget) return
-    deleteMember(deleteTarget.id)
-    toast.success(t('members.toast.memberDeleted', { name: deleteTarget.name }))
+    if (!deleteTarget || !canManage) return
+    const deleted = deleteTarget
+    deleteMember(deleted.id)
+    toast.success(t('members.toast.memberDeleted', { name: deleted.name }), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => addMember(deleted) }
+    })
     setDeleteTarget(null)
   }
 
   return {
     loading,
-    members,
+    canManage,
+    members: filteredMembers,
+    search,
+    setSearch,
     showForm,
     setShowForm,
     editTarget,

@@ -1,20 +1,27 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { Card } from '@/shared/components/ui/Card'
 import { DataTable, type Column } from '@/shared/components/ui/DataTable'
 import { ExportMenu } from '@/shared/components/ui/ExportMenu'
+import { DocumentPreviewModal } from '@/shared/components/ui/DocumentPreviewModal'
 import { Button } from '@/shared/components/ui/Button'
 import { FieldInput } from '@/shared/components/ui/FormField'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { formatCurrency } from '@/shared/lib/utils'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
+import { useDocumentPreview } from '@/shared/hooks/useDocumentPreview'
 import { AddBankModal } from './AddBankModal'
 import {
   exportSCRDSummary,
   exportSCRDSummaryPdf,
   exportSCRDSummaryDocx,
+  buildSCRDSummaryPdfDoc,
   type BankAccountBalance
 } from '../lib/scrdExcelExport'
+import { bankDisplayName } from '../store/banks.store'
+import type { Bank } from '../types/bank.types'
 import type { useScrdComputations } from '../hooks/useScrdComputations'
 
 type ScrdComputations = ReturnType<typeof useScrdComputations>
@@ -22,7 +29,22 @@ type ScrdComputations = ReturnType<typeof useScrdComputations>
 export function SummaryTab(data: ScrdComputations) {
   const { t } = useTranslation()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:scrd')
   const [addBankOpen, setAddBankOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Bank | null>(null)
+  const preview = useDocumentPreview()
+
+  function handleConfirmDeleteBank() {
+    if (!deleteTarget) return
+    const deleted = deleteTarget
+    data.deleteBank(deleted.id)
+    toast.success(t('scrd.banks.toast.deleted'), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => data.restoreBank(deleted) }
+    })
+    setDeleteTarget(null)
+  }
 
   const columns: Column<BankAccountBalance>[] = [
     { key: 'account', header: t('scrd.summary.account') },
@@ -82,14 +104,16 @@ export function SummaryTab(data: ScrdComputations) {
             }}
           >
             <span style={{ fontWeight: 600, fontSize: 13 }}>{t('scrd.openingBalancesTitle')}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<Plus size={13} />}
-              onClick={() => setAddBankOpen(true)}
-            >
-              {t('scrd.banks.addButton')}
-            </Button>
+            {canManage && (
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Plus size={13} />}
+                onClick={() => setAddBankOpen(true)}
+              >
+                {t('scrd.banks.addButton')}
+              </Button>
+            )}
           </div>
         }
         style={{ marginBottom: 14 }}
@@ -103,13 +127,29 @@ export function SummaryTab(data: ScrdComputations) {
         >
           {data.banks.map((bank) => (
             <div key={bank.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {bank.accountNumber ? `${bank.name} #${bank.accountNumber}` : bank.name}
-              </span>
+              <div
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  {bankDisplayName(bank)}
+                </span>
+                {canManage && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDeleteTarget(bank)}
+                    title={t('common.delete')}
+                    style={{ padding: 4 }}
+                  >
+                    <Trash2 size={12} />
+                  </Button>
+                )}
+              </div>
               <FieldInput
                 type="number"
                 value={bank.openingBalance}
                 onChange={(e) => data.setOpeningBalance(bank.id, parseFloat(e.target.value) || 0)}
+                disabled={!canManage}
               />
             </div>
           ))}
@@ -117,6 +157,18 @@ export function SummaryTab(data: ScrdComputations) {
       </Card>
 
       <AddBankModal open={addBankOpen} onOpenChange={setAddBankOpen} onAdd={data.addBank} />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={t('scrd.banks.confirmDelete.title')}
+        message={t('scrd.banks.confirmDelete.message', {
+          name: deleteTarget ? bankDisplayName(deleteTarget) : ''
+        })}
+        confirmLabel={t('common.delete')}
+        danger
+        onConfirm={handleConfirmDeleteBank}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       <div
         style={{
@@ -135,6 +187,7 @@ export function SummaryTab(data: ScrdComputations) {
           value={data.manualInterestIncome}
           onChange={(e) => data.setManualInterestIncome(parseFloat(e.target.value) || 0)}
           style={{ width: 160 }}
+          disabled={!canManage}
         />
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
           {t('scrd.otherIncomeLabel')}
@@ -144,10 +197,12 @@ export function SummaryTab(data: ScrdComputations) {
           value={data.manualOtherIncome}
           onChange={(e) => data.setManualOtherIncome(parseFloat(e.target.value) || 0)}
           style={{ width: 160 }}
+          disabled={!canManage}
         />
         <div style={{ marginLeft: 'auto' }}>
           <ExportMenu
             label={t('scrd.exportSummaryLabel')}
+            onView={async () => preview.openPreview(await buildSCRDSummaryPdfDoc(summaryParams()))}
             onExportExcel={() => {
               exportSCRDSummary(summaryParams())
               toast.success(t('scrd.toast.summaryExcel'))
@@ -397,16 +452,33 @@ export function SummaryTab(data: ScrdComputations) {
         </Card>
       </div>
 
-      <Card
-        header={
-          <span style={{ fontWeight: 600, fontSize: 13 }}>
-            {t('scrd.summary.accountedForAsFollows')}
-          </span>
-        }
-        padding="0px"
-      >
+      <div style={{ marginBottom: 12 }}>
+        <span style={{ fontWeight: 600, fontSize: 13 }}>
+          {t('scrd.summary.accountedForAsFollows')}
+        </span>
+      </div>
+      <Card padding="0px">
         <DataTable columns={columns} data={data.bankAccountBalances} />
       </Card>
+
+      <DocumentPreviewModal
+        open={preview.open}
+        onClose={preview.closePreview}
+        url={preview.url}
+        title={t('scrd.exportSummaryLabel')}
+        onDownloadExcel={() => {
+          exportSCRDSummary(summaryParams())
+          toast.success(t('scrd.toast.summaryExcel'))
+        }}
+        onDownloadPdf={() => {
+          exportSCRDSummaryPdf(summaryParams())
+          toast.success(t('scrd.toast.summaryPdf'))
+        }}
+        onDownloadWord={() => {
+          exportSCRDSummaryDocx(summaryParams())
+          toast.success(t('scrd.toast.summaryWord'))
+        }}
+      />
     </>
   )
 }

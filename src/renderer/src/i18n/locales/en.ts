@@ -8,6 +8,7 @@ const en = {
     refresh: 'Refresh',
     cancel: 'Cancel',
     confirm: 'Confirm',
+    undo: 'Undo',
     reset: 'Reset',
     settings: 'Settings',
     dashboard: 'Dashboard',
@@ -18,9 +19,12 @@ const en = {
     edit: 'Edit',
     delete: 'Delete',
     view: 'View',
+    preview: 'Preview',
+    downloadHint: 'Download if you need the file itself',
     close: 'Close',
     back: 'Back',
     search: 'Search…',
+    or: 'or',
     export: 'Export',
     columns: 'Columns',
     toggleColumns: 'Toggle Columns',
@@ -63,7 +67,8 @@ const en = {
     guest: 'Guest',
     myProfile: 'My Profile',
     groups: {
-      goals: 'Goals & Objectives',
+      crm: 'CRM',
+      councilPrograms: 'Council Programs',
       hrPayroll: 'HR & Payroll',
       facility: 'Facility',
       accounting: 'Accounting',
@@ -71,6 +76,8 @@ const en = {
     },
     nav: {
       dashboard: 'Dashboard',
+      announcements: 'Announcements',
+      budget: 'Council Budget',
       pos: 'Point of Sale',
       products: 'Inventory',
       members: 'Members',
@@ -82,11 +89,11 @@ const en = {
       orgChart: 'Organizational Chart',
       vouchers: 'Vouchers',
       rentals: 'Rental Bookings',
+      visitors: 'Visitors Logbook',
+      facilityCalendar: 'Calendar',
       invoices: 'Invoices',
       customers: 'Customers',
-      expenses: 'Expenses',
       vendors: 'Vendors',
-      items: 'Products & Services',
       reports: 'Reports',
       scrd: 'Cash Receipts & Disb.',
       users: 'User Accounts',
@@ -94,8 +101,11 @@ const en = {
       settings: 'Settings',
       devices: 'Devices',
       about: 'About',
+      manual: 'User Manual',
       enrollment: 'Enrollment',
-      goals: 'Goals & Objectives'
+      goals: 'Goals & Objectives',
+      programReports: 'Program Reports',
+      trainingReports: 'Training Reports'
     }
   },
   titleBar: {
@@ -105,12 +115,33 @@ const en = {
     switchToLight: 'Switch to light mode',
     switchToDark: 'Switch to dark mode',
     searchShortcut: 'Search (Ctrl+K)',
-    searchPlaceholder: 'Search…',
+    searchPlaceholder: 'Search everywhere…',
+    noResults: 'No results found',
     esc: 'Esc',
     notifications: 'Notifications',
     clearAll: 'Clear all',
     noNotifications: 'No notifications',
-    home: 'Home'
+    home: 'Home',
+    searchTypes: {
+      module: 'Module',
+      customer: 'Customer',
+      vendor: 'Vendor',
+      invoice: 'Invoice',
+      employee: 'Employee',
+      troop: 'Troop',
+      member: 'Member',
+      product: 'Product',
+      voucher: 'Voucher',
+      leave: 'Leave',
+      payroll: 'Payroll',
+      rental: 'Rental',
+      visitor: 'Visitor',
+      goal: 'Goal',
+      programReport: 'Program Report',
+      trainingReport: 'Training Report',
+      cashReceipt: 'Cash Receipt',
+      bank: 'Bank'
+    }
   },
   auth: {
     welcomeBack: 'Welcome back',
@@ -163,7 +194,9 @@ const en = {
     pendingLeaveNeedsReview: 'Needs review',
     pendingLeaveAllCaughtUp: 'All caught up',
     recentActivityTitle: 'Recent Activity',
-    viewAll: 'View all'
+    viewAll: 'View all',
+    announcementsTitle: 'Announcements',
+    budgetTitle: 'Council Budget {{year}}'
   },
   settings: {
     title: 'Settings',
@@ -304,6 +337,17 @@ const en = {
         saved: 'Membership year cycle updated'
       }
     },
+    payroll: {
+      title: '13th Month Pay & Cash Gift',
+      description:
+        'Council-wide Cash Gift amount granted on every employee’s November/December payroll entry. 13th Month Pay itself isn’t set here — it’s computed automatically per employee from their actual basic pay for the year.',
+      cashGiftLabel: 'Default Cash Gift amount',
+      adminOnlyNote:
+        'Only Super Admin and Admin can change this — it applies to the whole council, on every device.',
+      toast: {
+        saved: 'Default Cash Gift amount updated'
+      }
+    },
     privacy: 'Privacy',
     privacyDesc: 'Manage your data and privacy preferences',
     dataCollection: 'Usage Analytics',
@@ -333,6 +377,43 @@ const en = {
     toast: {
       photoUpdated: 'Photo updated',
       photoFailed: 'Failed to upload photo'
+    }
+  },
+  manual: {
+    title: 'User Manual',
+    subtitle: 'How to use every module in GSPI Admin.',
+    searchPlaceholder: 'Search the manual…',
+    noResults: 'No matching topics. Try a different search.',
+    tocHeading: 'Contents',
+    stepsHeading: 'How to use it',
+    tipsHeading: 'Good to know',
+    rolesHeading: 'Who can access this',
+    rolesFootnote:
+      "Reflects your council's current Role Permissions setup — an Admin can change it anytime under Users > Role Permissions.",
+    everyone: 'Everyone signed in',
+    customRoles: 'custom role(s)',
+    intro: {
+      title: 'Getting started',
+      body: 'GSPI Admin is the desktop system for GSP Ilocos Sur Council — Business, HR, and Financial Management in one place. A handful of things are true everywhere in the app:',
+      points: [
+        "Staff accounts are created by an Admin/Super Admin from the Users page — there is no public sign-up. If you can't log in, ask an Admin.",
+        'What you land on after signing in depends on your role: most roles land on the Dashboard, Cashiers land on Point of Sale, and HR lands on Employees.',
+        "The sidebar on the left is your map of the whole system — click the collapse arrow at the top to shrink it to icons only, or click your organization's logo to expand it again.",
+        'Press Ctrl+K (or click the search bar in the title bar) to jump straight to any record or page from anywhere.',
+        'Click your avatar at the bottom of the sidebar to open My Profile, where you can update your own profile photo. Your name and role are set by an Admin — ask one if either needs to change.',
+        'Settings lets you switch the interface between English and Tagalog, toggle light/dark mode, and adjust accent color, font size, and notifications — all under Settings > Appearance.',
+        "Every module below only appears in your sidebar if your role has been granted access to it — so don't worry if your menu looks shorter than this manual."
+      ]
+    },
+    groups: {
+      core: 'Overview',
+      crm: 'CRM',
+      accounting: 'Accounting',
+      councilPrograms: 'Council Programs',
+      hrPayroll: 'HR & Payroll',
+      facility: 'Facility',
+      admin: 'Admin',
+      system: 'Account & System'
     }
   },
   about: {
@@ -465,6 +546,7 @@ const en = {
     title: 'Troops & Membership',
     subtitle: 'Membership year {{year}}',
     addButton: 'Add Troop',
+    exportButton: 'Export',
     searchPlaceholder: 'Search troops…',
     empty: 'No troops found',
     viewRoster: 'View Roster',
@@ -515,11 +597,17 @@ const en = {
       updated: 'Troop updated',
       deleted: 'Troop {{troopNumber}} deleted',
       deactivated: 'Troop {{troopNumber}} deactivated',
-      reactivated: 'Troop {{troopNumber}} reactivated'
+      reactivated: 'Troop {{troopNumber}} reactivated',
+      noneToExport: 'No troops to export',
+      exportedExcel: 'Troops & Membership exported to Excel',
+      exportedPdf: 'Troops & Membership exported as PDF',
+      exportedWord: 'Troops & Membership exported as Word document'
     },
     roster: {
       heading: 'Member Roster',
       addButton: 'Add Member',
+      exportButton: 'Export',
+      searchPlaceholder: 'Search roster…',
       empty: 'No members registered in this troop yet',
       renewButton: 'Renew for this membership year',
       table: {
@@ -541,7 +629,8 @@ const en = {
         level: 'Level',
         guardianName: 'Guardian Name',
         guardianContact: 'Guardian Contact',
-        address: 'Address'
+        address: 'Address',
+        registrationFee: 'Registration Fee'
       },
       confirmDeactivate: {
         title: 'Deactivate Member',
@@ -563,7 +652,11 @@ const en = {
         deleted: '{{name}} removed from the roster',
         deactivated: '{{name}} deactivated',
         reactivated: '{{name}} reactivated',
-        renewed: '{{name}} renewed for membership year {{year}}'
+        renewed: '{{name}} renewed for membership year {{year}}',
+        noneToExport: 'No members to export',
+        exportedExcel: 'Member roster exported to Excel',
+        exportedPdf: 'Member roster exported as PDF',
+        exportedWord: 'Member roster exported as Word document'
       }
     }
   },
@@ -605,7 +698,8 @@ const en = {
       overtime: 'Overtime'
     },
     modal: {
-      title: 'Manual Attendance Entry'
+      title: 'Manual Attendance Entry',
+      editTitle: 'Edit Attendance Record'
     },
     form: {
       selectEmployee: 'Select employee'
@@ -613,6 +707,7 @@ const en = {
     toast: {
       selectEmployee: 'Select an employee',
       recorded: 'Attendance recorded',
+      updated: 'Attendance record updated',
       deleted: 'Attendance record deleted'
     },
     confirmDelete: {
@@ -629,9 +724,11 @@ const en = {
     empty: 'No leave requests filed yet',
     previewDaysPrefix: 'This request covers',
     previewDaysSuffix: 'day(s).',
+    searchPlaceholder: 'Search leave requests…',
     balances: {
       title: 'Leave Balances',
-      days: 'days'
+      days: 'days',
+      searchPlaceholder: 'Search employees…'
     },
     balancesModal: {
       editButton: 'Edit Balances',
@@ -693,9 +790,11 @@ const en = {
     exportButton: 'Export Register',
     newEntryButton: 'New Payroll Entry',
     pullFromAttendance: 'Pull from Attendance & Leave',
+    computeYearEndPay: 'Compute 13th Month Pay & Cash Gift',
     approveButton: 'Approve',
     markPaidButton: 'Mark Paid',
     empty: 'No payroll entries yet',
+    searchPlaceholder: 'Search employee or payroll #…',
     summary: {
       totalNet: 'Total Net Payroll',
       pending: 'Pending',
@@ -717,9 +816,12 @@ const en = {
       status: 'Status',
       action: 'Action'
     },
+    payslipTooltip: 'Payslip',
     modal: {
       title: 'New Payroll Entry',
-      createEntry: 'Create Entry'
+      editTitle: 'Edit Payroll Entry',
+      createEntry: 'Create Entry',
+      saveChanges: 'Save Changes'
     },
     form: {
       selectEmployee: 'Select employee',
@@ -735,7 +837,10 @@ const en = {
       philhealth: 'PhilHealth',
       pagibig: 'Pag-IBIG',
       withholdingTax: 'Withholding Tax',
-      unpaidLeaveDays: 'Unpaid Leave Days'
+      unpaidLeaveDays: 'Unpaid Leave Days',
+      yearEndTitle: '13th Month Pay & Cash Gift (November/December)',
+      thirteenthMonthPay: '13th Month Pay',
+      cashGift: 'Cash Gift'
     },
     preview: {
       basicPay: 'Basic pay (daily rate × days worked)',
@@ -747,13 +852,20 @@ const en = {
       selectEmployeePeriod: 'Select employee and period first',
       attendanceSummary:
         'Attendance: {{present}} present, {{absent}} absent, {{leave}} on leave, {{unpaid}} unpaid leave day(s) (≈{{deduction}} deduction)',
+      thirteenthMonthComputed:
+        '13th Month Pay: {{thirteenth}} (year-to-date basic pay ÷ 12), Cash Gift: {{cashGift}}',
       selectEmployee: 'Select an employee',
       entryCreated: 'Payroll entry created',
+      entryUpdated: 'Payroll entry updated',
+      entryDeleted: 'Payroll entry {{number}} deleted',
       noEntriesToExport: 'No payroll entries to export',
       exportedExcel: 'Payroll register exported in the Council’s official format',
       exportedPdf: 'Payroll register exported as PDF',
       exportedWord: 'Payroll register exported as Word document',
-      statusUpdated: 'Payroll {{number}} marked as {{status}}'
+      statusUpdated: 'Payroll {{number}} marked as {{status}}',
+      payslipExportedExcel: 'Payslip exported as Excel',
+      payslipExportedPdf: 'Payslip exported as PDF',
+      payslipExportedWord: 'Payslip exported as Word document'
     },
     confirmApprove: {
       title: 'Approve Payroll',
@@ -762,6 +874,10 @@ const en = {
     confirmMarkPaid: {
       title: 'Mark Payroll as Paid',
       message: 'Mark payroll entry {{number}} ({{amount}}) as paid? This cannot be undone.'
+    },
+    confirmDelete: {
+      title: 'Delete Payroll Entry',
+      message: 'Delete payroll entry {{number}} for {{name}}? This cannot be undone.'
     }
   },
   orgChart: {
@@ -783,6 +899,7 @@ const en = {
     unenrollButton: 'Unenroll',
     enrollButton: 'Enroll',
     empty: 'No employees found',
+    searchPlaceholder: 'Search employees…',
     table: {
       employee: 'Employee',
       position: 'Position',
@@ -828,6 +945,7 @@ const en = {
     capacity: 'Cap.',
     bookingsTitle: 'Bookings',
     empty: 'No bookings yet',
+    searchPlaceholder: 'Search bookings…',
     noSpaces: 'No rooms or spaces yet — click "Add Room" to create one.',
     confirmButton: 'Confirm',
     markCompletedButton: 'Mark Completed',
@@ -896,12 +1014,159 @@ const en = {
     confirmDeleteBooking: {
       title: 'Delete this booking?',
       message: 'The booking for "{{name}}" will be permanently removed.'
+    },
+    confirmStatusChange: {
+      confirmTitle: 'Confirm this booking?',
+      confirmMessage: 'The booking for "{{name}}" will be marked as confirmed.',
+      completeTitle: 'Mark this booking completed?',
+      completeMessage: 'The booking for "{{name}}" will be marked as completed.'
+    }
+  },
+  visitors: {
+    title: 'Visitors Logbook',
+    logVisitorButton: 'Log Visitor',
+    checkOutButton: 'Check Out',
+    empty: 'No visitors logged yet',
+    searchPlaceholder: 'Search visitors…',
+    table: {
+      name: 'Name',
+      purpose: 'Purpose',
+      host: 'Person / Office to Visit',
+      timeIn: 'Time In',
+      timeOut: 'Time Out',
+      status: 'Status',
+      action: 'Action'
+    },
+    status: {
+      checkedIn: 'Checked In',
+      checkedOut: 'Checked Out'
+    },
+    modal: {
+      title: 'Log Visitor',
+      logButton: 'Log Visitor'
+    },
+    form: {
+      fullName: 'Full Name',
+      purpose: 'Purpose of Visit',
+      personToVisit: 'Person / Office to Visit',
+      contactNumber: 'Contact Number'
+    },
+    toast: {
+      validationRequired: 'Full name, purpose, and person to visit are required',
+      logged: 'Visitor logged',
+      checkedOut: 'Visitor checked out',
+      deleted: 'Visitor log removed'
+    },
+    confirmDelete: {
+      title: 'Delete this visitor log?',
+      message: 'The log entry for "{{name}}" will be permanently removed.'
+    },
+    confirmCheckOut: {
+      title: 'Check out this visitor?',
+      message: '"{{name}}" will be marked as checked out.'
+    }
+  },
+  announcements: {
+    title: 'Announcements',
+    newButton: 'New Announcement',
+    empty: 'No announcements posted yet',
+    postedBy: 'Posted by {{name}} · {{date}}',
+    pinButton: 'Pin',
+    unpinButton: 'Unpin',
+    priority: {
+      normal: 'Normal',
+      important: 'Important',
+      urgent: 'Urgent'
+    },
+    modal: {
+      newTitle: 'New Announcement',
+      editTitle: 'Edit Announcement',
+      postButton: 'Post'
+    },
+    form: {
+      title: 'Title',
+      message: 'Message',
+      priority: 'Priority',
+      pinned: 'Pin to the top of the Dashboard highlight'
+    },
+    toast: {
+      validationRequired: 'Title and message are required',
+      posted: 'Announcement posted',
+      updated: 'Announcement updated',
+      deleted: 'Announcement removed'
+    },
+    confirmDelete: {
+      title: 'Delete this announcement?',
+      message: '"{{title}}" will be permanently removed.'
+    }
+  },
+  budget: {
+    title: 'Council Budget',
+    fiscalYear: 'Fiscal Year {{year}}',
+    newFiscalYearButton: 'New Fiscal Year',
+    newFiscalYearModal: {
+      title: 'Start a New Fiscal Year',
+      yearLabel: 'Fiscal Year',
+      createButton: 'Create',
+      hint: 'Copies every line item from {{year}} into the new year with the same structure — budgeted amounts start at 0 pending board approval, and {{year}}’s figures become the new prior-year reference.'
+    },
+    incomeTitle: 'Income',
+    expensesTitle: 'Expenses',
+    summary: {
+      income: 'Income',
+      expenses: 'Expenses',
+      net: 'Net',
+      ofBudgeted: 'of {{amount}} budgeted'
+    },
+    table: {
+      budgeted: 'Budgeted',
+      actual: 'Actual to Date',
+      variance: 'Variance',
+      subtotal: 'Sub-total'
+    },
+    editModal: {
+      subtitle: 'Update this line item’s budgeted amount and monthly actuals.',
+      budgetedAmount: 'Budgeted Amount',
+      monthlyActuals: 'Monthly Actuals',
+      totalActual: 'Total Actual',
+      useAllLiveData: 'Use all live data',
+      liveDataHint:
+        'Computed from POS sales, rental bookings, vouchers, or payroll — click to fill in this month'
+    },
+    autoSourceHint:
+      'This line has a live figure computed from real data — open Edit to review/apply it',
+    toast: {
+      updated: 'Budget line updated',
+      fiscalYearRequired: 'Enter a fiscal year label',
+      fiscalYearExists: 'That fiscal year already exists',
+      noSourceYear: 'No existing fiscal year to copy from',
+      fiscalYearCreated: '{{year}} created',
+      excel: 'Budget exported to Excel',
+      pdf: 'Budget exported to PDF',
+      word: 'Budget exported to Word'
+    }
+  },
+  facilityCalendar: {
+    title: 'Facility Calendar',
+    todayButton: 'Today',
+    summary: {
+      bookings: 'Bookings this month',
+      visitors: 'Visitors this month'
+    },
+    moreCount: '+{{count}} more',
+    dayModal: {
+      bookingsTitle: 'Bookings',
+      visitorsTitle: 'Visitors',
+      noBookings: 'No bookings this day',
+      noVisitors: 'No visitors logged this day'
     }
   },
   vouchers: {
     title: 'Vouchers',
     subtitle: 'Disbursement (Check) & Journal Vouchers',
     newVoucherButton: 'New Voucher',
+    editVoucherTitle: 'Edit Voucher',
+    searchPlaceholder: 'Search vouchers…',
     type: {
       checkVoucher: 'Disbursement / Check Voucher',
       journalVoucher: 'Journal Voucher'
@@ -944,6 +1209,8 @@ const en = {
     toast: {
       missingFields: 'Payee, account, and amount are required',
       created: 'Voucher created',
+      updated: 'Voucher updated',
+      deleted: 'Voucher deleted',
       statusChanged: '{{number}} marked as {{status}}',
       excelGenerated: 'Excel file generated in the Council’s official format',
       pdfGenerated: 'PDF file generated',
@@ -956,11 +1223,16 @@ const en = {
     confirmPost: {
       title: 'Post Voucher',
       message: 'Post voucher {{number}} to the cash disbursement journal? This cannot be undone.'
+    },
+    confirmDelete: {
+      title: 'Delete Voucher',
+      message: 'Delete voucher {{number}}? This cannot be undone.'
     }
   },
   invoices: {
     title: 'Invoices',
     newInvoiceButton: 'New Invoice',
+    searchPlaceholder: 'Search invoices…',
     markAsPaidButton: 'Mark as Paid',
     defaultMemo: 'Thank you for your business.',
     status: {
@@ -999,10 +1271,14 @@ const en = {
     form: {
       saveAsDraft: 'Save as Draft',
       saveAndSend: 'Save and Send',
+      saveButton: 'Save',
       selectCustomer: 'Select customer',
+      searchCustomer: 'Search by name, company, or email',
+      useAsManualCustomer: 'Use "{{name}}" (not in system)',
+      manualCustomerBadge: 'Manual entry',
       lineItems: 'Line Items',
       addLine: 'Add Line',
-      selectItem: 'Select item'
+      descriptionPlaceholder: 'Description'
     },
     toast: {
       customerRequired: 'Please select a customer.',
@@ -1052,37 +1328,13 @@ const en = {
       created: '{{name}} added to customers'
     }
   },
-  expenses: {
-    title: 'Expenses',
-    newExpenseButton: 'New Expense',
-    summary: {
-      total: 'Total Expenses'
-    },
-    table: {
-      date: 'Date',
-      vendor: 'Vendor',
-      category: 'Category',
-      paymentMethod: 'Payment Method',
-      amount: 'Amount',
-      status: 'Status',
-      empty: 'No expenses found'
-    },
-    form: {
-      selectVendor: 'Select vendor',
-      saveButton: 'Save Expense'
-    },
-    toast: {
-      vendorRequired: 'Please select a vendor.',
-      invalidAmount: 'Enter a valid amount.',
-      created: 'Expense of {{amount}} recorded'
-    }
-  },
   vendors: {
     title: 'Vendors',
     addButton: 'New Vendor',
     modalTitle: 'New Vendor',
     saveButton: 'Save Vendor',
     emptyMessage: 'No vendors found',
+    searchPlaceholder: 'Search vendors…',
     validation: {
       nameEmailRequired: 'Name and email are required.'
     },
@@ -1110,51 +1362,12 @@ const en = {
       category: 'Category'
     }
   },
-  items: {
-    title: 'Products & Services',
-    addButton: 'New Item',
-    modalTitle: 'New Product / Service',
-    saveButton: 'Save Item',
-    emptyMessage: 'No products or services yet',
-    validation: {
-      nameSkuRequired: 'Name and SKU are required.'
-    },
-    toast: {
-      added: '{{name}} added to products & services'
-    },
-    typeBadge: {
-      service: 'Service',
-      product: 'Product',
-      inventory: 'Inventory'
-    },
-    columns: {
-      name: 'Name',
-      sku: 'SKU',
-      type: 'Type',
-      salesPrice: 'Sales Price',
-      cost: 'Cost',
-      qtyOnHand: 'Qty on Hand',
-      incomeAccount: 'Income Account'
-    },
-    form: {
-      name: 'Name',
-      namePlaceholder: 'Item name',
-      sku: 'SKU',
-      skuPlaceholder: 'SKU-000',
-      type: 'Type',
-      description: 'Description',
-      descriptionPlaceholder: 'Short description',
-      salesPrice: 'Sales Price',
-      cost: 'Cost',
-      qtyOnHand: 'Quantity on Hand',
-      incomeAccount: 'Income Account'
-    }
-  },
   reports: {
     title: 'Reports',
     tabs: {
       pnl: 'Profit & Loss',
-      balanceSheet: 'Balance Sheet'
+      balanceSheet: 'Balance Sheet',
+      dailyCollections: 'Daily Collections'
     },
     pnl: {
       chartTitle: 'Income vs Expenses',
@@ -1186,6 +1399,45 @@ const en = {
         pdf: 'Balance Sheet exported as PDF',
         word: 'Balance Sheet exported as Word document'
       }
+    },
+    dailyCollections: {
+      cardTitle: 'Daily Cash Collection Report',
+      cardSubtitle: 'Beginning balance, receipts, and bank deposits for one day',
+      exportLabel: 'Export Daily Collections',
+      saved: 'Saved',
+      draft: 'Unsaved draft',
+      beginningBalance: 'Beginning Balance',
+      addCashReceipts: 'Add: Cash Receipts',
+      lessCashDeposit: 'Less: Cash Deposit',
+      addLine: 'Add Line',
+      addDeposit: 'Add Deposit',
+      selectBank: 'Select bank',
+      totalCashCollection: 'Total Cash Collection During the Day',
+      totalCashOnHand: 'Total Cash on Hand',
+      totalDeposited: 'Total Cash Collection Deposit in Bank',
+      balanceUndeposited: 'Balance/Undeposited Cash Collection',
+      attachments: 'Attachments',
+      noAttachments: 'No files attached yet',
+      uploadAttachment: 'Attach File',
+      saveButton: 'Save Report',
+      table: {
+        siNo: 'SI No.',
+        receivedFrom: 'Received From',
+        amount: 'Amount',
+        total: 'Total',
+        bank: 'Bank',
+        saNo: 'S/A No.',
+        purpose: 'Purpose'
+      },
+      walkIn: 'Walk-in',
+      toast: {
+        saved: 'Daily Collection Report saved',
+        attachmentUploaded: 'Attachment uploaded',
+        attachmentFailed: 'Failed to upload attachment',
+        excel: 'Daily Collection Report exported to Excel',
+        pdf: 'Daily Collection Report exported as PDF',
+        word: 'Daily Collection Report exported as Word document'
+      }
     }
   },
   scrd: {
@@ -1197,6 +1449,7 @@ const en = {
     },
     exportJournalLabel: 'Export Journal',
     exportSummaryLabel: 'Export SCRD',
+    journalSearchPlaceholder: 'Search journal…',
     emptyReceipts: 'No cash receipts recorded',
     emptyDisbursements: 'No posted/approved disbursement vouchers',
     beginningBalanceLabel: 'Beginning Balance:',
@@ -1213,7 +1466,13 @@ const en = {
       openingBalance: 'Opening Balance',
       toast: {
         nameRequired: 'Bank name is required',
-        added: 'Bank account added'
+        added: 'Bank account added',
+        deleted: 'Bank account removed'
+      },
+      confirmDelete: {
+        title: 'Delete Bank Account',
+        message:
+          'Remove "{{name}}" from Bank Opening Balances? Its past Cash Receipts and Voucher entries are not affected.'
       }
     },
     columns: {
@@ -1271,6 +1530,7 @@ const en = {
     },
     history: {
       emptyMessage: 'No sales yet.',
+      searchPlaceholder: 'Search sales…',
       itemsCount: '{{count}} item(s)',
       printButton: 'Print',
       voidButton: 'Void',
@@ -1339,9 +1599,13 @@ const en = {
       incomeStatement: 'Income Statement'
     },
     period: {
+      daily: 'Daily',
+      weekly: 'Weekly',
       monthly: 'Monthly',
       quarterly: 'Quarterly',
-      quarterEndedPlaceholder: 'e.g. March 31, 2026'
+      annually: 'Annually',
+      custom: 'Custom Date',
+      to: 'to'
     },
     table: {
       emptyMessage: 'No products found',
@@ -1414,6 +1678,7 @@ const en = {
     title: 'Members',
     addButton: 'Add Member',
     printCardButton: 'Print Loyalty Card',
+    searchPlaceholder: 'Search members…',
     table: {
       emptyMessage: 'No members found',
       memberCode: 'Member Code',
@@ -1455,11 +1720,13 @@ const en = {
     title: 'User Accounts',
     addButton: 'Add User',
     emptyState: 'No user accounts found',
+    searchPlaceholder: 'Search users…',
     statusDisabled: 'Disabled',
     disable: 'Disable',
     enable: 'Enable',
     table: {
       fullName: 'Full Name',
+      email: 'Email',
       role: 'Role',
       status: 'Status',
       action: 'Action'
@@ -1469,6 +1736,9 @@ const en = {
       subtitle: 'Control which modules each role can see and use.',
       permissionsGranted: '{{granted}} / {{total}} permissions granted',
       editButton: 'Edit Permissions',
+      baseRoleLabel: 'Base Role',
+      baseRoleHint:
+        "The custom role is a label plus its own permission checklist here on desktop — but data access (and the mobile app) only understands the 7 built-in roles, so a custom role needs one as its base. A user assigned this role gets the base role's account access, everywhere except this checklist.",
       addRole: {
         button: 'Add Role',
         title: 'Add Role',
@@ -1495,6 +1765,7 @@ const en = {
       emailLabel: 'Email',
       passwordLabel: 'Password',
       roleLabel: 'Role',
+      createButton: 'Create Account',
       generateButton: 'Generate Command',
       commandHelp:
         "This app never carries admin credentials, so account changes run from a terminal. Copy this command and run it on a machine with the project's service account key.",
@@ -1511,7 +1782,9 @@ const en = {
       titleDefault: 'Role Permissions',
       titleWithRole: '{{role}} Permissions',
       doneButton: 'Done',
-      manage: 'Manage'
+      manage: 'Manage',
+      selectAll: 'Select All',
+      grantedCount: '{{granted}} / {{total}} selected'
     },
     toast: {
       missingFields: 'Full name, email, and password are required',
@@ -1519,6 +1792,10 @@ const en = {
       userDisabled: 'User "{{fullName}}" disabled',
       userEnabled: 'User "{{fullName}}" enabled',
       toggleActiveFailed: 'Failed to update this account. Please try again.',
+      userCreated: 'User "{{fullName}}" created',
+      userCreateFailed: 'Failed to create user account. Please try again.',
+      roleUpdated: '"{{fullName}}" role updated',
+      roleUpdateFailed: 'Failed to update the role. Please try again.',
       fullNameUpdated: '"{{fullName}}" saved',
       fullNameUpdateFailed: 'Failed to save the name. Please try again.',
       commandCopied: 'Command copied to clipboard',
@@ -1538,6 +1815,7 @@ const en = {
     subtitle: '{{count}} event(s) this session',
     emptyMessage:
       'No activity recorded yet this session — actions across the app will appear here.',
+    searchPlaceholder: 'Search audit log…',
     table: {
       when: 'When',
       actor: 'Actor',
@@ -1602,6 +1880,182 @@ const en = {
       objectiveCreated: 'Objective added',
       objectiveUpdated: 'Objective updated',
       objectiveDeleted: 'Objective deleted'
+    }
+  },
+  trainingReports: {
+    title: 'Training Reports',
+    subtitle: 'Per-event training report forms, matching the National HQ template.',
+    subtitleFiltered:
+      'Per-event training report forms, matching the National HQ template — {{period}}',
+    newReportButton: 'New Training Report',
+    editButton: 'Edit Training Report',
+    exportLabel: 'Export Training Report',
+    empty: 'No training reports found',
+    searchPlaceholder: 'Search training reports…',
+    filters: {
+      allYears: 'All Years',
+      allMonths: 'All Months'
+    },
+    table: {
+      reportNo: 'Report No.',
+      title: 'Title',
+      type: 'Type',
+      date: 'Date',
+      place: 'Place',
+      participants: 'Participants'
+    },
+    types: {
+      leaders: "Leaders' Training",
+      trainers: "Trainers' Training",
+      dfas: "District Field Advisors' (DFAs) Training",
+      communityWomen: "Community Women's Training",
+      barangayCommittee: 'Training of Barangay GS Committee',
+      districtCommittee: 'Training of District Committee',
+      councilBoard: 'Training of Council Board Members',
+      councilStandingCommittee: 'Training of Council Standing Committee Members',
+      regionalCouncilStaff: 'Training of Regional & Council Staff',
+      other: 'Other'
+    },
+    form: {
+      sectionBasic: 'Basic Info',
+      reportNo: 'Report No.',
+      seriesYear: 'Series Year',
+      title: 'Title of Training Event',
+      titlePlaceholder: 'e.g. Training of District GS Committee',
+      place: 'Place of Training Event',
+      dateFrom: 'Date From',
+      dateTo: 'Date To',
+      objectives: 'Objectives of Training',
+      oneLineEach: 'One item per line',
+      sectionDetails: 'Training Details',
+      type: 'Type of Training',
+      hoursPerDay: 'Hours per Day',
+      totalHours: 'Total Hours',
+      participantClassification: 'Classification of Participants',
+      participantCount: 'No. of Participants',
+      sectionFees: 'Fees',
+      feePerParticipant: 'Amount Collected per Participant',
+      feeCollectedReserves: 'Amount Collected in Training Reserves',
+      feeRemitted: 'Amount Remitted and Enclosed',
+      sectionTeam: 'Training Team & Staff',
+      trainers: 'Trainers',
+      coordinator: 'Coordinator',
+      dietician: 'Dietician / QM',
+      assistantCoordinators: 'Assistant Coordinators',
+      sectionObservations: 'Observations / Recommendations / Suggestions',
+      observations: 'Observations',
+      sectionParticipants: 'Enclosed List of Participants',
+      participantName: 'Name',
+      participantSchool: 'School',
+      addParticipant: 'Add Participant',
+      sectionSubmission: 'Submission',
+      submittedByName: 'Submitted By',
+      submittedByDesignation: 'Designation',
+      submittedDate: 'Date'
+    },
+    toast: {
+      requiredFields: 'Report No. and Title are required',
+      created: 'Training report created',
+      updated: 'Training report updated',
+      deleted: 'Training report deleted',
+      exportedExcel: 'Training report exported to Excel',
+      exportedPdf: 'Training report exported as PDF',
+      exportedWord: 'Training report exported as Word document'
+    },
+    confirmDelete: {
+      title: 'Delete Training Report',
+      message: 'Delete "{{title}}"? This cannot be undone.'
+    }
+  },
+  programReports: {
+    title: 'Program Reports',
+    subtitle:
+      'Monthly Badgework, Troop Camps, Improved Image, and International Affairs detail — {{month}} {{year}}',
+    empty: 'No line items found',
+    editLineItem: {
+      title: 'Edit Line Item'
+    },
+    exportLabel: 'Export Section',
+    editHeader: {
+      button: 'Edit Header',
+      title: 'Edit Report Header',
+      subtitle: 'Applies only to {{month}} {{year}} — other months/years keep their own header.',
+      reportTitle: 'Report Title',
+      goalHeading: 'Goal Heading'
+    },
+    table: {
+      code: 'Code',
+      label: 'Line Item',
+      thisMonth: '{{month}}',
+      breakdownTotal: '{{count}} total',
+      logEntries: '{{count}} entries'
+    },
+    sections: {
+      badgework: 'Badgework',
+      troopCamps: 'Troop Camps & Activities',
+      improvedImage: 'Improved Image',
+      intlAffairs: 'International Affairs'
+    },
+    shapes: {
+      count: 'Monthly Count',
+      ageLevelBreakdown: 'Monthly Count by Age Level',
+      categoryAgeLevelBreakdown: 'Monthly Count by Category & Age Level',
+      log: 'Dated Log'
+    },
+    form: {
+      code: 'Code',
+      label: 'Label',
+      shape: 'Tracking Type',
+      scope: 'Reporting Level',
+      district: 'District'
+    },
+    scopes: {
+      council: 'Council-wide',
+      district: 'Per District'
+    },
+    breakdownModal: {
+      subtitle: '{{month}} — count by age level',
+      districtPlaceholder: 'District name',
+      addDistrict: 'Add District',
+      ageLevelPlaceholder: 'Age level name',
+      addAgeLevel: 'Add Age Level',
+      councilTotal: 'Council Total',
+      confirmDeleteDistrict: {
+        title: 'Delete District',
+        message:
+          'Delete "{{district}}"? All of its tracked progress for this line item will be permanently removed.'
+      },
+      confirmDeleteAgeLevel: {
+        title: 'Delete Age Level',
+        message:
+          'Delete "{{ageLevel}}"? All of its tracked progress for this line item will be permanently removed.'
+      }
+    },
+    categoryBreakdownModal: {
+      subtitle: '{{month}} — count by category & age level',
+      grandTotal: 'Grand Total'
+    },
+    goalMetrics: {
+      population: 'Total No. of Girls',
+      earned: 'Girls Earned Badges',
+      targetLabel: 'Monthly Target',
+      targetPlaceholder: 'e.g. 25',
+      awardedAgainstGoalLabel: 'Total No. of Badges Awarded Against Goal',
+      earnedThisMonth: '{{count}} earned this month',
+      againstGoal: '{{percent}}% against goal'
+    },
+    logModal: {
+      descriptionPlaceholder: 'Description',
+      quantityPlaceholder: 'Qty (optional)',
+      addEntry: 'Add Entry',
+      entries: 'Entries',
+      empty: 'No entries yet'
+    },
+    toast: {
+      exportedExcel: 'Section exported to Excel',
+      exportedPdf: 'Section exported as PDF',
+      exportedWord: 'Section exported as Word document',
+      headerSaved: 'Report header updated'
     }
   }
 } as const

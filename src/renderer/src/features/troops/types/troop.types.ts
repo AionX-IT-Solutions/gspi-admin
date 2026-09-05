@@ -26,5 +26,8 @@ export interface ScoutMember {
   membershipYear: string
   /** ISO date of the last registration/renewal. */
   renewedAt: string
+  /** Amount collected for this member's registration/renewal on `renewedAt` — feeds the
+   *  Reports > Daily Collections tab. Unset/0 = fee waived or not yet recorded. */
+  registrationFee?: number
   isActive: boolean
 }

@@ -1,15 +1,22 @@
 import { motion } from 'framer-motion'
-import { Check, Plus, Wallet } from 'lucide-react'
+import { Check, Pencil, Plus, Trash2, Wallet } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { FieldSelect } from '@/shared/components/ui/FormField'
+import { ExportMenu } from '@/shared/components/ui/ExportMenu'
+import { DocumentPreviewModal } from '@/shared/components/ui/DocumentPreviewModal'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
 import type { PayrollStatus } from '../types/hr.types'
 import { PayrollExportMenu } from '../components/PayrollExportMenu'
@@ -37,19 +44,34 @@ export function Payroll() {
   const { t } = useTranslation()
   const {
     loading,
+    canManage,
     rows,
     totals,
     yearFilter,
     setYearFilter,
     periodFilter,
     setPeriodFilter,
+    search,
+    setSearch,
     availableYears,
     availablePeriods,
     showDialog,
     setShowDialog,
+    editTarget,
+    openAdd,
+    openEdit,
     advanceTarget,
     setAdvanceTarget,
-    handleConfirmAdvanceStatus
+    handleConfirmAdvanceStatus,
+    deleteTarget,
+    setDeleteTarget,
+    handleConfirmDelete,
+    preview,
+    previewRow,
+    handleViewPayslip,
+    handleExportPayslipExcel,
+    handleExportPayslipPdf,
+    handleExportPayslipWord
   } = usePayroll()
   const hydrate = useHRStore((s) => s.hydrate)
 
@@ -110,21 +132,47 @@ export function Payroll() {
       header: t('payroll.table.action'),
       sortable: false,
       align: 'right',
-      render: (r) =>
-        r.status !== 'paid' ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            leftIcon={<Check size={12} />}
-            onClick={() => setAdvanceTarget(r)}
-          >
-            {r.status === 'pending' ? t('payroll.approveButton') : t('payroll.markPaidButton')}
-          </Button>
-        ) : (
-          <span style={{ fontSize: 11, color: 'var(--c-text-3)' }}>—</span>
-        )
+      render: (r) => (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+          <ExportMenu
+            iconOnly
+            title={t('payroll.payslipTooltip')}
+            onView={() => handleViewPayslip(r)}
+            onExportExcel={() => handleExportPayslipExcel(r)}
+            onExportPdf={() => handleExportPayslipPdf(r)}
+            onExportWord={() => handleExportPayslipWord(r)}
+          />
+          {r.status !== 'paid' && canManage && (
+            <Button
+              size="sm"
+              variant="secondary"
+              leftIcon={<Check size={12} />}
+              onClick={() => setAdvanceTarget(r)}
+            >
+              {r.status === 'pending' ? t('payroll.approveButton') : t('payroll.markPaidButton')}
+            </Button>
+          )}
+          {canManage && (
+            <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
+              <Pencil size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDeleteTarget(r)}
+              title={t('common.delete')}
+            >
+              <Trash2 size={13} />
+            </Button>
+          )}
+        </div>
+      )
     }
   ]
+
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
 
   return (
     <motion.div
@@ -142,14 +190,11 @@ export function Payroll() {
           <>
             <RefreshButton onRefresh={() => hydrate(true)} />
             <PayrollExportMenu rows={rows} />
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={13} />}
-              onClick={() => setShowDialog(true)}
-            >
-              {t('payroll.newEntryButton')}
-            </Button>
+            {canManage && (
+              <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
+                {t('payroll.newEntryButton')}
+              </Button>
+            )}
           </>
         }
       />
@@ -178,7 +223,15 @@ export function Payroll() {
         </Card>
       </div>
 
-      <TableToolbar count={rows.length}>
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('payroll.searchPlaceholder')}
+        count={rows.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
+        }
+      >
         <FieldSelect
           value={yearFilter}
           onChange={(e) => setYearFilter(e.target.value)}
@@ -203,12 +256,17 @@ export function Payroll() {
         <DataTable
           columns={columns}
           data={rows}
+          hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('payroll.empty')}
         />
       </Card>
 
-      <NewPayrollEntryModal open={showDialog} onOpenChange={setShowDialog} />
+      <NewPayrollEntryModal
+        open={showDialog}
+        onOpenChange={setShowDialog}
+        editTarget={editTarget}
+      />
 
       <ConfirmDialog
         open={!!advanceTarget}
@@ -235,6 +293,29 @@ export function Payroll() {
         }
         onConfirm={handleConfirmAdvanceStatus}
         onCancel={() => setAdvanceTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={t('payroll.confirmDelete.title')}
+        message={t('payroll.confirmDelete.message', {
+          number: deleteTarget?.payrollNumber ?? '',
+          name: deleteTarget?.employeeName ?? ''
+        })}
+        confirmLabel={t('common.delete')}
+        danger
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <DocumentPreviewModal
+        open={preview.open}
+        onClose={preview.closePreview}
+        url={preview.url}
+        title={t('payroll.payslipTooltip')}
+        onDownloadExcel={() => previewRow && handleExportPayslipExcel(previewRow)}
+        onDownloadPdf={() => previewRow && handleExportPayslipPdf(previewRow)}
+        onDownloadWord={() => previewRow && handleExportPayslipWord(previewRow)}
       />
     </motion.div>
   )

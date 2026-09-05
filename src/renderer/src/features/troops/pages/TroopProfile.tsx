@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Plus, Pencil, RefreshCw, UserX, Trash2 } from 'lucide-react'
@@ -6,12 +7,20 @@ import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Card } from '@/shared/components/ui/Card'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { actionsColumn } from '@/shared/lib/columnHelpers'
 import { formatDate } from '@/shared/lib/utils'
 import { useTroopsStore } from '../store/troops.store'
 import { useTroopProfile } from '../hooks/useTroopProfile'
 import { ScoutMemberFormModal } from '../components/ScoutMemberFormModal'
+import { RosterExportMenu } from '../components/RosterExportMenu'
+import type { RosterExportRow } from '../lib/rosterExport'
 import type { ScoutMember } from '../types/troop.types'
 
 export function TroopProfile() {
@@ -21,7 +30,11 @@ export function TroopProfile() {
   const troop = useTroopsStore((s) => s.troops.find((tr) => tr.id === id) ?? null)
 
   const {
+    canManage,
     roster,
+    filteredRoster,
+    search,
+    setSearch,
     currentMembershipYear,
     isCurrent,
     showDialog,
@@ -38,7 +51,16 @@ export function TroopProfile() {
     handleRenew
   } = useTroopProfile(troop)
 
-  if (!troop) return null
+  const rosterExportRows: RosterExportRow[] = useMemo(
+    () =>
+      roster.map((r) => ({
+        ...r,
+        membershipStatusLabel: isCurrent(r)
+          ? t('troops.roster.table.current', { year: r.membershipYear })
+          : t('troops.roster.table.needsRenewalBadge', { year: r.membershipYear })
+      })),
+    [roster, isCurrent, t]
+  )
 
   const columns: Column<ScoutMember>[] = [
     { key: 'fullName', header: t('troops.roster.table.fullName') },
@@ -70,7 +92,7 @@ export function TroopProfile() {
     actionsColumn<ScoutMember>(
       (r) => (
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-          {!isCurrent(r) && (
+          {canManage && !isCurrent(r) && (
             <Button
               size="sm"
               variant="ghost"
@@ -80,30 +102,40 @@ export function TroopProfile() {
               <RefreshCw size={13} />
             </Button>
           )}
-          <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
-            <Pencil size={13} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setToggleTarget(r)}
-            title={r.isActive ? t('troops.table.deactivate') : t('troops.table.reactivate')}
-          >
-            <UserX size={13} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setDeleteTarget(r)}
-            title={t('common.delete')}
-          >
-            <Trash2 size={13} />
-          </Button>
+          {canManage && (
+            <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
+              <Pencil size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setToggleTarget(r)}
+              title={r.isActive ? t('troops.table.deactivate') : t('troops.table.reactivate')}
+            >
+              <UserX size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDeleteTarget(r)}
+              title={t('common.delete')}
+            >
+              <Trash2 size={13} />
+            </Button>
+          )}
         </div>
       ),
       t('common.actions')
     )
   ]
+
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
+
+  if (!troop) return null
 
   return (
     <div className="page-wrapper">
@@ -184,13 +216,37 @@ export function TroopProfile() {
             {t('troops.subtitle', { year: currentMembershipYear })}
           </p>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
-          {t('troops.roster.addButton')}
-        </Button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <RosterExportMenu
+            roster={rosterExportRows}
+            troopNumber={troop.troopNumber}
+            membershipYear={currentMembershipYear}
+          />
+          {canManage && (
+            <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
+              {t('troops.roster.addButton')}
+            </Button>
+          )}
+        </div>
       </div>
 
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('troops.roster.searchPlaceholder')}
+        count={filteredRoster.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
+        }
+      />
+
       <Card padding="0px">
-        <DataTable columns={columns} data={roster} emptyMessage={t('troops.roster.empty')} />
+        <DataTable
+          columns={columns}
+          data={filteredRoster}
+          hiddenColumns={hiddenColumns}
+          emptyMessage={t('troops.roster.empty')}
+        />
       </Card>
 
       <ScoutMemberFormModal

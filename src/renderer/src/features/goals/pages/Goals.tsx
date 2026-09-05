@@ -186,7 +186,7 @@ export function Goals() {
               options={PROGRAM_MONTHS.map((m, i) => ({ value: String(i), label: m }))}
               style={{ width: 100 }}
             />
-            <GoalsExportMenu achievedFor={achievedFor} />
+            <GoalsExportMenu achievedFor={achievedFor} monthIndex={monthIndex} />
           </>
         }
       />

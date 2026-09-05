@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Download, ChevronDown, FileSpreadsheet, FileText, FileType } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Download, ChevronDown, Eye, FileSpreadsheet, FileText, FileType } from 'lucide-react'
 import { Button } from './Button'
 
 interface ExportMenuProps {
   label?: string
+  /** Opens an in-app preview instead of downloading — shown first, above the download
+   *  options, when provided. See shared/hooks/useDocumentPreview.ts + DocumentPreviewModal. */
+  onView?: () => void
   onExportExcel: () => void
   onExportPdf: () => void
   onExportWord: () => void
@@ -15,6 +19,7 @@ interface ExportMenuProps {
 
 export function ExportMenu({
   label,
+  onView,
   onExportExcel,
   onExportPdf,
   onExportWord,
@@ -22,6 +27,7 @@ export function ExportMenu({
   iconOnly,
   title
 }: ExportMenuProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const ref = useRef<HTMLDivElement>(null)
@@ -59,6 +65,9 @@ export function ExportMenu({
   }
 
   const items: { key: string; label: string; icon: ReactNode; onClick: () => void }[] = [
+    ...(onView
+      ? [{ key: 'view', label: t('common.view'), icon: <Eye size={14} />, onClick: onView }]
+      : []),
     {
       key: 'excel',
       label: 'Excel (.xlsx)',

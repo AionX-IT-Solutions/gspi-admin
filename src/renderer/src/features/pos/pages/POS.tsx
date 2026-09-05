@@ -7,9 +7,16 @@ import { Badge } from '@/shared/components/ui/Badge'
 import { Modal } from '@/shared/components/ui/Modal'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
 import { ExportMenu } from '@/shared/components/ui/ExportMenu'
+import { DocumentPreviewModal } from '@/shared/components/ui/DocumentPreviewModal'
 import { FieldInput, FieldSelect, FormField, FieldTextArea } from '@/shared/components/ui/FormField'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { StyledSwitch } from '@/features/settings/components/primitives'
 import { currencyColumn, actionsColumn } from '@/shared/lib/columnHelpers'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
@@ -34,6 +41,8 @@ export function POS() {
     sales,
     search,
     setSearch,
+    historySearch,
+    setHistorySearch,
     handleAddToCart,
     removeFromCart,
     setCartQuantity,
@@ -57,7 +66,9 @@ export function POS() {
     closeVoidConfirm,
     handleConfirmVoidSale,
     handlePrintReceipt,
-    handleExportSalesReport
+    handleExportSalesReport,
+    handleViewSalesReport,
+    salesReportPreview
   } = usePOS()
 
   const paymentMethodLabel = (method: PaymentMethod) =>
@@ -139,6 +150,8 @@ export function POS() {
       t('pos.history.table.actions')
     )
   ]
+
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(historyColumns)
 
   return (
     <motion.div
@@ -412,15 +425,39 @@ export function POS() {
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
             <ExportMenu
               label={t('products.export.salesReport')}
+              onView={handleViewSalesReport}
               onExportExcel={() => handleExportSalesReport('excel')}
               onExportPdf={() => handleExportSalesReport('pdf')}
               onExportWord={() => handleExportSalesReport('word')}
             />
           </div>
+          <DocumentPreviewModal
+            open={salesReportPreview.open}
+            onClose={salesReportPreview.closePreview}
+            url={salesReportPreview.url}
+            title={t('products.export.salesReport')}
+            onDownloadExcel={() => handleExportSalesReport('excel')}
+            onDownloadPdf={() => handleExportSalesReport('pdf')}
+            onDownloadWord={() => handleExportSalesReport('word')}
+          />
+          <TableToolbar
+            search={historySearch}
+            onSearchChange={setHistorySearch}
+            searchPlaceholder={t('pos.history.searchPlaceholder')}
+            count={sales.length}
+            columnsSlot={
+              <ColumnsButton
+                columns={historyColumns}
+                hiddenColumns={hiddenColumns}
+                onToggle={toggleColumn}
+              />
+            }
+          />
           <Card padding="0px">
             <DataTable
               columns={historyColumns}
               data={sales}
+              hiddenColumns={hiddenColumns}
               emptyMessage={t('pos.history.emptyMessage')}
             />
           </Card>

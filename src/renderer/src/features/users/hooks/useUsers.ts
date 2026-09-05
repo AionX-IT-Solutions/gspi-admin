@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUsersStore, type StaffUser } from '../store/users.store'
 import { setStaffUserActive } from '../lib/staffUserFunctions'
@@ -24,6 +24,13 @@ export function useUsers() {
   const [editTarget, setEditTarget] = useState<UserRow | null>(null)
   const [toggleTarget, setToggleTarget] = useState<UserRow | null>(null)
   const [toggling, setToggling] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return users
+    return users.filter((u) => u.fullName.toLowerCase().includes(q))
+  }, [users, search])
 
   async function handleConfirmToggleActive() {
     if (!toggleTarget) return
@@ -51,7 +58,9 @@ export function useUsers() {
 
   return {
     loading,
-    users,
+    users: filteredUsers,
+    search,
+    setSearch,
     showDialog,
     setShowDialog,
     editTarget,

@@ -2,18 +2,26 @@ import { useTranslation } from 'react-i18next'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField, FieldInput, FieldSelect, FieldTextArea } from '@/shared/components/ui/FormField'
-import type { AttendanceStatus } from '../types/hr.types'
+import type { AttendanceRecord, AttendanceStatus } from '../types/hr.types'
 import { useManualAttendanceModal } from '../hooks/useManualAttendanceModal'
 
 interface ManualAttendanceModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  editingRecord?: AttendanceRecord | null
 }
 
-export function ManualAttendanceModal({ open, onOpenChange }: ManualAttendanceModalProps) {
+export function ManualAttendanceModal({
+  open,
+  onOpenChange,
+  editingRecord = null
+}: ManualAttendanceModalProps) {
   const { t } = useTranslation()
-  const { activeEmployees, form, setForm, handleSubmit, resetForm } =
-    useManualAttendanceModal(onOpenChange)
+  const { activeEmployees, form, setForm, handleSubmit, resetForm } = useManualAttendanceModal(
+    onOpenChange,
+    editingRecord
+  )
+  const employeeName = activeEmployees.find((e) => e.id === form.employeeId)?.fullName
 
   return (
     <Modal
@@ -22,7 +30,7 @@ export function ManualAttendanceModal({ open, onOpenChange }: ManualAttendanceMo
         onOpenChange(o)
         if (o) resetForm()
       }}
-      title={t('attendance.modal.title')}
+      title={t(editingRecord ? 'attendance.modal.editTitle' : 'attendance.modal.title')}
       footer={
         <>
           <Button variant="secondary" size="sm" onClick={() => onOpenChange(false)}>
@@ -36,18 +44,24 @@ export function ManualAttendanceModal({ open, onOpenChange }: ManualAttendanceMo
     >
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
         <FormField label={t('attendance.table.employee')} required className="col-span-2">
-          <FieldSelect
-            value={form.employeeId}
-            onChange={(e) => setForm((f) => ({ ...f, employeeId: e.target.value }))}
-            placeholder={t('attendance.form.selectEmployee')}
-            options={activeEmployees.map((e) => ({ value: e.id, label: e.fullName }))}
-          />
+          {editingRecord ? (
+            <FieldInput value={employeeName ?? form.employeeId} disabled readOnly />
+          ) : (
+            <FieldSelect
+              value={form.employeeId}
+              onChange={(e) => setForm((f) => ({ ...f, employeeId: e.target.value }))}
+              placeholder={t('attendance.form.selectEmployee')}
+              options={activeEmployees.map((e) => ({ value: e.id, label: e.fullName }))}
+            />
+          )}
         </FormField>
         <FormField label={t('attendance.table.date')}>
           <FieldInput
             type="date"
             value={form.date}
             onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+            disabled={!!editingRecord}
+            readOnly={!!editingRecord}
           />
         </FormField>
         <FormField label={t('attendance.table.status')}>

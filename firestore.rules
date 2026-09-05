@@ -5,9 +5,14 @@ rules_version = '2';
 //   and scripts/manageStaffUser.mjs, run manually from a developer machine that holds the
 //   service account key. Never writable by clients, never shipped inside the app.
 // - The fine-grained, admin-editable permission matrix on the "Role Permissions" screen
-//   lives client-side (Zustand) for UI/UX gating only — it is NOT mirrored here. These
-//   rules are the actual server-enforced security boundary and intentionally use the
-//   coarser role, not the editable matrix.
+//   is mirrored to the `rolePermissions` collection below purely so gspi-app (mobile) can
+//   read it for its own UI/module visibility — it is NOT the security boundary here. These
+//   rules are the actual server-enforced boundary and intentionally use the coarser role,
+//   not the editable matrix. A custom role (Role Permissions screen) is never a `role`
+//   value itself — every account's real `role` custom claim is always one of the 7 built-in
+//   roles below; a custom role resolves to one of them as its "base role" (see
+//   resolveRoleAssignment in app/lib/permissions.ts) and is carried separately as the
+//   cosmetic `customRoleId` field on `users/{uid}`.
 // - Account creation, role changes, and password resets-by-admin all happen via the CLI
 //   scripts (Admin SDK, bypasses these rules). The exceptions clients CAN do directly are
 //   toggling `isActive` (Enable/Disable) and renaming (`fullName`) — see the narrow rule
@@ -42,6 +47,15 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Role Permissions screen's view/manage matrix, one doc per role (built-in or
+    // custom) — mirrored here purely so gspi-app (mobile) can read a role's checklist
+    // for its own module visibility. Not the security boundary (see note at top):
+    // every signed-in user can read every role's doc, only admins can edit.
+    match /rolePermissions/{roleId} {
+      allow read: if isSignedIn();
+      allow write: if hasAnyRole(['super_admin', 'admin']);
+    }
+
     // HR module: Employees, Attendance, Biometric Enrollments, Leave, Payroll.
     match /employees/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
@@ -73,11 +87,29 @@ service cloud.firestore {
     match /troops/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
     }
+    // Read also granted to accountant — Reports > Daily Collections rolls up each
+    // member's registrationFee as a cash-collection line.
     match /scoutMembers/{id} {
+      allow read: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager', 'accountant']);
+      allow write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+    }
+
+    // Council Programs: Program Reports (Badgework/Troop Camps/Improved Image/Int'l Affairs
+    // monthly detail) and Training Reports — same role gate as Troops.
+    match /programReportLineItems/{id} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+    }
+    // Per-section report title / Goal heading shown on Program Reports exports — admin-
+    // editable since Goal numbering/wording is set by National HQ and can change between
+    // program years. Same role gate as the line items they're printed above.
+    match /programReportSectionMeta/{id} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+    }
+    match /trainingReports/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
     }
 
-    // Accounting module: Customers, Vendors, Invoices, Expenses, Products & Services, Accounts.
+    // Accounting module: Customers, Vendors, Invoices, Expenses, Accounts.
     match /customers/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
     }
@@ -89,9 +121,6 @@ service cloud.firestore {
     }
     match /expenses/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
-    }
-    match /items/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'accountant', 'inventory_clerk']);
     }
     match /accounts/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
@@ -111,8 +140,11 @@ service cloud.firestore {
     match /members/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'cashier', 'manager']);
     }
+    // Read also granted to accountant — Reports > Daily Collections rolls up
+    // POS sales as a cash-collection source.
     match /sales/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'cashier']);
+      allow read: if hasAnyRole(['super_admin', 'admin', 'cashier', 'accountant']);
+      allow write: if hasAnyRole(['super_admin', 'admin', 'cashier']);
     }
     match /purchases/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'cashier', 'inventory_clerk']);
@@ -124,11 +156,20 @@ service cloud.firestore {
     }
 
     // Facility module: Rental Spaces, Bookings.
+    // Read also granted to accountant — Reports > Daily Collections rolls up
+    // confirmed/completed bookings as a cash-collection source.
     match /rentalSpaces/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'cashier', 'manager']);
+      allow read: if hasAnyRole(['super_admin', 'admin', 'cashier', 'manager', 'accountant']);
+      allow write: if hasAnyRole(['super_admin', 'admin', 'cashier', 'manager']);
     }
     match /rentalBookings/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'cashier', 'manager']);
+      allow read: if hasAnyRole(['super_admin', 'admin', 'cashier', 'manager', 'accountant']);
+      allow write: if hasAnyRole(['super_admin', 'admin', 'cashier', 'manager']);
+    }
+
+    // Front desk: Visitors Logbook.
+    match /visitors/{id} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'manager', 'hr', 'cashier']);
     }
 
     // Vouchers, Cash Receipts & Disbursements, Goals & Objectives.
@@ -150,6 +191,12 @@ service cloud.firestore {
     match /goals/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'accountant', 'manager']);
     }
+    // Reports > Daily Collections — one saved report per date (beginning balance,
+    // manually-entered receipt lines, bank deposits, attachments). Same role gate as
+    // the rest of the Accounting module.
+    match /dailyCollectionReports/{id} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
+    }
 
     // Org-wide shared settings (e.g. the membership year renewal cycle) — every signed-in
     // user reads the same value so renewal status computes consistently on every device;
@@ -157,6 +204,21 @@ service cloud.firestore {
     match /orgSettings/{id} {
       allow read: if isSignedIn();
       allow write: if hasAnyRole(['super_admin', 'admin']);
+    }
+
+    // Org-wide Announcements board, highlighted on the Dashboard — every signed-in user
+    // reads it (desktop and gspi-app alike), only admins can post/edit/delete.
+    match /announcements/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasAnyRole(['super_admin', 'admin']);
+    }
+
+    // Council Budget — approved budget vs. actual-to-date per line item, one doc per
+    // category per fiscal year. Read broadly (dashboard highlight + Budget page for
+    // anyone with view access), edited only by SCRD-tier roles.
+    match /budgetCategories/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
     }
 
     // Audit Log — append-only from any signed-in user (every module writes to it), but

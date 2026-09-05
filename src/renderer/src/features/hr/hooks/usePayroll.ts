@@ -3,7 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 import { useHRStore } from '../store/hr.store'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { formatDate } from '@/shared/lib/utils'
+import { useDocumentPreview } from '@/shared/hooks/useDocumentPreview'
+import {
+  exportPayslip,
+  exportPayslipPdf,
+  exportPayslipDocx,
+  buildPayslipPdfDoc
+} from '../lib/payrollExcelExport'
 import type { PayrollEntry, PayrollStatus } from '../types/hr.types'
 
 export interface PayrollRow extends PayrollEntry {
@@ -17,14 +25,22 @@ export function usePayroll() {
   const { t } = useTranslation()
   const loading = useSkeletonLoading()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:payroll')
   const employees = useHRStore((s) => s.employees)
   const payroll = useHRStore((s) => s.payroll)
   const setPayrollStatus = useHRStore((s) => s.setPayrollStatus)
+  const deletePayrollEntry = useHRStore((s) => s.deletePayrollEntry)
 
   const [showDialog, setShowDialog] = useState(false)
+  const [editTarget, setEditTarget] = useState<PayrollRow | null>(null)
   const [advanceTarget, setAdvanceTarget] = useState<PayrollRow | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<PayrollRow | null>(null)
   const [yearFilter, setYearFilterState] = useState(ALL_FILTER)
   const [periodFilter, setPeriodFilter] = useState(ALL_FILTER)
+  const [search, setSearch] = useState('')
+  const preview = useDocumentPreview()
+  const [previewRow, setPreviewRow] = useState<PayrollRow | null>(null)
 
   const allRows: PayrollRow[] = useMemo(
     () =>
@@ -70,16 +86,20 @@ export function usePayroll() {
     setPeriodFilter(ALL_FILTER)
   }
 
-  const rows: PayrollRow[] = useMemo(
-    () =>
-      allRows
-        .filter((r) => yearFilter === ALL_FILTER || r.periodStart.startsWith(yearFilter))
-        .filter(
-          (r) =>
-            periodFilter === ALL_FILTER || periodKey(r.periodStart, r.periodEnd) === periodFilter
-        ),
-    [allRows, yearFilter, periodFilter]
-  )
+  const rows: PayrollRow[] = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return allRows
+      .filter((r) => yearFilter === ALL_FILTER || r.periodStart.startsWith(yearFilter))
+      .filter(
+        (r) => periodFilter === ALL_FILTER || periodKey(r.periodStart, r.periodEnd) === periodFilter
+      )
+      .filter(
+        (r) =>
+          !q ||
+          r.employeeName.toLowerCase().includes(q) ||
+          r.payrollNumber.toLowerCase().includes(q)
+      )
+  }, [allRows, yearFilter, periodFilter, search])
 
   const totals = useMemo(
     () => ({
@@ -95,7 +115,7 @@ export function usePayroll() {
   }
 
   function handleConfirmAdvanceStatus() {
-    if (!advanceTarget) return
+    if (!advanceTarget || !canManage) return
     const next = nextStatus(advanceTarget)
     setPayrollStatus(advanceTarget.id, next)
     toast.success(
@@ -107,20 +127,72 @@ export function usePayroll() {
     setAdvanceTarget(null)
   }
 
+  function openAdd() {
+    setEditTarget(null)
+    setShowDialog(true)
+  }
+
+  function openEdit(row: PayrollRow) {
+    setEditTarget(row)
+    setShowDialog(true)
+  }
+
+  function handleConfirmDelete() {
+    if (!deleteTarget || !canManage) return
+    deletePayrollEntry(deleteTarget.id)
+    toast.success(t('payroll.toast.entryDeleted', { number: deleteTarget.payrollNumber }))
+    setDeleteTarget(null)
+  }
+
+  async function handleViewPayslip(row: PayrollRow) {
+    setPreviewRow(row)
+    preview.openPreview(await buildPayslipPdfDoc(row))
+  }
+
+  function handleExportPayslipExcel(row: PayrollRow) {
+    exportPayslip(row)
+    toast.success(t('payroll.toast.payslipExportedExcel'))
+  }
+
+  function handleExportPayslipPdf(row: PayrollRow) {
+    exportPayslipPdf(row)
+    toast.success(t('payroll.toast.payslipExportedPdf'))
+  }
+
+  function handleExportPayslipWord(row: PayrollRow) {
+    exportPayslipDocx(row)
+    toast.success(t('payroll.toast.payslipExportedWord'))
+  }
+
   return {
     loading,
+    canManage,
     rows,
     totals,
     yearFilter,
     setYearFilter,
     periodFilter,
     setPeriodFilter,
+    search,
+    setSearch,
     availableYears,
     availablePeriods,
     showDialog,
     setShowDialog,
+    editTarget,
+    openAdd,
+    openEdit,
     advanceTarget,
     setAdvanceTarget,
-    handleConfirmAdvanceStatus
+    handleConfirmAdvanceStatus,
+    deleteTarget,
+    setDeleteTarget,
+    handleConfirmDelete,
+    preview,
+    previewRow,
+    handleViewPayslip,
+    handleExportPayslipExcel,
+    handleExportPayslipPdf,
+    handleExportPayslipWord
   }
 }

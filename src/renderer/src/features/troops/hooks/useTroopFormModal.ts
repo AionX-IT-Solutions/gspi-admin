@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { useTroopsStore } from '../store/troops.store'
 import type { Troop } from '../types/troop.types'
 
@@ -37,6 +38,7 @@ export function useTroopFormModal(
 ) {
   const { t } = useTranslation()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
   const addTroop = useTroopsStore((s) => s.addTroop)
   const updateTroop = useTroopsStore((s) => s.updateTroop)
   const [form, setForm] = useState(emptyForm())
@@ -46,6 +48,7 @@ export function useTroopFormModal(
   }, [open, editTarget])
 
   function handleSubmit() {
+    if (!hasPermission('manage:troops')) return
     if (!form.troopNumber.trim() || !form.leaderName.trim() || !form.level.trim()) {
       toast.error(t('troops.toast.validationRequired'))
       return

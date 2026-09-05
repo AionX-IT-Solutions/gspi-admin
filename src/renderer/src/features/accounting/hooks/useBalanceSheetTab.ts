@@ -1,16 +1,19 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/app/hooks/useToast'
+import { useDocumentPreview } from '@/shared/hooks/useDocumentPreview'
 import { useAccountingStore } from '../store/accounting.store'
 import {
   exportBalanceSheetExcel,
   exportBalanceSheetPdf,
-  exportBalanceSheetDocx
+  exportBalanceSheetDocx,
+  buildBalanceSheetPdfDoc
 } from '../lib/financialReportsExport'
 
 export function useBalanceSheetTab(periodLabel: string) {
   const { t } = useTranslation()
   const toast = useToast()
+  const preview = useDocumentPreview()
   const invoices = useAccountingStore((s) => s.invoices)
   const vendors = useAccountingStore((s) => s.vendors)
   const accounts = useAccountingStore((s) => s.accounts)
@@ -36,6 +39,10 @@ export function useBalanceSheetTab(periodLabel: string) {
     return { assets, liabilities, equity, totalAssets, totalLiabilities, totalEquity }
   }, [accounts, invoices, vendors])
 
+  async function handleView() {
+    preview.openPreview(await buildBalanceSheetPdfDoc({ periodLabel, ...balanceSheet }))
+  }
+
   function handleExportExcel() {
     exportBalanceSheetExcel({ periodLabel, ...balanceSheet })
     toast.success(t('reports.balanceSheet.toast.excel'))
@@ -51,5 +58,5 @@ export function useBalanceSheetTab(periodLabel: string) {
     toast.success(t('reports.balanceSheet.toast.word'))
   }
 
-  return { balanceSheet, handleExportExcel, handleExportPdf, handleExportWord }
+  return { balanceSheet, handleView, preview, handleExportExcel, handleExportPdf, handleExportWord }
 }

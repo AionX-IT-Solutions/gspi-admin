@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCashReceiptsStore } from '../store/cashReceipts.store'
 import { useBanksStore } from '../store/banks.store'
-import { useBankBalances } from './useBankBalances'
+import { safeAmount, useBankBalances } from './useBankBalances'
 import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
 import { usePOSStore } from '@/features/pos/store/pos.store'
 import { useRentalsStore } from '@/features/rentals/store/rentals.store'
@@ -40,6 +40,8 @@ export function useScrdComputations() {
   const { banks, bankAccountBalances: baseBankAccountBalances } = useBankBalances()
   const addBank = useBanksStore((s) => s.addBank)
   const updateBank = useBanksStore((s) => s.updateBank)
+  const deleteBank = useBanksStore((s) => s.deleteBank)
+  const restoreBank = useBanksStore((s) => s.restoreBank)
   const vouchers = useVouchersStore((s) => s.vouchers)
   const sales = usePOSStore((s) => s.sales)
   const bookings = useRentalsStore((s) => s.bookings)
@@ -55,7 +57,7 @@ export function useScrdComputations() {
   }
 
   const beginningBalance = useMemo(
-    () => banks.reduce((sum, b) => sum + b.openingBalance, 0),
+    () => banks.reduce((sum, b) => sum + safeAmount(b.openingBalance), 0),
     [banks]
   )
 
@@ -68,7 +70,7 @@ export function useScrdComputations() {
       reference: r.referenceNumber,
       category: r.category,
       bankAccount: r.bankAccount,
-      amount: r.amount
+      amount: safeAmount(r.amount)
     }))
     const fromSales: JournalDisplayRow[] = sales
       .filter((s) => !s.voided)
@@ -80,7 +82,7 @@ export function useScrdComputations() {
         reference: s.saleNumber,
         category: 'NES Sales',
         bankAccount: 'Cash on Hand',
-        amount: s.totalAmount
+        amount: safeAmount(s.totalAmount)
       }))
     const fromRentals: JournalDisplayRow[] = bookings
       .filter((b) => b.status === 'confirmed' || b.status === 'completed')
@@ -93,7 +95,7 @@ export function useScrdComputations() {
         bankAccount: 'Cash on Hand',
         // What was actually collected (down payment or full settlement), not
         // the contract price — see useBankBalances for the same fallback.
-        amount: b.amountPaid ?? b.totalAmount
+        amount: safeAmount(b.amountPaid ?? b.totalAmount)
       }))
     return [...fromManual, ...fromSales, ...fromRentals].sort((a, b) => (a.date < b.date ? 1 : -1))
   }, [cashReceipts, sales, bookings, spaces])
@@ -113,7 +115,7 @@ export function useScrdComputations() {
           reference: v.checkNumber ? `Check ${v.checkNumber}` : v.voucherNumber,
           category: v.accountLines[0]?.account ?? 'General',
           bankAccount: v.bankAccountRef ?? 'Cash on Hand',
-          amount: v.amount
+          amount: safeAmount(v.amount)
         }))
         .sort((a, b) => (a.date < b.date ? 1 : -1)),
     [vouchers]
@@ -165,7 +167,7 @@ export function useScrdComputations() {
   }, [receiptRows])
 
   const nesPurchasesTotal = useMemo(
-    () => purchases.reduce((sum, p) => sum + p.amount, 0),
+    () => purchases.reduce((sum, p) => sum + safeAmount(p.amount), 0),
     [purchases]
   )
 
@@ -175,7 +177,7 @@ export function useScrdComputations() {
       (v) => v.voucherType === 'check_voucher' && (v.status === 'posted' || v.status === 'approved')
     )) {
       for (const line of v.accountLines) {
-        if (line.debit) map.set(line.account, (map.get(line.account) ?? 0) + line.debit)
+        if (line.debit) map.set(line.account, (map.get(line.account) ?? 0) + safeAmount(line.debit))
       }
     }
     return Array.from(map.entries()).map(([category, amount]) => ({ category, amount }))
@@ -234,6 +236,8 @@ export function useScrdComputations() {
     monthLabel,
     banks,
     addBank,
+    deleteBank,
+    restoreBank,
     setOpeningBalance,
     manualInterestIncome,
     setManualInterestIncome,

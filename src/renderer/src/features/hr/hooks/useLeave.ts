@@ -37,6 +37,8 @@ export function useLeave() {
   const [showBalancesModal, setShowBalancesModal] = useState(false)
   const [revertTarget, setRevertTarget] = useState<RequestRow | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<RequestRow | null>(null)
+  const [search, setSearch] = useState('')
+  const [balanceSearch, setBalanceSearch] = useState('')
 
   const activeEmployees = employees.filter((e) => e.isActive)
 
@@ -72,8 +74,24 @@ export function useLeave() {
     })
   }, [activeEmployees, leaveTypes, leaveRequests, leaveCreditGrants])
 
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter(
+      (r) => r.employeeName.toLowerCase().includes(q) || r.leaveTypeName.toLowerCase().includes(q)
+    )
+  }, [rows, search])
+
+  const filteredBalanceRows = useMemo(() => {
+    const q = balanceSearch.trim().toLowerCase()
+    if (!q) return balanceRows
+    return balanceRows.filter(
+      (r) => r.employeeName.toLowerCase().includes(q) || r.employeeNumber.toLowerCase().includes(q)
+    )
+  }, [balanceRows, balanceSearch])
+
   function handleConfirmDelete() {
-    if (!deleteTarget) return
+    if (!deleteTarget || !canManage) return
     deleteLeaveRequest(deleteTarget.id)
     toast.success(t('leave.toast.requestDeleted'))
     setDeleteTarget(null)
@@ -82,8 +100,12 @@ export function useLeave() {
   return {
     loading,
     leaveTypes,
-    rows,
-    balanceRows,
+    rows: filteredRows,
+    balanceRows: filteredBalanceRows,
+    search,
+    setSearch,
+    balanceSearch,
+    setBalanceSearch,
     showFileDialog,
     setShowFileDialog,
     decision,

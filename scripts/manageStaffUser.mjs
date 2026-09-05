@@ -4,12 +4,19 @@
 // from a developer machine — never as a network-callable function.
 //
 // Usage:
-//   node --env-file=.env scripts/manageStaffUser.mjs create --email=x@y.com --password=secret123 --fullName="Full Name" --role=cashier
-//   node --env-file=.env scripts/manageStaffUser.mjs update --uid=<uid> [--fullName="New Name"] [--role=hr] [--isActive=false] [--newPassword=secret456]
+//   node --env-file=.env scripts/manageStaffUser.mjs create --email=x@y.com --password=secret123 --fullName="Full Name" --role=cashier [--customRoleId=developer]
+//   node --env-file=.env scripts/manageStaffUser.mjs update --uid=<uid> [--fullName="New Name"] [--role=hr] [--customRoleId=developer|""] [--isActive=false] [--newPassword=secret456]
 //
 // Prerequisites: same as scripts/bootstrapSuperAdmin.mjs — serviceAccountKey.json at the repo root
 // (Firebase Console → Project Settings → Service accounts → Generate new private key).
 // The "Add User" / "Edit User" modals in the app generate the exact command to paste here.
+//
+// `--role` must always be one of the 7 built-in roles — Firestore security rules and
+// gspi-app (mobile) only understand them. A custom role (Role Permissions screen) is
+// never passed as `--role` itself: the app resolves it to its base role first and passes
+// the custom role's id separately via `--customRoleId` (cosmetic label + desktop-only
+// permission-checklist lookup — see resolveRoleAssignment in app/lib/permissions.ts).
+// `--customRoleId=` (empty value) on update clears a previously-set custom role.
 
 import { readFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -37,10 +44,10 @@ function parseArgs(argv) {
 function usageAndExit() {
   console.error('Usage:')
   console.error(
-    '  node --env-file=.env scripts/manageStaffUser.mjs create --email=x@y.com --password=secret --fullName="Full Name" --role=cashier'
+    '  node --env-file=.env scripts/manageStaffUser.mjs create --email=x@y.com --password=secret --fullName="Full Name" --role=cashier [--customRoleId=...]'
   )
   console.error(
-    '  node --env-file=.env scripts/manageStaffUser.mjs update --uid=<uid> [--fullName=...] [--role=...] [--isActive=true|false] [--newPassword=...]'
+    '  node --env-file=.env scripts/manageStaffUser.mjs update --uid=<uid> [--fullName=...] [--role=...] [--customRoleId=...] [--isActive=true|false] [--newPassword=...]'
   )
   process.exit(1)
 }
@@ -60,10 +67,10 @@ const auth = getAuth()
 const db = getFirestore()
 
 function assertValidRole(role) {
-  if (role && !ASSIGNABLE_ROLES.includes(role)) {
-    console.error(`role must be one of: ${ASSIGNABLE_ROLES.join(', ')}`)
-    process.exit(1)
-  }
+  if (!role) return
+  if (ASSIGNABLE_ROLES.includes(role)) return
+  console.error(`role must be one of: ${ASSIGNABLE_ROLES.join(', ')}`)
+  process.exit(1)
 }
 
 /** Only one active super_admin at a time — this is the server-side backstop for that rule;
@@ -79,7 +86,7 @@ async function assertSuperAdminAvailable(excludeUid) {
 }
 
 async function createUser() {
-  const { email, password, fullName, role } = flags
+  const { email, password, fullName, role, customRoleId } = flags
   if (!email || !password || !fullName || !role) usageAndExit()
   assertValidRole(role)
   if (role === 'super_admin') await assertSuperAdminAvailable()
@@ -94,6 +101,7 @@ async function createUser() {
       email,
       fullName,
       role,
+      ...(customRoleId ? { customRoleId } : {}),
       isActive: true,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
@@ -103,7 +111,7 @@ async function createUser() {
 }
 
 async function updateUser() {
-  const { uid, fullName, role, isActive, newPassword } = flags
+  const { uid, fullName, role, customRoleId, isActive, newPassword } = flags
   if (!uid) usageAndExit()
   assertValidRole(role)
   if (role === 'super_admin') await assertSuperAdminAvailable(uid)
@@ -122,6 +130,7 @@ async function updateUser() {
   const firestoreUpdate = { updatedAt: FieldValue.serverTimestamp() }
   if (fullName) firestoreUpdate.fullName = fullName
   if (role) firestoreUpdate.role = role
+  if (customRoleId !== undefined) firestoreUpdate.customRoleId = customRoleId || FieldValue.delete()
   if (isActive !== undefined) firestoreUpdate.isActive = isActive !== 'false'
 
   await db.collection('users').doc(uid).update(firestoreUpdate)

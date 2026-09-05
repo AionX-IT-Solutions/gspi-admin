@@ -1,16 +1,17 @@
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAccountingStore } from '@/features/accounting/store/accounting.store'
+import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
+import { getExpenseVouchers, voucherCategory } from '@/features/vouchers/lib/expenseVouchers'
 import { useBankBalances } from '@/features/scrd/hooks/useBankBalances'
 import { useToast } from '@/app/hooks/useToast'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 
 export function useDashboard() {
-  const navigate = useNavigate()
   const toast = useToast()
   const loading = useSkeletonLoading()
   const invoices = useAccountingStore((s) => s.invoices)
-  const expenses = useAccountingStore((s) => s.expenses)
+  const vouchers = useVouchersStore((s) => s.vouchers)
+  const expenses = useMemo(() => getExpenseVouchers(vouchers), [vouchers])
   const { banks, bankAccountBalances, totalBalance } = useBankBalances()
 
   const totals = useMemo(() => {
@@ -26,9 +27,10 @@ export function useDashboard() {
     const draft = invoices.filter((i) => i.status === 'draft').length
 
     const expenseByCategory = new Map<string, number>()
-    expenses.forEach((e) =>
-      expenseByCategory.set(e.category, (expenseByCategory.get(e.category) ?? 0) + e.amount)
-    )
+    expenses.forEach((e) => {
+      const category = voucherCategory(e)
+      expenseByCategory.set(category, (expenseByCategory.get(category) ?? 0) + e.amount)
+    })
     const topCategories = [...expenseByCategory.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
 
     return {
@@ -46,7 +48,6 @@ export function useDashboard() {
   const outstandingInvoiceCount = invoices.filter((i) => i.balanceDue > 0).length
 
   return {
-    navigate,
     toast,
     loading,
     invoices,

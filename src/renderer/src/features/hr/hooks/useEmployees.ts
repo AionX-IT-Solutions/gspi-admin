@@ -3,12 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 import { useHRStore } from '../store/hr.store'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import type { Employee } from '../types/hr.types'
 
 export function useEmployees() {
   const { t } = useTranslation()
   const loading = useSkeletonLoading()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:employees')
   const employees = useHRStore((s) => s.employees)
   const updateEmployee = useHRStore((s) => s.updateEmployee)
   const deleteEmployee = useHRStore((s) => s.deleteEmployee)
@@ -32,7 +35,7 @@ export function useEmployees() {
   }
 
   const handleConfirmToggleActive = () => {
-    if (!toggleTarget) return
+    if (!toggleTarget || !canManage) return
     updateEmployee(toggleTarget.id, { isActive: !toggleTarget.isActive })
     toast.info(
       toggleTarget.isActive
@@ -43,7 +46,7 @@ export function useEmployees() {
   }
 
   const handleConfirmDelete = () => {
-    if (!deleteTarget) return
+    if (!deleteTarget || !canManage) return
     deleteEmployee(deleteTarget.id)
     toast.success(t('employees.toast.deleted', { name: deleteTarget.fullName }))
     setDeleteTarget(null)
@@ -62,6 +65,7 @@ export function useEmployees() {
 
   return {
     loading,
+    canManage,
     search,
     setSearch,
     filteredEmployees,

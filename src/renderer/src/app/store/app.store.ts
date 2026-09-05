@@ -41,6 +41,10 @@ export interface CurrentUser {
   id: string
   fullName: string
   role: RoleId
+  /** Set only when `role` was resolved from a custom role's base role — see
+   *  resolveRoleAssignment in app/lib/permissions.ts. Drives desktop's own
+   *  permission-checklist lookup in usePermissions.ts. */
+  customRoleId?: string
   email: string
   photoUrl?: string
 }
@@ -115,7 +119,13 @@ export const useAppStore = create<AppState>()(
           const credential = await signInWithEmailAndPassword(auth, email.trim(), password)
           const profileSnap = await getDoc(doc(db, 'users', credential.user.uid))
           const profile = profileSnap.data() as
-            | { fullName?: string; role?: RoleId; isActive?: boolean; photoUrl?: string }
+            | {
+                fullName?: string
+                role?: RoleId
+                customRoleId?: string
+                isActive?: boolean
+                photoUrl?: string
+              }
             | undefined
 
           if (!profile || profile.isActive === false) {
@@ -130,6 +140,7 @@ export const useAppStore = create<AppState>()(
               email: credential.user.email ?? email,
               fullName: profile.fullName ?? credential.user.displayName ?? email,
               role: profile.role ?? 'manager',
+              customRoleId: profile.customRoleId,
               photoUrl: profile.photoUrl
             }
           })

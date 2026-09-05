@@ -1,19 +1,24 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { useToast } from '@/app/hooks/useToast'
+import { useDocumentPreview } from '@/shared/hooks/useDocumentPreview'
 import type { Product, Purchase, Sale } from '../types/pos.types'
 import {
   exportMonthlySalesReport,
   exportMonthlySalesReportPdf,
   exportMonthlySalesReportDocx,
+  buildMonthlySalesReportPdfDoc,
   exportMonthlyInventoryReport,
   exportMonthlyInventoryReportPdf,
   exportMonthlyInventoryReportDocx,
+  buildMonthlyInventoryReportPdfDoc,
   exportNesIncomeStatement,
   exportNesIncomeStatementPdf,
   exportNesIncomeStatementDocx,
+  buildNesIncomeStatementPdfDoc,
   computeInventoryMovements
 } from '../lib/nesExcelExport'
+import { type ReportPeriodType, getPeriodRange, isWithinRange } from '../lib/periodRange'
 
 interface UseProductReportsMenuArgs {
   products: Product[]
@@ -29,23 +34,38 @@ export function useProductReportsMenu({
   toast
 }: UseProductReportsMenuArgs) {
   const { t } = useTranslation()
-  const [periodType, setPeriodType] = useState<'monthly' | 'quarterly'>('monthly')
-  const [quarterEndedLabel, setQuarterEndedLabel] = useState('')
+  const todayIso = () => new Date().toISOString().slice(0, 10)
+  const [periodType, setPeriodType] = useState<ReportPeriodType>('monthly')
+  const [customStart, setCustomStart] = useState(todayIso)
+  const [customEnd, setCustomEnd] = useState(todayIso)
+  const preview = useDocumentPreview()
+  const [previewKind, setPreviewKind] = useState<'sales' | 'inventory' | 'incomeStatement' | null>(
+    null
+  )
 
-  function monthLabel() {
-    return new Date().toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })
+  function periodRange() {
+    return getPeriodRange(periodType, customStart, customEnd)
+  }
+
+  function periodSales() {
+    const range = periodRange()
+    return sales.filter((s) => !s.voided && isWithinRange(s.createdAt, range))
+  }
+
+  function periodPurchases() {
+    const range = periodRange()
+    return purchases.filter((p) => isWithinRange(p.date, range))
   }
 
   function incomeStatementParams() {
-    const month = monthLabel()
-    const periodLabel = periodType === 'quarterly' ? quarterEndedLabel || month : month
-    const movements = computeInventoryMovements(products, sales, purchases)
+    const range = periodRange()
+    const movements = computeInventoryMovements(products, periodSales(), periodPurchases())
     const beginningInventory = movements.reduce((sum, m) => sum + m.beginningValue, 0)
     const purchasesTotal = movements.reduce((sum, m) => sum + m.purchasesValue, 0)
     const endingInventory = movements.reduce((sum, m) => sum + m.endingValue, 0)
-    const cashSales = sales.filter((s) => !s.voided).reduce((sum, s) => sum + s.totalAmount, 0)
+    const cashSales = periodSales().reduce((sum, s) => sum + s.totalAmount, 0)
     return {
-      monthLabel: periodLabel,
+      monthLabel: range.label,
       periodType,
       beginningInventory,
       purchases: purchasesTotal,
@@ -55,33 +75,36 @@ export function useProductReportsMenu({
   }
 
   function exportSalesReport(fmt: 'excel' | 'pdf' | 'word') {
-    if (sales.length === 0) {
+    const sel = periodSales()
+    if (sel.length === 0) {
       toast.error(t('products.toast.noSalesToReport'))
       return
     }
-    const month = monthLabel()
+    const label = periodRange().label
     if (fmt === 'excel') {
-      exportMonthlySalesReport(sales, month)
+      exportMonthlySalesReport(sel, label, periodType)
       toast.success(t('products.toast.salesReportExportedExcel'))
     } else if (fmt === 'pdf') {
-      exportMonthlySalesReportPdf(sales, month)
+      exportMonthlySalesReportPdf(sel, label, periodType)
       toast.success(t('products.toast.salesReportExportedPdf'))
     } else {
-      exportMonthlySalesReportDocx(sales, month)
+      exportMonthlySalesReportDocx(sel, label, periodType)
       toast.success(t('products.toast.salesReportExportedWord'))
     }
   }
 
   function exportInventoryReport(fmt: 'excel' | 'pdf' | 'word') {
-    const month = monthLabel()
+    const sel = periodSales()
+    const pur = periodPurchases()
+    const label = periodRange().label
     if (fmt === 'excel') {
-      exportMonthlyInventoryReport(products, sales, purchases, month)
+      exportMonthlyInventoryReport(products, sel, pur, label, periodType)
       toast.success(t('products.toast.inventoryReportExportedExcel'))
     } else if (fmt === 'pdf') {
-      exportMonthlyInventoryReportPdf(products, sales, purchases, month)
+      exportMonthlyInventoryReportPdf(products, sel, pur, label, periodType)
       toast.success(t('products.toast.inventoryReportExportedPdf'))
     } else {
-      exportMonthlyInventoryReportDocx(products, sales, purchases, month)
+      exportMonthlyInventoryReportDocx(products, sel, pur, label, periodType)
       toast.success(t('products.toast.inventoryReportExportedWord'))
     }
   }
@@ -100,13 +123,62 @@ export function useProductReportsMenu({
     }
   }
 
+  async function viewSalesReport() {
+    const sel = periodSales()
+    if (sel.length === 0) {
+      toast.error(t('products.toast.noSalesToReport'))
+      return
+    }
+    setPreviewKind('sales')
+    preview.openPreview(await buildMonthlySalesReportPdfDoc(sel, periodRange().label, periodType))
+  }
+
+  async function viewInventoryReport() {
+    setPreviewKind('inventory')
+    preview.openPreview(
+      await buildMonthlyInventoryReportPdfDoc(
+        products,
+        periodSales(),
+        periodPurchases(),
+        periodRange().label,
+        periodType
+      )
+    )
+  }
+
+  async function viewIncomeStatement() {
+    setPreviewKind('incomeStatement')
+    preview.openPreview(await buildNesIncomeStatementPdfDoc(incomeStatementParams()))
+  }
+
+  const previewTitle =
+    previewKind === 'sales'
+      ? t('products.export.salesReport')
+      : previewKind === 'inventory'
+        ? t('products.export.inventoryReport')
+        : t('products.export.incomeStatement')
+
+  function downloadPreviewed(fmt: 'excel' | 'pdf' | 'word') {
+    if (previewKind === 'sales') exportSalesReport(fmt)
+    else if (previewKind === 'inventory') exportInventoryReport(fmt)
+    else if (previewKind === 'incomeStatement') exportIncomeStatement(fmt)
+  }
+
   return {
     periodType,
     setPeriodType,
-    quarterEndedLabel,
-    setQuarterEndedLabel,
+    customStart,
+    setCustomStart,
+    customEnd,
+    setCustomEnd,
     exportSalesReport,
     exportInventoryReport,
-    exportIncomeStatement
+    exportIncomeStatement,
+    viewSalesReport,
+    viewInventoryReport,
+    viewIncomeStatement,
+    preview,
+    previewTitle,
+    downloadPreviewed
   }
 }

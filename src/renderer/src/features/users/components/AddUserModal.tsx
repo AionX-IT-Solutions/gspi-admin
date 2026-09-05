@@ -14,8 +14,17 @@ interface AddUserModalProps {
 
 export function AddUserModal({ open, onOpenChange }: AddUserModalProps) {
   const { t } = useTranslation()
-  const { form, setForm, generatedCommand, handleGenerate, handleCopy, resetForm, close } =
-    useAddUserModal(onOpenChange)
+  const {
+    form,
+    setForm,
+    generatedCommand,
+    directAvailable,
+    creating,
+    handleSubmit,
+    handleCopy,
+    resetForm,
+    close
+  } = useAddUserModal(onOpenChange)
   const roleOptions = useUserRoleOptions()
 
   return (
@@ -36,8 +45,10 @@ export function AddUserModal({ open, onOpenChange }: AddUserModalProps) {
             <Button variant="secondary" size="sm" onClick={close}>
               {t('common.cancel')}
             </Button>
-            <Button variant="primary" size="sm" onClick={handleGenerate}>
-              {t('users.addModal.generateButton')}
+            <Button variant="primary" size="sm" loading={creating} onClick={handleSubmit}>
+              {directAvailable
+                ? t('users.addModal.createButton')
+                : t('users.addModal.generateButton')}
             </Button>
           </>
         )

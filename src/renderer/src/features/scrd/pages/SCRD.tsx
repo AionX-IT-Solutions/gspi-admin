@@ -17,9 +17,11 @@ import {
   exportCashReceiptsJournal,
   exportCashReceiptsJournalPdf,
   exportCashReceiptsJournalDocx,
+  buildCashReceiptsJournalPdfDoc,
   exportCashDisbursementJournal,
   exportCashDisbursementJournalPdf,
-  exportCashDisbursementJournalDocx
+  exportCashDisbursementJournalDocx,
+  buildCashDisbursementJournalPdfDoc
 } from '../lib/scrdExcelExport'
 
 const pageVariants = {
@@ -83,6 +85,9 @@ export function SCRD() {
             loading={loading}
             emptyMessage={t('scrd.emptyReceipts')}
             monthLabel={data.monthLabel}
+            onView={(rows, monthLabel) =>
+              buildCashReceiptsJournalPdfDoc(rows, monthLabel, bankAccountNames)
+            }
             onExportExcel={(rows, monthLabel) =>
               exportCashReceiptsJournal(rows, monthLabel, bankAccountNames)
             }
@@ -106,6 +111,9 @@ export function SCRD() {
             loading={loading}
             emptyMessage={t('scrd.emptyDisbursements')}
             monthLabel={data.monthLabel}
+            onView={(rows, monthLabel) =>
+              buildCashDisbursementJournalPdfDoc(rows, monthLabel, bankAccountNames)
+            }
             onExportExcel={(rows, monthLabel) =>
               exportCashDisbursementJournal(rows, monthLabel, bankAccountNames)
             }

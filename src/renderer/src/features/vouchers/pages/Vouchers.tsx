@@ -1,13 +1,20 @@
 import { motion } from 'framer-motion'
-import { Check, Plus, Send, Ticket } from 'lucide-react'
+import { Check, Pencil, Plus, Send, Ticket, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { ExportMenu } from '@/shared/components/ui/ExportMenu'
+import { DocumentPreviewModal } from '@/shared/components/ui/DocumentPreviewModal'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
 import type { Voucher, VoucherStatus, VoucherType } from '../types/vouchers.types'
@@ -41,16 +48,28 @@ export function Vouchers() {
   const { t } = useTranslation()
   const {
     loading,
+    canManage,
     vouchers,
+    search,
+    setSearch,
     showDialog,
     setShowDialog,
+    editTarget,
+    openAdd,
+    openEdit,
+    deleteTarget,
+    setDeleteTarget,
+    handleConfirmDelete,
     advanceTarget,
     setAdvanceTarget,
     statusLabel,
     handleConfirmAdvance,
     handleExportExcel,
     handleExportPdf,
-    handleExportWord
+    handleExportWord,
+    handleView,
+    preview,
+    previewVoucher
   } = useVouchers()
   const hydrate = useVouchersStore((s) => s.hydrate)
 
@@ -85,11 +104,12 @@ export function Vouchers() {
           <ExportMenu
             iconOnly
             title={t('vouchers.table.exportTooltip')}
+            onView={() => handleView(r)}
             onExportExcel={() => handleExportExcel(r)}
             onExportPdf={() => handleExportPdf(r)}
             onExportWord={() => handleExportWord(r)}
           />
-          {(r.status === 'pending' || r.status === 'approved') && (
+          {canManage && (r.status === 'pending' || r.status === 'approved') && (
             <Button
               size="sm"
               variant="secondary"
@@ -99,10 +119,27 @@ export function Vouchers() {
               {r.status === 'pending' ? t('vouchers.actions.approve') : t('vouchers.actions.post')}
             </Button>
           )}
+          {canManage && (
+            <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
+              <Pencil size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDeleteTarget(r)}
+              title={t('common.delete')}
+            >
+              <Trash2 size={13} />
+            </Button>
+          )}
         </div>
       )
     }
   ]
+
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
 
   return (
     <motion.div
@@ -120,15 +157,22 @@ export function Vouchers() {
         actions={
           <>
             <RefreshButton onRefresh={() => hydrate(true)} />
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={13} />}
-              onClick={() => setShowDialog(true)}
-            >
-              {t('vouchers.newVoucherButton')}
-            </Button>
+            {canManage && (
+              <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
+                {t('vouchers.newVoucherButton')}
+              </Button>
+            )}
           </>
+        }
+      />
+
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('vouchers.searchPlaceholder')}
+        count={vouchers.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
         }
       />
 
@@ -136,12 +180,13 @@ export function Vouchers() {
         <DataTable
           columns={columns}
           data={vouchers}
+          hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('vouchers.table.empty')}
         />
       </Card>
 
-      <NewVoucherModal open={showDialog} onOpenChange={setShowDialog} />
+      <NewVoucherModal open={showDialog} onOpenChange={setShowDialog} editTarget={editTarget} />
 
       <ConfirmDialog
         open={!!advanceTarget}
@@ -162,6 +207,26 @@ export function Vouchers() {
         }
         onConfirm={handleConfirmAdvance}
         onCancel={() => setAdvanceTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={t('vouchers.confirmDelete.title')}
+        message={t('vouchers.confirmDelete.message', { number: deleteTarget?.voucherNumber ?? '' })}
+        confirmLabel={t('common.delete')}
+        danger
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <DocumentPreviewModal
+        open={preview.open}
+        onClose={preview.closePreview}
+        url={preview.url}
+        title={previewVoucher?.voucherNumber}
+        onDownloadExcel={() => previewVoucher && handleExportExcel(previewVoucher)}
+        onDownloadPdf={() => previewVoucher && handleExportPdf(previewVoucher)}
+        onDownloadWord={() => previewVoucher && handleExportWord(previewVoucher)}
       />
     </motion.div>
   )

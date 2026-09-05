@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion'
-import { Banknote, Receipt, FileText, Landmark, Plus, RefreshCw, Wallet } from 'lucide-react'
+import { Banknote, Receipt, FileText, Landmark, RefreshCw, Wallet } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
 import { formatCurrency } from '@/shared/lib/utils'
+import { AnnouncementsHighlight } from '../components/AnnouncementsHighlight'
+import { BudgetHighlight } from '../components/BudgetHighlight'
 import { StatCard, type StatCardProps } from '../components/StatCard'
 import { CashFlowChart } from '../components/CashFlowChart'
 import { ExpenseCategoryChart } from '../components/ExpenseCategoryChart'
@@ -25,7 +27,6 @@ const pageVariants = {
 export function Dashboard() {
   const { t } = useTranslation()
   const {
-    navigate,
     toast,
     loading,
     invoices,
@@ -46,24 +47,18 @@ export function Dashboard() {
     {
       title: t('dashboard.statIncome'),
       value: formatCurrency(totals.income),
-      change: '+8.1%',
-      positive: true,
       icon: <Banknote size={20} />,
       color: '#10b981'
     },
     {
       title: t('dashboard.statExpenses'),
       value: formatCurrency(totals.expenseTotal),
-      change: '+3.4%',
-      positive: false,
       icon: <Receipt size={20} />,
       color: '#ef4444'
     },
     {
       title: t('dashboard.statNetProfit'),
       value: formatCurrency(totals.netProfit),
-      change: totals.netProfit >= 0 ? '+12.4%' : '-4.2%',
-      positive: totals.netProfit >= 0,
       icon: <Wallet size={20} />,
       color: '#6366f1'
     },
@@ -121,24 +116,11 @@ export function Dashboard() {
           >
             {t('dashboard.refreshButton')}
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<Receipt size={13} />}
-            onClick={() => navigate('/expenses')}
-          >
-            {t('dashboard.newExpenseButton')}
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus size={13} />}
-            onClick={() => navigate('/invoices')}
-          >
-            {t('dashboard.newInvoiceButton')}
-          </Button>
         </div>
       </div>
+
+      {/* Announcements — pinned/latest, kept prominent right under the header */}
+      <AnnouncementsHighlight />
 
       {/* Stats Grid */}
       <div
@@ -164,6 +146,9 @@ export function Dashboard() {
               </motion.div>
             ))}
       </div>
+
+      {/* Council Budget — income/expense vs. actual-to-date at a glance */}
+      <BudgetHighlight />
 
       {/* Bank Balances breakdown */}
       {!loading && bankAccountBalances.length > 0 && (

@@ -22,6 +22,11 @@ import type {
   SilentPrintRequest,
   SilentPrintResult
 } from '../shared/printing-types'
+import type {
+  CreateStaffUserRequest,
+  StaffAdminResult,
+  UpdateStaffUserRequest
+} from '../shared/staff-admin-types'
 
 const api = {
   getAppVersion: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.APP_VERSION),
@@ -107,6 +112,14 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.PRINTER_SAVE_CONFIG, patch),
     silentPrint: (request: SilentPrintRequest): Promise<SilentPrintResult> =>
       ipcRenderer.invoke(IPC_CHANNELS.PRINTER_SILENT_PRINT, request)
+  },
+
+  staffAdmin: {
+    isAvailable: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.STAFF_ADMIN_IS_AVAILABLE),
+    createUser: (input: CreateStaffUserRequest): Promise<StaffAdminResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.STAFF_ADMIN_CREATE_USER, input),
+    updateUser: (input: UpdateStaffUserRequest): Promise<StaffAdminResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.STAFF_ADMIN_UPDATE_USER, input)
   }
 }
 

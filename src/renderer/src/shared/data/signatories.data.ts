@@ -7,7 +7,8 @@ export const signatories = {
   councilTreasurer: 'Marianne R. Florendo',
   councilPresident: 'Eva Marie S. Medina',
   cesInCharge: 'Roselyn R. Cubangbang',
-  nesCommitteeChairman: 'Loraine Rocero-Pe Benito'
+  nesCommitteeChairman: 'Loraine Rocero-Pe Benito',
+  taForProgram: 'John Aaron R. Rapanut'
 }
 
 export const orgHeader = {

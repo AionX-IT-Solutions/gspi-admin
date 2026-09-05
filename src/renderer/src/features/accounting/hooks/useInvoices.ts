@@ -38,10 +38,16 @@ export function useInvoices() {
     return { overdue, notDueYet, paid }
   }, [invoiceList])
 
-  const filtered = useMemo(
-    () => (filter === 'all' ? invoiceList : invoiceList.filter((i) => i.status === filter)),
-    [invoiceList, filter]
-  )
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    const byStatus = filter === 'all' ? invoiceList : invoiceList.filter((i) => i.status === filter)
+    const q = search.trim().toLowerCase()
+    if (!q) return byStatus
+    return byStatus.filter(
+      (i) => i.number.toLowerCase().includes(q) || i.customerName.toLowerCase().includes(q)
+    )
+  }, [invoiceList, filter, search])
 
   return {
     loading,
@@ -53,6 +59,8 @@ export function useInvoices() {
     viewingId,
     setViewingId,
     creating,
-    setCreating
+    setCreating,
+    search,
+    setSearch
   }
 }

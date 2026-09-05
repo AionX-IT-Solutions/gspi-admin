@@ -6,7 +6,13 @@ import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { usePermissionsStore } from '@/app/store/permissions.store'
 import { resolveRoleLabel } from '@/app/lib/permissions'
@@ -31,6 +37,8 @@ export function Users() {
   const {
     loading,
     users,
+    search,
+    setSearch,
     showDialog,
     setShowDialog,
     editTarget,
@@ -44,10 +52,15 @@ export function Users() {
 
   const columns: Column<UserRow>[] = [
     { key: 'fullName', header: t('users.table.fullName') },
+    { key: 'email', header: t('users.table.email') },
     {
       key: 'role',
       header: t('users.table.role'),
-      render: (r) => <Badge variant="primary">{resolveRoleLabel(r.role, t, customRoles)}</Badge>
+      render: (r) => (
+        <Badge variant="primary">
+          {resolveRoleLabel(r.customRoleId ?? r.role, t, customRoles)}
+        </Badge>
+      )
     },
     {
       key: 'isActive',
@@ -88,6 +101,8 @@ export function Users() {
     }
   ]
 
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
+
   return (
     <motion.div
       key="users"
@@ -115,10 +130,21 @@ export function Users() {
         }
       />
 
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('users.searchPlaceholder')}
+        count={users.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
+        }
+      />
+
       <Card padding="0px">
         <DataTable
           columns={columns}
           data={users}
+          hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('users.emptyState')}
         />

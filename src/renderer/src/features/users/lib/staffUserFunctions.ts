@@ -1,38 +1,71 @@
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { db } from '@/shared/lib/firebase'
-import type { RoleId } from '@/app/lib/permissions'
+import type { UserRole } from '@/app/lib/permissions'
+import type { StaffAdminResult } from '../../../../../shared/staff-admin-types'
 
+/** `role` here is always a real built-in role — a custom role selection is resolved to
+ *  its base role (+ `customRoleId`) via resolveRoleAssignment() before it ever reaches
+ *  these functions. See useAddUserModal.ts / useEditUserModal.ts. */
 interface CreateStaffUserInput {
   email: string
   password: string
   fullName: string
-  role: RoleId
+  role: UserRole
+  customRoleId?: string | null
+}
+
+/** True when this machine has a service account key the main process can use — i.e. Add/Edit
+ *  User can create or change roles directly. Everywhere else, falls back to the CLI command. */
+export function isStaffAdminAvailable(): Promise<boolean> {
+  return window.api?.staffAdmin.isAvailable() ?? Promise.resolve(false)
+}
+
+export function createStaffUserDirect(input: CreateStaffUserInput): Promise<StaffAdminResult> {
+  return window.api.staffAdmin.createUser(input)
+}
+
+interface UpdateStaffUserDirectInput {
+  uid: string
+  fullName?: string
+  role?: UserRole
+  customRoleId?: string | null
+}
+
+export function updateStaffUserDirect(
+  input: UpdateStaffUserDirectInput
+): Promise<StaffAdminResult> {
+  return window.api.staffAdmin.updateUser(input)
 }
 
 /** Builds the exact `scripts/manageStaffUser.mjs create` command to run from a terminal.
- *  Account creation needs Admin SDK access, which this app deliberately never ships with —
- *  so it's a copy-pasteable CLI command instead of an in-app network call. */
+ *  Fallback for machines without a local service account key — see isStaffAdminAvailable(). */
 export function buildCreateStaffUserCommand(input: CreateStaffUserInput): string {
-  return [
+  const parts = [
     'node --env-file=.env scripts/manageStaffUser.mjs create',
     `--email="${input.email}"`,
     `--password="${input.password}"`,
     `--fullName="${input.fullName}"`,
     `--role=${input.role}`
-  ].join(' ')
+  ]
+  if (input.customRoleId) parts.push(`--customRoleId=${input.customRoleId}`)
+  return parts.join(' ')
 }
 
 interface UpdateStaffUserInput {
   uid: string
   fullName?: string
-  role?: RoleId
+  role?: UserRole
+  customRoleId?: string | null
 }
 
-/** Builds the exact `scripts/manageStaffUser.mjs update` command for a role/name change. */
+/** Builds the exact `scripts/manageStaffUser.mjs update` command for a role/name change.
+ *  `customRoleId: null` clears a previously-set custom role label (passed as `--customRoleId=`
+ *  with no value, which the script treats as "remove the field"). */
 export function buildUpdateStaffUserCommand(input: UpdateStaffUserInput): string {
   const parts = ['node --env-file=.env scripts/manageStaffUser.mjs update', `--uid=${input.uid}`]
   if (input.fullName) parts.push(`--fullName="${input.fullName}"`)
   if (input.role) parts.push(`--role=${input.role}`)
+  if (input.customRoleId !== undefined) parts.push(`--customRoleId=${input.customRoleId ?? ''}`)
   return parts.join(' ')
 }
 

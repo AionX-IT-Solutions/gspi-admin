@@ -5,7 +5,13 @@ import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Modal } from '@/shared/components/ui/Modal'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { FieldSelect } from '@/shared/components/ui/FormField'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import type { BiometricMethod } from '../types/hr.types'
@@ -18,6 +24,8 @@ export function EnrollmentTab() {
     loading,
     employees,
     enrollmentRows,
+    search,
+    setSearch,
     enrollTarget,
     setEnrollTarget,
     enrollMethod,
@@ -73,6 +81,8 @@ export function EnrollmentTab() {
     }
   ]
 
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
+
   return (
     <>
       <div
@@ -92,10 +102,20 @@ export function EnrollmentTab() {
         </div>
         <RefreshButton onRefresh={() => hydrate(true)} />
       </div>
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('biometricKiosk.searchPlaceholder')}
+        count={enrollmentRows.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
+        }
+      />
       <Card padding="0px">
         <DataTable
           columns={columns}
           data={enrollmentRows}
+          hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('biometricKiosk.empty')}
         />

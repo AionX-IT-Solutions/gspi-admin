@@ -44,3 +44,6 @@ functions/lib/
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+
+# Firestore data backups (may contain real org/member data)
+backups/

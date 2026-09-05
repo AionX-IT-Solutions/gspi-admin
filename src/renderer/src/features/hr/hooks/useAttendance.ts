@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 import { useHRStore } from '../store/hr.store'
-import { useAppStore } from '@/app/store/app.store'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { useToast } from '@/app/hooks/useToast'
 import { useTranslation } from 'react-i18next'
 import type { AttendanceRecord } from '../types/hr.types'
@@ -29,7 +29,8 @@ export function useAttendance() {
   const employees = useHRStore((s) => s.employees)
   const records = useHRStore((s) => s.attendance)
   const deleteAttendanceRecord = useHRStore((s) => s.deleteAttendanceRecord)
-  const isSuperAdmin = useAppStore((s) => s.currentUser?.role === 'super_admin')
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:attendance')
 
   const [dateFrom, setDateFrom] = useState(daysAgoIso(13))
   const [dateTo, setDateTo] = useState(todayIso())
@@ -63,7 +64,7 @@ export function useAttendance() {
   }, [rows])
 
   function handleConfirmDelete() {
-    if (!deleteTarget) return
+    if (!deleteTarget || !canManage) return
     deleteAttendanceRecord(deleteTarget.id)
     toast.success(t('attendance.toast.deleted'))
     setDeleteTarget(null)
@@ -82,7 +83,7 @@ export function useAttendance() {
     setEmployeeFilter,
     showDialog,
     setShowDialog,
-    isSuperAdmin,
+    canManage,
     deleteTarget,
     setDeleteTarget,
     handleConfirmDelete

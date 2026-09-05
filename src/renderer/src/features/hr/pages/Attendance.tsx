@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
-import { CalendarClock, Fingerprint, Plus, Trash2 } from 'lucide-react'
+import { CalendarClock, Fingerprint, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
@@ -56,11 +57,13 @@ export function Attendance() {
     setEmployeeFilter,
     showDialog,
     setShowDialog,
-    isSuperAdmin,
+    canManage,
     deleteTarget,
     setDeleteTarget,
     handleConfirmDelete
   } = useAttendance()
+
+  const [editingRecord, setEditingRecord] = useState<AttendanceRow | null>(null)
 
   const columns: Column<AttendanceRow>[] = [
     { key: 'date', header: t('attendance.table.date'), render: (r) => formatDate(r.date) },
@@ -104,7 +107,7 @@ export function Attendance() {
       )
     },
     { key: 'notes', header: t('attendance.table.notes'), render: (r) => r.notes ?? '—' },
-    ...(isSuperAdmin
+    ...(canManage
       ? [
           {
             key: 'id',
@@ -112,14 +115,27 @@ export function Attendance() {
             sortable: false,
             align: 'right' as const,
             render: (r: AttendanceRow) => (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setDeleteTarget(r)}
-                title={t('common.delete')}
-              >
-                <Trash2 size={13} />
-              </Button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditingRecord(r)
+                    setShowDialog(true)
+                  }}
+                  title={t('common.edit')}
+                >
+                  <Pencil size={13} />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setDeleteTarget(r)}
+                  title={t('common.delete')}
+                >
+                  <Trash2 size={13} />
+                </Button>
+              </div>
             )
           }
         ]
@@ -149,14 +165,19 @@ export function Attendance() {
             >
               {t('attendance.enrollmentButton')}
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={13} />}
-              onClick={() => setShowDialog(true)}
-            >
-              {t('attendance.manualEntryButton')}
-            </Button>
+            {canManage && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={13} />}
+                onClick={() => {
+                  setEditingRecord(null)
+                  setShowDialog(true)
+                }}
+              >
+                {t('attendance.manualEntryButton')}
+              </Button>
+            )}
           </>
         }
       />
@@ -244,7 +265,14 @@ export function Attendance() {
         />
       </Card>
 
-      <ManualAttendanceModal open={showDialog} onOpenChange={setShowDialog} />
+      <ManualAttendanceModal
+        open={showDialog}
+        onOpenChange={(o) => {
+          setShowDialog(o)
+          if (!o) setEditingRecord(null)
+        }}
+        editingRecord={editingRecord}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}

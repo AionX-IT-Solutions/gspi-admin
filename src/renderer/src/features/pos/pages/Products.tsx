@@ -47,6 +47,7 @@ export function Products() {
   const {
     loading,
     toast,
+    canManage,
     products,
     sales,
     purchases,
@@ -148,18 +149,20 @@ export function Products() {
     actionsColumn<Product>(
       (r) => (
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-          <Button
-            size="sm"
-            variant="ghost"
-            leftIcon={<PackagePlus size={12} />}
-            onClick={() => {
-              setRestockTarget(r)
-              setRestockQty(0)
-              setRestockCost(r.costPrice)
-            }}
-          >
-            {t('products.restockButton')}
-          </Button>
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              leftIcon={<PackagePlus size={12} />}
+              onClick={() => {
+                setRestockTarget(r)
+                setRestockQty(0)
+                setRestockCost(r.costPrice)
+              }}
+            >
+              {t('products.restockButton')}
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
@@ -168,17 +171,21 @@ export function Products() {
           >
             {t('products.printLabelButton')}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
-            <Pencil size={13} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setDeleteTarget(r)}
-            title={t('common.delete')}
-          >
-            <Trash2 size={13} />
-          </Button>
+          {canManage && (
+            <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
+              <Pencil size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDeleteTarget(r)}
+              title={t('common.delete')}
+            >
+              <Trash2 size={13} />
+            </Button>
+          )}
         </div>
       ),
       t('common.actions')
@@ -208,9 +215,11 @@ export function Products() {
               purchases={purchases}
               toast={toast}
             />
-            <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
-              {t('products.addButton')}
-            </Button>
+            {canManage && (
+              <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
+                {t('products.addButton')}
+              </Button>
+            )}
           </>
         }
       />

@@ -136,7 +136,7 @@ function accountLinesRows(voucher: Voucher): (string | number)[][] {
   return rows
 }
 
-export async function exportDisbursementVoucherPdf(voucher: Voucher) {
+export async function buildDisbursementVoucherPdfDoc(voucher: Voucher) {
   const doc = createPdf('portrait')
   let y = await addHeaderLines(doc, [
     { text: orgHeader.orgName, bold: true },
@@ -195,6 +195,11 @@ export async function exportDisbursementVoucherPdf(voucher: Voucher) {
       role: 'Council President'
     }
   ])
+  return doc
+}
+
+export async function exportDisbursementVoucherPdf(voucher: Voucher) {
+  const doc = await buildDisbursementVoucherPdfDoc(voucher)
   savePdf(doc, `DV_${voucher.voucherNumber.replace(/[^0-9a-z]/gi, '_')}.pdf`)
 }
 
@@ -350,7 +355,7 @@ function cashAdvanceRows(voucher: Voucher): (string | number)[][] {
   ]
 }
 
-export async function exportJournalVoucherPdf(voucher: Voucher) {
+export async function buildJournalVoucherPdfDoc(voucher: Voucher) {
   const doc = createPdf('portrait')
   let y = await addHeaderLines(doc, [
     { text: orgHeader.orgName, bold: true },
@@ -406,6 +411,11 @@ export async function exportJournalVoucherPdf(voucher: Voucher) {
       role: 'Council Auditor'
     }
   ])
+  return doc
+}
+
+export async function exportJournalVoucherPdf(voucher: Voucher) {
+  const doc = await buildJournalVoucherPdfDoc(voucher)
   savePdf(doc, `JV_${voucher.voucherNumber.replace(/[^0-9a-z]/gi, '_')}.pdf`)
 }
 

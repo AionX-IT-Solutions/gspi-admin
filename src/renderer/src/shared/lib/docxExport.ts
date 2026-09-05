@@ -75,30 +75,42 @@ function cell(
   })
 }
 
+export interface DocxGroupHeaderCell {
+  label: string
+  span: number
+}
+
+function headerCell(text: string, columnSpan?: number): TableCell {
+  return new TableCell({
+    columnSpan,
+    shading: { fill: '10B981' },
+    verticalAlign: VerticalAlign.CENTER,
+    margins: { top: 60, bottom: 60, left: 80, right: 80 },
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text, bold: true, color: 'FFFFFF', size: 16 })]
+      })
+    ]
+  })
+}
+
 export function buildTable(
   head: string[],
   rows: (string | number)[][],
-  footRow?: (string | number | null)[]
+  footRow?: (string | number | null)[],
+  groupHeader?: DocxGroupHeaderCell[]
 ): Table {
+  const groupHeaderRow = groupHeader
+    ? new TableRow({
+        tableHeader: true,
+        children: groupHeader.map((g) => headerCell(g.label, g.span > 1 ? g.span : undefined))
+      })
+    : null
+
   const headerRow =
     head.length > 0
-      ? new TableRow({
-          tableHeader: true,
-          children: head.map(
-            (h) =>
-              new TableCell({
-                shading: { fill: '6366F1' },
-                verticalAlign: VerticalAlign.CENTER,
-                margins: { top: 60, bottom: 60, left: 80, right: 80 },
-                children: [
-                  new Paragraph({
-                    alignment: AlignmentType.CENTER,
-                    children: [new TextRun({ text: h, bold: true, color: 'FFFFFF', size: 16 })]
-                  })
-                ]
-              })
-          )
-        })
+      ? new TableRow({ tableHeader: true, children: head.map((h) => headerCell(h)) })
       : null
 
   const bodyRows = rows.map(
@@ -108,7 +120,11 @@ export function buildTable(
       })
   )
 
-  const rowsAll = headerRow ? [headerRow, ...bodyRows] : bodyRows
+  const rowsAll = [
+    ...(groupHeaderRow ? [groupHeaderRow] : []),
+    ...(headerRow ? [headerRow] : []),
+    ...bodyRows
+  ]
   if (footRow) {
     rowsAll.push(
       new TableRow({

@@ -172,7 +172,10 @@ function createWindow(): void {
       // is refactored to avoid any direct Node API calls.
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      // plugins: true enables Chromium's built-in PDF viewer, which the "View"
+      // document preview modals rely on to render blob: PDF URLs in an <iframe>.
+      plugins: true
     }
   })
 

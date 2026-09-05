@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { AppearanceSection } from '../components/AppearanceSection'
 import { MembershipYearSection } from '../components/MembershipYearSection'
+import { PayrollSettingsSection } from '../components/PayrollSettingsSection'
 import { NotificationsSection } from '../components/NotificationsSection'
 import { SecuritySection } from '../components/SecuritySection'
 import { PrivacySection } from '../components/PrivacySection'
@@ -60,6 +61,14 @@ export function Settings() {
           transition={{ duration: 0.3, delay: 0.09 }}
         >
           <MembershipYearSection />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.11 }}
+        >
+          <PayrollSettingsSection />
         </motion.div>
 
         <motion.div

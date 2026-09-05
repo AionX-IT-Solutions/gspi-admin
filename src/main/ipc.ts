@@ -10,12 +10,14 @@ import {
 } from '../shared/ipc-types'
 import { hikvisionService } from './services/hikvision/HikvisionService'
 import { printerService } from './services/printing/PrinterService'
+import { staffAdminService } from './services/staffAdmin/StaffAdminService'
 import type {
   HikvisionDeviceConfigInput,
   HikvisionEnrollFacePayload,
   HikvisionEventSearchRange
 } from '../shared/hikvision-types'
 import type { PrinterConfig, SilentPrintRequest } from '../shared/printing-types'
+import type { CreateStaffUserRequest, UpdateStaffUserRequest } from '../shared/staff-admin-types'
 
 export function registerIpcHandlers(): void {
   // ── App ──────────────────────────────────────────────────────────────────────
@@ -125,5 +127,14 @@ export function registerIpcHandlers(): void {
   )
   ipcMain.handle(IPC_CHANNELS.PRINTER_SILENT_PRINT, (_, request: SilentPrintRequest) =>
     printerService.silentPrint(request)
+  )
+
+  // ── Staff account admin (Admin SDK, local service account key only) ────────
+  ipcMain.handle(IPC_CHANNELS.STAFF_ADMIN_IS_AVAILABLE, () => staffAdminService.isAvailable())
+  ipcMain.handle(IPC_CHANNELS.STAFF_ADMIN_CREATE_USER, (_, input: CreateStaffUserRequest) =>
+    staffAdminService.createUser(input)
+  )
+  ipcMain.handle(IPC_CHANNELS.STAFF_ADMIN_UPDATE_USER, (_, input: UpdateStaffUserRequest) =>
+    staffAdminService.updateUser(input)
   )
 }

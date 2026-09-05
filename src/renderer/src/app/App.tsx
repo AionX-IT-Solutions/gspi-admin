@@ -20,20 +20,22 @@ import { MODULE_PERMISSIONS } from './lib/permissions'
 const Dashboard = lazy(() =>
   import('@/features/dashboard/pages/Dashboard').then((m) => ({ default: m.Dashboard }))
 )
+const Announcements = lazy(() =>
+  import('@/features/announcements/pages/Announcements').then((m) => ({
+    default: m.Announcements
+  }))
+)
+const Budget = lazy(() =>
+  import('@/features/budget/pages/Budget').then((m) => ({ default: m.Budget }))
+)
 const Invoices = lazy(() =>
   import('@/features/accounting/pages/Invoices').then((m) => ({ default: m.Invoices }))
 )
 const Customers = lazy(() =>
   import('@/features/accounting/pages/Customers').then((m) => ({ default: m.Customers }))
 )
-const Expenses = lazy(() =>
-  import('@/features/accounting/pages/Expenses').then((m) => ({ default: m.Expenses }))
-)
 const Vendors = lazy(() =>
   import('@/features/accounting/pages/Vendors').then((m) => ({ default: m.Vendors }))
-)
-const Items = lazy(() =>
-  import('@/features/accounting/pages/Items').then((m) => ({ default: m.Items }))
 )
 const Reports = lazy(() =>
   import('@/features/accounting/pages/Reports').then((m) => ({ default: m.Reports }))
@@ -48,6 +50,9 @@ const Profile = lazy(() =>
   import('@/features/profile/pages/Profile').then((m) => ({ default: m.Profile }))
 )
 const About = lazy(() => import('@/features/about/pages/About').then((m) => ({ default: m.About })))
+const Manual = lazy(() =>
+  import('@/features/manual/pages/Manual').then((m) => ({ default: m.Manual }))
+)
 const Login = lazy(() => import('@/features/auth/pages/Login').then((m) => ({ default: m.Login })))
 const POS = lazy(() => import('@/features/pos/pages/POS').then((m) => ({ default: m.POS })))
 const Products = lazy(() =>
@@ -89,6 +94,14 @@ const Vouchers = lazy(() =>
 const Rentals = lazy(() =>
   import('@/features/rentals/pages/Rentals').then((m) => ({ default: m.Rentals }))
 )
+const Visitors = lazy(() =>
+  import('@/features/visitors/pages/Visitors').then((m) => ({ default: m.Visitors }))
+)
+const FacilityCalendar = lazy(() =>
+  import('@/features/facility-calendar/pages/FacilityCalendar').then((m) => ({
+    default: m.FacilityCalendar
+  }))
+)
 const UsersPage = lazy(() =>
   import('@/features/users/pages/Users').then((m) => ({ default: m.Users }))
 )
@@ -97,6 +110,16 @@ const AuditLog = lazy(() =>
 )
 const SCRD = lazy(() => import('@/features/scrd/pages/SCRD').then((m) => ({ default: m.SCRD })))
 const Goals = lazy(() => import('@/features/goals/pages/Goals').then((m) => ({ default: m.Goals })))
+const ProgramReports = lazy(() =>
+  import('@/features/programReports/pages/ProgramReports').then((m) => ({
+    default: m.ProgramReports
+  }))
+)
+const TrainingReports = lazy(() =>
+  import('@/features/trainingReports/pages/TrainingReports').then((m) => ({
+    default: m.TrainingReports
+  }))
+)
 
 function PageLoader() {
   return (
@@ -146,6 +169,22 @@ function AuthenticatedShell() {
                   element={
                     <RequirePermission permission={MODULE_PERMISSIONS.dashboard}>
                       <Dashboard />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/announcements"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.announcements}>
+                      <Announcements />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/budget"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.budget}>
+                      <Budget />
                     </RequirePermission>
                   }
                 />
@@ -262,6 +301,22 @@ function AuthenticatedShell() {
                   }
                 />
                 <Route
+                  path="/visitors"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.visitors}>
+                      <Visitors />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/facility-calendar"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.facilityCalendar}>
+                      <FacilityCalendar />
+                    </RequirePermission>
+                  }
+                />
+                <Route
                   path="/users"
                   element={
                     <RequirePermission permission={MODULE_PERMISSIONS.users}>
@@ -302,26 +357,10 @@ function AuthenticatedShell() {
                   }
                 />
                 <Route
-                  path="/expenses"
-                  element={
-                    <RequirePermission permission={MODULE_PERMISSIONS.expenses}>
-                      <Expenses />
-                    </RequirePermission>
-                  }
-                />
-                <Route
                   path="/vendors"
                   element={
                     <RequirePermission permission={MODULE_PERMISSIONS.vendors}>
                       <Vendors />
-                    </RequirePermission>
-                  }
-                />
-                <Route
-                  path="/items"
-                  element={
-                    <RequirePermission permission={MODULE_PERMISSIONS.items}>
-                      <Items />
                     </RequirePermission>
                   }
                 />
@@ -341,9 +380,33 @@ function AuthenticatedShell() {
                     </RequirePermission>
                   }
                 />
+                <Route
+                  path="/program-reports"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.programReports}>
+                      <ProgramReports />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/training-reports"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.trainingReports}>
+                      <TrainingReports />
+                    </RequirePermission>
+                  }
+                />
                 <Route path="/settings" element={<Settings />} />
-                <Route path="/devices" element={<Devices />} />
+                <Route
+                  path="/devices"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.devices}>
+                      <Devices />
+                    </RequirePermission>
+                  }
+                />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/manual" element={<Manual />} />
                 <Route path="/about" element={<About />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>

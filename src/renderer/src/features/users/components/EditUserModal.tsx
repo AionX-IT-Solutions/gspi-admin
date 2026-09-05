@@ -15,8 +15,16 @@ interface EditUserModalProps {
 
 export function EditUserModal({ target, onClose }: EditUserModalProps) {
   const { t } = useTranslation()
-  const { form, setForm, generatedCommand, roleChanged, saving, handleSave, handleCopy } =
-    useEditUserModal(target, onClose)
+  const {
+    form,
+    setForm,
+    generatedCommand,
+    directAvailable,
+    roleChanged,
+    saving,
+    handleSave,
+    handleCopy
+  } = useEditUserModal(target, onClose)
   const roleOptions = useUserRoleOptions(target?.uid)
 
   return (
@@ -39,7 +47,9 @@ export function EditUserModal({ target, onClose }: EditUserModalProps) {
               {t('common.cancel')}
             </Button>
             <Button variant="primary" size="sm" loading={saving} onClick={handleSave}>
-              {roleChanged ? t('users.editModal.generateButton') : t('common.save')}
+              {roleChanged && !directAvailable
+                ? t('users.editModal.generateButton')
+                : t('common.save')}
             </Button>
           </>
         )
@@ -90,7 +100,7 @@ export function EditUserModal({ target, onClose }: EditUserModalProps) {
               options={roleOptions}
             />
           </FormField>
-          {roleChanged && (
+          {roleChanged && !directAvailable && (
             <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>
               {t('users.editModal.roleChangeHint')}
             </p>

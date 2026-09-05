@@ -37,20 +37,6 @@ export interface Customer {
   avatarColor: string
 }
 
-export type ExpenseStatus = 'paid' | 'unpaid'
-
-export interface Expense {
-  id: string
-  vendorId: string
-  vendorName: string
-  date: string
-  category: string
-  paymentMethod: string
-  amount: number
-  status: ExpenseStatus
-  memo?: string
-}
-
 export interface Vendor {
   id: string
   name: string
@@ -61,20 +47,6 @@ export interface Vendor {
   balance: number
   status: 'active' | 'inactive'
   avatarColor: string
-}
-
-export type ItemType = 'service' | 'product' | 'inventory'
-
-export interface Item {
-  id: string
-  name: string
-  sku: string
-  type: ItemType
-  description: string
-  salesPrice: number
-  cost: number
-  qtyOnHand?: number
-  incomeAccount: string
 }
 
 export interface Account {

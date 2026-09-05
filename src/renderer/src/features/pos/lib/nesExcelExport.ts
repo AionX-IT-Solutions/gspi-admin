@@ -16,6 +16,7 @@ import {
   saveDocx
 } from '@/shared/lib/docxExport'
 import { addWorksheetLogo } from '@/shared/lib/excelReport'
+import { type ReportPeriodType, reportPeriodHeading } from './periodRange'
 
 function downloadWorkbook(wb: ExcelJS.Workbook, filename: string) {
   wb.xlsx.writeBuffer().then((buffer) => {
@@ -55,17 +56,21 @@ function computeSalesReportRows(sales: Sale[]) {
 
 // Matches the Council's actual "CES/NES Monthly Sales Report" — the report
 // submitted for the National Equipment Service (uniform/merchandise store).
-export async function exportMonthlySalesReport(sales: Sale[], monthLabel: string) {
+export async function exportMonthlySalesReport(
+  sales: Sale[],
+  monthLabel: string,
+  periodType: ReportPeriodType = 'monthly'
+) {
   const wb = new ExcelJS.Workbook()
-  const sheet = wb.addWorksheet('Monthly Sales Report')
-  await addWorksheetLogo(wb, sheet)
+  const sheet = wb.addWorksheet('Sales Report')
   sheet.columns = [{ width: 4 }, { width: 34 }, { width: 12 }, { width: 14 }, { width: 14 }]
+  await addWorksheetLogo(wb, sheet, { startCol: 2, endCol: 5 })
 
   const headerLines = [
     orgHeader.orgName,
     orgHeader.region,
     orgHeader.council,
-    `CES Monthly Sales Report for ${monthLabel}`
+    `CES ${reportPeriodHeading(periodType)} Sales Report for ${monthLabel}`
   ]
   headerLines.forEach((line, i) => {
     sheet.mergeCells(i + 1, 2, i + 1, 5)
@@ -127,17 +132,28 @@ export async function exportMonthlySalesReport(sales: Sale[], monthLabel: string
   sheet.getCell(r, 2).value = 'C.E.S. In-Charge'
   sheet.getCell(r, 4).value = 'Accounting Clerk'
 
-  downloadWorkbook(wb, `NES_Monthly_Sales_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`)
+  downloadWorkbook(
+    wb,
+    `NES_${reportPeriodHeading(periodType).replace(/\s+/g, '_')}_Sales_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`
+  )
 }
 
-export async function exportMonthlySalesReportPdf(sales: Sale[], monthLabel: string) {
+export async function buildMonthlySalesReportPdfDoc(
+  sales: Sale[],
+  monthLabel: string,
+  periodType: ReportPeriodType = 'monthly'
+) {
   const { rows, totalQty, totalAmount } = computeSalesReportRows(sales)
   const doc = createPdf('portrait')
   let y = await addHeaderLines(doc, [
     { text: orgHeader.orgName, bold: true },
     { text: orgHeader.region },
     { text: orgHeader.council },
-    { text: `CES Monthly Sales Report for ${monthLabel}`, bold: true, size: 12 }
+    {
+      text: `CES ${reportPeriodHeading(periodType)} Sales Report for ${monthLabel}`,
+      bold: true,
+      size: 12
+    }
   ])
   y = addTable(doc, {
     startY: y,
@@ -158,17 +174,37 @@ export async function exportMonthlySalesReportPdf(sales: Sale[], monthLabel: str
       role: 'Accounting Clerk'
     }
   ])
-  savePdf(doc, `NES_Monthly_Sales_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`)
+  return doc
 }
 
-export async function exportMonthlySalesReportDocx(sales: Sale[], monthLabel: string) {
+export async function exportMonthlySalesReportPdf(
+  sales: Sale[],
+  monthLabel: string,
+  periodType: ReportPeriodType = 'monthly'
+) {
+  const doc = await buildMonthlySalesReportPdfDoc(sales, monthLabel, periodType)
+  savePdf(
+    doc,
+    `NES_${reportPeriodHeading(periodType).replace(/\s+/g, '_')}_Sales_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`
+  )
+}
+
+export async function exportMonthlySalesReportDocx(
+  sales: Sale[],
+  monthLabel: string,
+  periodType: ReportPeriodType = 'monthly'
+) {
   const { rows, totalQty, totalAmount } = computeSalesReportRows(sales)
   const children = [
     ...(await headerParagraphs([
       { text: orgHeader.orgName, bold: true },
       { text: orgHeader.region },
       { text: orgHeader.council },
-      { text: `CES Monthly Sales Report for ${monthLabel}`, bold: true, size: 24 }
+      {
+        text: `CES ${reportPeriodHeading(periodType)} Sales Report for ${monthLabel}`,
+        bold: true,
+        size: 24
+      }
     ])),
     spacer(),
     buildTable(['Particulars', 'Quantity', 'Selling Price', 'Amount'], rows, [
@@ -194,16 +230,25 @@ export async function exportMonthlySalesReportDocx(sales: Sale[], monthLabel: st
   ]
   await saveDocx(
     children,
-    `NES_Monthly_Sales_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.docx`
+    `NES_${reportPeriodHeading(periodType).replace(/\s+/g, '_')}_Sales_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.docx`
   )
 }
 
-export type IncomeStatementPeriodType = 'monthly' | 'quarterly'
-
-function incomeStatementPeriodLine(periodType: IncomeStatementPeriodType, periodLabel: string) {
-  return periodType === 'quarterly'
-    ? `For the Quarter Ended ${periodLabel}`
-    : `For the Month of ${periodLabel}`
+function incomeStatementPeriodLine(periodType: ReportPeriodType, periodLabel: string) {
+  switch (periodType) {
+    case 'daily':
+      return `For the Day of ${periodLabel}`
+    case 'weekly':
+      return `For the Week of ${periodLabel}`
+    case 'quarterly':
+      return `For the Quarter Ended ${periodLabel}`
+    case 'annually':
+      return `For the Year ${periodLabel}`
+    case 'custom':
+      return `For the Period ${periodLabel}`
+    default:
+      return `For the Month of ${periodLabel}`
+  }
 }
 
 // Matches the Council's actual "NES Income Statement" (periodic inventory method),
@@ -211,7 +256,7 @@ function incomeStatementPeriodLine(periodType: IncomeStatementPeriodType, period
 // "Quarterly IS.xlsx" reference — same rows, only the period line changes).
 export async function exportNesIncomeStatement(params: {
   monthLabel: string
-  periodType?: IncomeStatementPeriodType
+  periodType?: ReportPeriodType
   beginningInventory: number
   purchases: number
   endingInventory: number
@@ -220,7 +265,6 @@ export async function exportNesIncomeStatement(params: {
   const periodType = params.periodType ?? 'monthly'
   const wb = new ExcelJS.Workbook()
   const sheet = wb.addWorksheet('NES Income Statement')
-  await addWorksheetLogo(wb, sheet)
   sheet.columns = [
     { width: 4 },
     { width: 4 },
@@ -230,6 +274,7 @@ export async function exportNesIncomeStatement(params: {
     { width: 6 },
     { width: 16 }
   ]
+  await addWorksheetLogo(wb, sheet, { startCol: 3, endCol: 7 })
 
   const headerLines = [
     orgHeader.orgName,
@@ -301,6 +346,7 @@ export async function exportNesIncomeStatement(params: {
   r++
   sheet.getCell(r, 7).value = 'Council Executive'
   r += 3
+  sheet.getCell(r, 3).value = 'Recommending Approval:'
   sheet.getCell(r, 7).value = 'Approved:'
   r += 2
   sheet.getCell(r, 3).value = signatories.nesCommitteeChairman.toUpperCase()
@@ -324,14 +370,16 @@ function nesIncomeStatementFigures(params: {
   return { totalAvailable, cogs, netIncome }
 }
 
-export async function exportNesIncomeStatementPdf(params: {
+interface NesIncomeStatementParams {
   monthLabel: string
-  periodType?: IncomeStatementPeriodType
+  periodType?: ReportPeriodType
   beginningInventory: number
   purchases: number
   endingInventory: number
   cashSales: number
-}) {
+}
+
+export async function buildNesIncomeStatementPdfDoc(params: NesIncomeStatementParams) {
   const periodType = params.periodType ?? 'monthly'
   const { totalAvailable, cogs, netIncome } = nesIncomeStatementFigures(params)
   const doc = createPdf('portrait')
@@ -379,18 +427,27 @@ export async function exportNesIncomeStatementPdf(params: {
   ])
   addSignatories(doc, y, [
     {
-      label: 'Approved:',
+      label: 'Recommending Approval:',
       name: signatories.nesCommitteeChairman.toUpperCase(),
       role: 'Chairman - NES Committee'
     },
-    { label: '', name: signatories.councilPresident.toUpperCase(), role: 'Council President' }
+    {
+      label: 'Approved:',
+      name: signatories.councilPresident.toUpperCase(),
+      role: 'Council President'
+    }
   ])
+  return doc
+}
+
+export async function exportNesIncomeStatementPdf(params: NesIncomeStatementParams) {
+  const doc = await buildNesIncomeStatementPdfDoc(params)
   savePdf(doc, `NES_Income_Statement_${params.monthLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`)
 }
 
 export async function exportNesIncomeStatementDocx(params: {
   monthLabel: string
-  periodType?: IncomeStatementPeriodType
+  periodType?: ReportPeriodType
   beginningInventory: number
   purchases: number
   endingInventory: number
@@ -446,11 +503,15 @@ export async function exportNesIncomeStatementDocx(params: {
     spacer(),
     signatoryTable([
       {
-        label: 'Approved:',
+        label: 'Recommending Approval:',
         name: signatories.nesCommitteeChairman.toUpperCase(),
         role: 'Chairman - NES Committee'
       },
-      { label: '', name: signatories.councilPresident.toUpperCase(), role: 'Council President' }
+      {
+        label: 'Approved:',
+        name: signatories.councilPresident.toUpperCase(),
+        role: 'Council President'
+      }
     ])
   ]
   await saveDocx(
@@ -520,13 +581,13 @@ export async function exportMonthlyInventoryReport(
   products: Product[],
   sales: Sale[],
   purchases: Purchase[],
-  monthLabel: string
+  monthLabel: string,
+  periodType: ReportPeriodType = 'monthly'
 ) {
   const movements = computeInventoryMovements(products, sales, purchases)
 
   const wb = new ExcelJS.Workbook()
-  const sheet = wb.addWorksheet('Monthly Inventory Report')
-  await addWorksheetLogo(wb, sheet)
+  const sheet = wb.addWorksheet('Inventory Report')
   sheet.columns = [
     { width: 26 },
     { width: 10 },
@@ -541,8 +602,14 @@ export async function exportMonthlyInventoryReport(
     { width: 12 },
     { width: 12 }
   ]
+  await addWorksheetLogo(wb, sheet)
 
-  const headerLines = [orgHeader.orgName, orgHeader.council, 'Monthly Inventory Report', monthLabel]
+  const headerLines = [
+    orgHeader.orgName,
+    orgHeader.council,
+    `${reportPeriodHeading(periodType)} Inventory Report`,
+    monthLabel
+  ]
   headerLines.forEach((line, i) => {
     sheet.mergeCells(i + 1, 1, i + 1, 12)
     const cell = sheet.getCell(i + 1, 1)
@@ -637,7 +704,7 @@ export async function exportMonthlyInventoryReport(
 
   downloadWorkbook(
     wb,
-    `NES_Monthly_Inventory_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`
+    `NES_${reportPeriodHeading(periodType).replace(/\s+/g, '_')}_Inventory_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`
   )
 }
 
@@ -710,11 +777,12 @@ function inventoryReportRows(movements: InventoryMovement[]) {
   return { rows, totalsRow }
 }
 
-export async function exportMonthlyInventoryReportPdf(
+export async function buildMonthlyInventoryReportPdfDoc(
   products: Product[],
   sales: Sale[],
   purchases: Purchase[],
-  monthLabel: string
+  monthLabel: string,
+  periodType: ReportPeriodType = 'monthly'
 ) {
   const movements = computeInventoryMovements(products, sales, purchases)
   const { rows, totalsRow } = inventoryReportRows(movements)
@@ -722,7 +790,7 @@ export async function exportMonthlyInventoryReportPdf(
   const y = await addHeaderLines(doc, [
     { text: orgHeader.orgName, bold: true },
     { text: orgHeader.council },
-    { text: 'Monthly Inventory Report', bold: true, size: 12 },
+    { text: `${reportPeriodHeading(periodType)} Inventory Report`, bold: true, size: 12 },
     { text: monthLabel }
   ])
   addTable(doc, {
@@ -734,14 +802,35 @@ export async function exportMonthlyInventoryReportPdf(
       Array.from({ length: 11 }, (_, i) => [i + 1, { halign: 'right' as const }])
     )
   })
-  savePdf(doc, `NES_Monthly_Inventory_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`)
+  return doc
+}
+
+export async function exportMonthlyInventoryReportPdf(
+  products: Product[],
+  sales: Sale[],
+  purchases: Purchase[],
+  monthLabel: string,
+  periodType: ReportPeriodType = 'monthly'
+) {
+  const doc = await buildMonthlyInventoryReportPdfDoc(
+    products,
+    sales,
+    purchases,
+    monthLabel,
+    periodType
+  )
+  savePdf(
+    doc,
+    `NES_${reportPeriodHeading(periodType).replace(/\s+/g, '_')}_Inventory_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`
+  )
 }
 
 export async function exportMonthlyInventoryReportDocx(
   products: Product[],
   sales: Sale[],
   purchases: Purchase[],
-  monthLabel: string
+  monthLabel: string,
+  periodType: ReportPeriodType = 'monthly'
 ) {
   const movements = computeInventoryMovements(products, sales, purchases)
   const { rows, totalsRow } = inventoryReportRows(movements)
@@ -749,7 +838,7 @@ export async function exportMonthlyInventoryReportDocx(
     ...(await headerParagraphs([
       { text: orgHeader.orgName, bold: true },
       { text: orgHeader.council },
-      { text: 'Monthly Inventory Report', bold: true, size: 24 },
+      { text: `${reportPeriodHeading(periodType)} Inventory Report`, bold: true, size: 24 },
       { text: monthLabel }
     ])),
     spacer(),
@@ -757,7 +846,7 @@ export async function exportMonthlyInventoryReportDocx(
   ]
   await saveDocx(
     children,
-    `NES_Monthly_Inventory_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.docx`,
+    `NES_${reportPeriodHeading(periodType).replace(/\s+/g, '_')}_Inventory_Report_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.docx`,
     true
   )
 }

@@ -61,15 +61,17 @@ const COMP_TIME_MIN_OVERTIME_HOURS = 4
 const CREDIT_EXPIRY_MONTHS = 3
 export const COMP_TIME_LEAVE_TYPE_ID = 'lt-comp-time'
 
-// GSPI official workday start — zero grace period, any clock-in after this instant is Late.
+// GSPI official workday start, plus a 15-minute grace period — a clock-in past
+// 8:15 AM is Late; anything at or before that is on time.
 const WORK_START_HOUR = 8
 const WORK_START_MINUTE = 0
+const LATE_GRACE_PERIOD_MINUTES = 15
 
 export function isLateClockIn(clockInIso: string): boolean {
   const clockIn = new Date(clockInIso)
-  const workStart = new Date(clockIn)
-  workStart.setHours(WORK_START_HOUR, WORK_START_MINUTE, 0, 0)
-  return clockIn.getTime() > workStart.getTime()
+  const graceDeadline = new Date(clockIn)
+  graceDeadline.setHours(WORK_START_HOUR, WORK_START_MINUTE + LATE_GRACE_PERIOD_MINUTES, 0, 0)
+  return clockIn.getTime() > graceDeadline.getTime()
 }
 
 export function statusForHoursWorked(hoursWorked: number): AttendanceStatus {
@@ -157,6 +159,8 @@ interface HRState {
   updateLeaveTypeCredits: (leaveTypeId: string, defaultAnnualCredits: number) => void
 
   addPayrollEntry: (entry: PayrollEntry) => void
+  updatePayrollEntry: (id: string, patch: Partial<PayrollEntry>) => void
+  deletePayrollEntry: (id: string) => void
   setPayrollStatus: (id: string, status: PayrollStatus) => void
 }
 
@@ -710,6 +714,28 @@ export const useHRStore = create<HRState>()((set, get) => ({
       actorName: actorName(),
       entityType: 'payroll',
       summary: `Payroll entry ${entry.payrollNumber} created for ${emp?.fullName ?? 'employee'}.`
+    })
+  },
+  updatePayrollEntry: (id, patch) => {
+    set((s) => ({ payroll: s.payroll.map((p) => (p.id === id ? { ...p, ...patch } : p)) }))
+    const entry = get().payroll.find((p) => p.id === id)
+    if (entry) persist('payroll', id, entry)
+    appendAuditLog({
+      action: 'payroll_updated',
+      actorName: actorName(),
+      entityType: 'payroll',
+      summary: `Payroll entry ${entry?.payrollNumber ?? id} updated.`
+    })
+  },
+  deletePayrollEntry: (id) => {
+    const entry = get().payroll.find((p) => p.id === id)
+    set((s) => ({ payroll: s.payroll.filter((p) => p.id !== id) }))
+    deleteDocById('payroll', id)
+    appendAuditLog({
+      action: 'payroll_deleted',
+      actorName: actorName(),
+      entityType: 'payroll',
+      summary: `Payroll entry ${entry?.payrollNumber ?? id} deleted.`
     })
   },
   setPayrollStatus: (id, status) => {

@@ -20,6 +20,11 @@ import type {
   SilentPrintRequest,
   SilentPrintResult
 } from '../../../../shared/printing-types'
+import type {
+  CreateStaffUserRequest,
+  StaffAdminResult,
+  UpdateStaffUserRequest
+} from '../../../../shared/staff-admin-types'
 
 declare global {
   interface Window {
@@ -69,6 +74,11 @@ declare global {
         getConfig: () => Promise<PrinterConfig>
         saveConfig: (patch: Partial<PrinterConfig>) => Promise<PrinterConfig>
         silentPrint: (request: SilentPrintRequest) => Promise<SilentPrintResult>
+      }
+      staffAdmin: {
+        isAvailable: () => Promise<boolean>
+        createUser: (input: CreateStaffUserRequest) => Promise<StaffAdminResult>
+        updateUser: (input: UpdateStaffUserRequest) => Promise<StaffAdminResult>
       }
     }
   }

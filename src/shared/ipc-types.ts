@@ -34,7 +34,10 @@ export const IPC_CHANNELS = {
   PRINTER_LIST: 'printer:list',
   PRINTER_GET_CONFIG: 'printer:getConfig',
   PRINTER_SAVE_CONFIG: 'printer:saveConfig',
-  PRINTER_SILENT_PRINT: 'printer:silentPrint'
+  PRINTER_SILENT_PRINT: 'printer:silentPrint',
+  STAFF_ADMIN_IS_AVAILABLE: 'staffAdmin:isAvailable',
+  STAFF_ADMIN_CREATE_USER: 'staffAdmin:createUser',
+  STAFF_ADMIN_UPDATE_USER: 'staffAdmin:updateUser'
 } as const
 
 export type IpcChannels = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

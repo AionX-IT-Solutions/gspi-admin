@@ -157,7 +157,7 @@ export async function exportCashReceiptsJournal(
   downloadWorkbook(wb, `Cash_Receipts_Journal_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`)
 }
 
-export async function exportCashReceiptsJournalPdf(
+export async function buildCashReceiptsJournalPdfDoc(
   rows: JournalRow[],
   monthLabel: string,
   bankAccountNames: string[]
@@ -184,6 +184,15 @@ export async function exportCashReceiptsJournalPdf(
       Array.from({ length: allCols.length - 4 }, (_, i) => [4 + i, { halign: 'right' as const }])
     )
   })
+  return doc
+}
+
+export async function exportCashReceiptsJournalPdf(
+  rows: JournalRow[],
+  monthLabel: string,
+  bankAccountNames: string[]
+) {
+  const doc = await buildCashReceiptsJournalPdfDoc(rows, monthLabel, bankAccountNames)
   savePdf(doc, `Cash_Receipts_Journal_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`)
 }
 
@@ -240,7 +249,7 @@ export async function exportCashDisbursementJournal(
   downloadWorkbook(wb, `Cash_Disbursement_Journal_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`)
 }
 
-export async function exportCashDisbursementJournalPdf(
+export async function buildCashDisbursementJournalPdfDoc(
   rows: JournalRow[],
   monthLabel: string,
   bankAccountNames: string[]
@@ -267,6 +276,15 @@ export async function exportCashDisbursementJournalPdf(
       Array.from({ length: allCols.length - 4 }, (_, i) => [4 + i, { halign: 'right' as const }])
     )
   })
+  return doc
+}
+
+export async function exportCashDisbursementJournalPdf(
+  rows: JournalRow[],
+  monthLabel: string,
+  bankAccountNames: string[]
+) {
+  const doc = await buildCashDisbursementJournalPdfDoc(rows, monthLabel, bankAccountNames)
   savePdf(doc, `Cash_Disbursement_Journal_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`)
 }
 
@@ -493,7 +511,7 @@ export async function exportSCRDSummary(params: SCRDSummaryParams) {
   downloadWorkbook(wb, `SCRD_${params.monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`)
 }
 
-export async function exportSCRDSummaryPdf(params: SCRDSummaryParams) {
+export async function buildSCRDSummaryPdfDoc(params: SCRDSummaryParams) {
   const { rows } = scrdSummaryRows(params)
   const doc = createPdf('portrait')
   const y = await addHeaderLines(doc, [
@@ -509,6 +527,11 @@ export async function exportSCRDSummaryPdf(params: SCRDSummaryParams) {
     body: rows,
     columnStyles: { 1: { halign: 'right' } }
   })
+  return doc
+}
+
+export async function exportSCRDSummaryPdf(params: SCRDSummaryParams) {
+  const doc = await buildSCRDSummaryPdfDoc(params)
   savePdf(doc, `SCRD_${params.monthLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`)
 }
 

@@ -44,7 +44,7 @@ export async function addHeaderLines(
 }
 
 export interface PdfTableOptions {
-  head: string[][]
+  head: NonNullable<UserOptions['head']>
   body: (string | number)[][]
   foot?: (string | number)[][]
   startY: number
@@ -65,8 +65,8 @@ export function addTable(doc: jsPDF, opts: PdfTableOptions): number {
       lineColor: [220, 220, 230],
       lineWidth: 0.5
     },
-    headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold', halign: 'center' },
-    footStyles: { fillColor: [237, 237, 250], textColor: [18, 18, 42], fontStyle: 'bold' },
+    headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold', halign: 'center' },
+    footStyles: { fillColor: [219, 246, 235], textColor: [18, 18, 42], fontStyle: 'bold' },
     columnStyles: opts.columnStyles,
     margin: { left: 30, right: 30 }
   })
@@ -84,25 +84,41 @@ export function addSignatories(doc: jsPDF, startY: number, columns: PdfSignatory
   const margin = 30
   const usableWidth = pageWidth - margin * 2
   const colWidth = usableWidth / columns.length
+  // Leave a gap so a long signatory name wraps within its own column instead of
+  // bleeding into the next one (e.g. long officer full names on the DV/JV templates).
+  const textWidth = colWidth - 14
   let y = startY + 30
 
   doc.setFontSize(8.5)
   doc.setFont('helvetica', 'normal')
-  columns.forEach((col, i) => doc.text(col.label, margin + colWidth * i, y))
+  const labelLines = columns.map((col) => doc.splitTextToSize(col.label, textWidth) as string[])
+  labelLines.forEach((lines, i) => doc.text(lines, margin + colWidth * i, y))
+  y += 34 + (Math.max(1, ...labelLines.map((l) => l.length)) - 1) * 10
 
-  y += 34
   doc.setFontSize(9.5)
   doc.setFont('helvetica', 'bold')
-  columns.forEach((col, i) => doc.text(col.name, margin + colWidth * i, y))
+  const nameLines = columns.map((col) => doc.splitTextToSize(col.name, textWidth) as string[])
+  nameLines.forEach((lines, i) => doc.text(lines, margin + colWidth * i, y))
+  y += 12 + (Math.max(1, ...nameLines.map((l) => l.length)) - 1) * 11
 
-  y += 12
   doc.setFontSize(8.5)
   doc.setFont('helvetica', 'normal')
-  columns.forEach((col, i) => doc.text(col.role, margin + colWidth * i, y))
+  const roleLines = columns.map((col) => doc.splitTextToSize(col.role, textWidth) as string[])
+  roleLines.forEach((lines, i) => doc.text(lines, margin + colWidth * i, y))
+  y += (Math.max(1, ...roleLines.map((l) => l.length)) - 1) * 10
 
   return y
 }
 
 export function savePdf(doc: jsPDF, filename: string): void {
   doc.save(filename)
+}
+
+/** Returns a `blob:` URL for an in-app preview instead of forcing a download — Electron's
+ *  Chromium renders PDFs natively from a blob URL in an <iframe>, no extra dependency
+ *  needed. Caller owns the URL's lifecycle (URL.revokeObjectURL when the preview closes).
+ *  jsPDF's types claim 'bloburl' returns a URL object, but at runtime it's the raw string
+ *  from URL.createObjectURL() — casting through unknown to match what actually comes back. */
+export function previewPdf(doc: jsPDF): string {
+  return doc.output('bloburl') as unknown as string
 }

@@ -7,17 +7,17 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
+  BookOpen,
   FileText,
   Users,
-  Receipt,
   Truck,
-  Package,
   BarChart3,
   ShoppingCart,
   Boxes,
   UserCog,
   Fingerprint,
   CalendarClock,
+  CalendarDays,
   Wallet,
   Briefcase,
   Calculator,
@@ -29,7 +29,11 @@ import {
   Target,
   Usb,
   Network,
-  Tent
+  Tent,
+  UserCheck,
+  GraduationCap,
+  Megaphone,
+  Wallet2
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -68,10 +72,10 @@ const coreNavItems: NavItem[] = [
     permission: MODULE_PERMISSIONS.dashboard
   },
   {
-    path: '/troops',
-    labelKey: 'sidebar.nav.troops',
-    icon: <Tent size={16} />,
-    permission: MODULE_PERMISSIONS.troops
+    path: '/announcements',
+    labelKey: 'sidebar.nav.announcements',
+    icon: <Megaphone size={16} />,
+    permission: MODULE_PERMISSIONS.announcements
   },
   {
     path: '/pos',
@@ -95,14 +99,86 @@ const coreNavItems: NavItem[] = [
 
 const navGroups: NavGroup[] = [
   {
-    titleKey: 'sidebar.groups.goals',
-    icon: <Target size={16} />,
+    titleKey: 'sidebar.groups.crm',
+    icon: <Users size={16} />,
     items: [
+      {
+        path: '/invoices',
+        labelKey: 'sidebar.nav.invoices',
+        icon: <FileText size={16} />,
+        permission: MODULE_PERMISSIONS.invoices
+      },
+      {
+        path: '/customers',
+        labelKey: 'sidebar.nav.customers',
+        icon: <Users size={16} />,
+        permission: MODULE_PERMISSIONS.customers
+      }
+    ]
+  },
+  {
+    titleKey: 'sidebar.groups.accounting',
+    icon: <Calculator size={16} />,
+    items: [
+      {
+        path: '/budget',
+        labelKey: 'sidebar.nav.budget',
+        icon: <Wallet2 size={16} />,
+        permission: MODULE_PERMISSIONS.budget
+      },
+      {
+        path: '/vendors',
+        labelKey: 'sidebar.nav.vendors',
+        icon: <Truck size={16} />,
+        permission: MODULE_PERMISSIONS.vendors
+      },
+      {
+        path: '/vouchers',
+        labelKey: 'sidebar.nav.vouchers',
+        icon: <Ticket size={16} />,
+        permission: MODULE_PERMISSIONS.vouchers
+      },
+      {
+        path: '/reports',
+        labelKey: 'sidebar.nav.reports',
+        icon: <BarChart3 size={16} />,
+        permission: MODULE_PERMISSIONS.reports
+      },
+      {
+        path: '/scrd',
+        labelKey: 'sidebar.nav.scrd',
+        icon: <FileText size={16} />,
+        permission: MODULE_PERMISSIONS.scrd
+      }
+    ]
+  },
+  {
+    titleKey: 'sidebar.groups.councilPrograms',
+    icon: <Tent size={16} />,
+    items: [
+      {
+        path: '/troops',
+        labelKey: 'sidebar.nav.troops',
+        icon: <Tent size={16} />,
+        permission: MODULE_PERMISSIONS.troops
+      },
       {
         path: '/goals',
         labelKey: 'sidebar.nav.goals',
         icon: <Target size={16} />,
         permission: MODULE_PERMISSIONS.goals
+      },
+      {
+        path: '/program-reports',
+        labelKey: 'sidebar.nav.programReports',
+        icon: <ClipboardList size={16} />,
+        permission: MODULE_PERMISSIONS.programReports
+      },
+      {
+        path: '/training-reports',
+        labelKey: 'sidebar.nav.trainingReports',
+        icon: <GraduationCap size={16} />,
+        permission: MODULE_PERMISSIONS.trainingReports
       }
     ]
   },
@@ -151,60 +227,18 @@ const navGroups: NavGroup[] = [
         labelKey: 'sidebar.nav.rentals',
         icon: <Building2 size={16} />,
         permission: MODULE_PERMISSIONS.rentals
-      }
-    ]
-  },
-  {
-    titleKey: 'sidebar.groups.accounting',
-    icon: <Calculator size={16} />,
-    items: [
-      {
-        path: '/invoices',
-        labelKey: 'sidebar.nav.invoices',
-        icon: <FileText size={16} />,
-        permission: MODULE_PERMISSIONS.invoices
       },
       {
-        path: '/customers',
-        labelKey: 'sidebar.nav.customers',
-        icon: <Users size={16} />,
-        permission: MODULE_PERMISSIONS.customers
+        path: '/visitors',
+        labelKey: 'sidebar.nav.visitors',
+        icon: <UserCheck size={16} />,
+        permission: MODULE_PERMISSIONS.visitors
       },
       {
-        path: '/expenses',
-        labelKey: 'sidebar.nav.expenses',
-        icon: <Receipt size={16} />,
-        permission: MODULE_PERMISSIONS.expenses
-      },
-      {
-        path: '/vendors',
-        labelKey: 'sidebar.nav.vendors',
-        icon: <Truck size={16} />,
-        permission: MODULE_PERMISSIONS.vendors
-      },
-      {
-        path: '/items',
-        labelKey: 'sidebar.nav.items',
-        icon: <Package size={16} />,
-        permission: MODULE_PERMISSIONS.items
-      },
-      {
-        path: '/vouchers',
-        labelKey: 'sidebar.nav.vouchers',
-        icon: <Ticket size={16} />,
-        permission: MODULE_PERMISSIONS.vouchers
-      },
-      {
-        path: '/reports',
-        labelKey: 'sidebar.nav.reports',
-        icon: <BarChart3 size={16} />,
-        permission: MODULE_PERMISSIONS.reports
-      },
-      {
-        path: '/scrd',
-        labelKey: 'sidebar.nav.scrd',
-        icon: <FileText size={16} />,
-        permission: MODULE_PERMISSIONS.scrd
+        path: '/facility-calendar',
+        labelKey: 'sidebar.nav.facilityCalendar',
+        icon: <CalendarDays size={16} />,
+        permission: MODULE_PERMISSIONS.facilityCalendar
       }
     ]
   },
@@ -230,7 +264,13 @@ const navGroups: NavGroup[] = [
 
 const footerNavItems: NavItem[] = [
   { path: '/settings', labelKey: 'sidebar.nav.settings', icon: <Settings size={16} /> },
-  { path: '/devices', labelKey: 'sidebar.nav.devices', icon: <Usb size={16} /> },
+  {
+    path: '/devices',
+    labelKey: 'sidebar.nav.devices',
+    icon: <Usb size={16} />,
+    permission: MODULE_PERMISSIONS.devices
+  },
+  { path: '/manual', labelKey: 'sidebar.nav.manual', icon: <BookOpen size={16} /> },
   { path: '/about', labelKey: 'sidebar.nav.about', icon: <Info size={16} /> }
 ]
 
@@ -748,7 +788,7 @@ export function Sidebar() {
         )}
 
         {/* Settings + About */}
-        {footerNavItems.map(renderNavItem)}
+        {filterItems(footerNavItems).map(renderNavItem)}
       </div>
 
       {/* ── User profile ─────────────────────────────────────────── */}

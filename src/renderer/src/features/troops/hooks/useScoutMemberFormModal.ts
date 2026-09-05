@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { useTroopsStore } from '../store/troops.store'
 import type { ScoutMember } from '../types/troop.types'
 
@@ -11,7 +12,8 @@ function emptyForm() {
     level: '',
     guardianName: '',
     guardianContact: '',
-    address: ''
+    address: '',
+    registrationFee: 0
   }
 }
 
@@ -22,7 +24,8 @@ function formFromMember(member: ScoutMember) {
     level: member.level ?? '',
     guardianName: member.guardianName ?? '',
     guardianContact: member.guardianContact ?? '',
-    address: member.address ?? ''
+    address: member.address ?? '',
+    registrationFee: member.registrationFee ?? 0
   }
 }
 
@@ -35,6 +38,7 @@ export function useScoutMemberFormModal(
 ) {
   const { t } = useTranslation()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
   const addScoutMember = useTroopsStore((s) => s.addScoutMember)
   const updateScoutMember = useTroopsStore((s) => s.updateScoutMember)
   const [form, setForm] = useState(emptyForm())
@@ -44,6 +48,7 @@ export function useScoutMemberFormModal(
   }, [open, editTarget])
 
   function handleSubmit() {
+    if (!hasPermission('manage:troops')) return
     if (!form.fullName.trim() || !form.birthdate.trim()) {
       toast.error(t('troops.roster.toast.validationRequired'))
       return
@@ -54,7 +59,8 @@ export function useScoutMemberFormModal(
       level: form.level.trim() || undefined,
       guardianName: form.guardianName.trim() || undefined,
       guardianContact: form.guardianContact.trim() || undefined,
-      address: form.address.trim() || undefined
+      address: form.address.trim() || undefined,
+      registrationFee: form.registrationFee || undefined
     }
     if (editTarget) {
       updateScoutMember(editTarget.id, payload)

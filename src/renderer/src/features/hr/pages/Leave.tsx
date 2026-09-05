@@ -5,7 +5,13 @@ import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
-import { DataTable, type Column } from '@/shared/components/ui/DataTable'
+import {
+  DataTable,
+  useColumnVisibility,
+  ColumnsButton,
+  type Column
+} from '@/shared/components/ui/DataTable'
+import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { formatDate } from '@/shared/lib/utils'
@@ -41,6 +47,10 @@ export function Leave() {
     leaveTypes,
     rows,
     balanceRows,
+    search,
+    setSearch,
+    balanceSearch,
+    setBalanceSearch,
     showFileDialog,
     setShowFileDialog,
     decision,
@@ -86,7 +96,7 @@ export function Leave() {
       align: 'right',
       render: (r) => (
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
-          {r.status === 'pending' ? (
+          {r.status === 'pending' && canManage ? (
             <>
               <Button
                 size="sm"
@@ -132,6 +142,10 @@ export function Leave() {
       )
     }
   ]
+
+  const { hiddenColumns: hiddenBalanceColumns, toggleColumn: toggleBalanceColumn } =
+    useColumnVisibility(balanceColumns)
+  const { hiddenColumns, toggleColumn } = useColumnVisibility(columns)
 
   return (
     <motion.div
@@ -180,19 +194,43 @@ export function Leave() {
           </Button>
         )}
       </div>
+      <TableToolbar
+        search={balanceSearch}
+        onSearchChange={setBalanceSearch}
+        searchPlaceholder={t('leave.balances.searchPlaceholder')}
+        count={balanceRows.length}
+        columnsSlot={
+          <ColumnsButton
+            columns={balanceColumns}
+            hiddenColumns={hiddenBalanceColumns}
+            onToggle={toggleBalanceColumn}
+          />
+        }
+      />
       <Card style={{ marginBottom: 16 }} padding="0px">
         <DataTable
           columns={balanceColumns}
           data={balanceRows}
+          hiddenColumns={hiddenBalanceColumns}
           loading={loading}
           emptyMessage={t('employees.empty')}
         />
       </Card>
 
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('leave.searchPlaceholder')}
+        count={rows.length}
+        columnsSlot={
+          <ColumnsButton columns={columns} hiddenColumns={hiddenColumns} onToggle={toggleColumn} />
+        }
+      />
       <Card padding="0px">
         <DataTable
           columns={columns}
           data={rows}
+          hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('leave.empty')}
         />

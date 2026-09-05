@@ -36,7 +36,10 @@ export function ViewInvoiceModal({ invoiceId, onClose }: ViewInvoiceModalProps) 
                 variant="primary"
                 size="sm"
                 leftIcon={<CheckCircle2 size={13} />}
-                onClick={() => setConfirmingMarkPaid(true)}
+                onClick={() => {
+                  onClose()
+                  setConfirmingMarkPaid(true)
+                }}
               >
                 {t('invoices.markAsPaidButton')}
               </Button>
@@ -266,7 +269,10 @@ export function ViewInvoiceModal({ invoiceId, onClose }: ViewInvoiceModalProps) 
           amount: formatCurrency(invoice?.balanceDue ?? 0)
         })}
         confirmLabel={t('invoices.markAsPaidButton')}
-        onConfirm={handleConfirmMarkPaid}
+        onConfirm={() => {
+          handleConfirmMarkPaid()
+          onClose()
+        }}
         onCancel={() => setConfirmingMarkPaid(false)}
       />
     </>

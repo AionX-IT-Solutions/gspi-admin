@@ -42,6 +42,7 @@ export function Employees() {
 
   const {
     loading,
+    canManage,
     search,
     setSearch,
     filteredEmployees,
@@ -88,25 +89,31 @@ export function Employees() {
           >
             <UserCircle2 size={13} />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
-            <Pencil size={13} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setToggleTarget(r)}
-            title={r.isActive ? t('employees.table.deactivate') : t('employees.table.reactivate')}
-          >
-            <UserX size={13} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setDeleteTarget(r)}
-            title={t('common.delete')}
-          >
-            <Trash2 size={13} />
-          </Button>
+          {canManage && (
+            <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
+              <Pencil size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setToggleTarget(r)}
+              title={r.isActive ? t('employees.table.deactivate') : t('employees.table.reactivate')}
+            >
+              <UserX size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setDeleteTarget(r)}
+              title={t('common.delete')}
+            >
+              <Trash2 size={13} />
+            </Button>
+          )}
         </div>
       ),
       t('common.actions')
@@ -131,9 +138,11 @@ export function Employees() {
         actions={
           <>
             <RefreshButton onRefresh={() => hydrate(true)} />
-            <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
-              {t('employees.addButton')}
-            </Button>
+            {canManage && (
+              <Button variant="primary" size="sm" leftIcon={<Plus size={13} />} onClick={openAdd}>
+                {t('employees.addButton')}
+              </Button>
+            )}
           </>
         }
       />

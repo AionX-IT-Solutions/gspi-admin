@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { useOrgSettingsStore } from '@/app/store/orgSettings.store'
 import { useTroopsStore } from '../store/troops.store'
 import { getMembershipYearLabel, isMembershipCurrent } from '../lib/membershipYear'
@@ -11,10 +12,14 @@ export function useTroops() {
   const { t } = useTranslation()
   const loading = useSkeletonLoading()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
+  const canManage = hasPermission('manage:troops')
   const troops = useTroopsStore((s) => s.troops)
   const scoutMembers = useTroopsStore((s) => s.scoutMembers)
   const updateTroop = useTroopsStore((s) => s.updateTroop)
   const deleteTroop = useTroopsStore((s) => s.deleteTroop)
+  const addTroop = useTroopsStore((s) => s.addTroop)
+  const addScoutMember = useTroopsStore((s) => s.addScoutMember)
   const startMonth = useOrgSettingsStore((s) => s.membershipYearStartMonth)
 
   const [showDialog, setShowDialog] = useState(false)
@@ -48,7 +53,7 @@ export function useTroops() {
   }
 
   const handleConfirmToggleActive = () => {
-    if (!toggleTarget) return
+    if (!toggleTarget || !canManage) return
     updateTroop(toggleTarget.id, { isActive: !toggleTarget.isActive })
     toast.info(
       toggleTarget.isActive
@@ -59,9 +64,20 @@ export function useTroops() {
   }
 
   const handleConfirmDelete = () => {
-    if (!deleteTarget) return
-    deleteTroop(deleteTarget.id)
-    toast.success(t('troops.toast.deleted', { troopNumber: deleteTarget.troopNumber }))
+    if (!deleteTarget || !canManage) return
+    const deleted = deleteTarget
+    const orphanedMembers = scoutMembers.filter((m) => m.troopId === deleted.id)
+    deleteTroop(deleted.id)
+    toast.success(t('troops.toast.deleted', { troopNumber: deleted.troopNumber }), {
+      duration: 6000,
+      action: {
+        label: t('common.undo'),
+        onClick: () => {
+          addTroop(deleted)
+          orphanedMembers.forEach(addScoutMember)
+        }
+      }
+    })
     setDeleteTarget(null)
   }
 
@@ -78,6 +94,7 @@ export function useTroops() {
 
   return {
     loading,
+    canManage,
     search,
     setSearch,
     filteredTroops,

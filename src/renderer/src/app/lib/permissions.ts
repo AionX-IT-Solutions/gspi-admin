@@ -15,10 +15,16 @@ export type UserRole = (typeof USER_ROLES)[number]
  *  accepting any custom role string. */
 export type RoleId = UserRole | (string & {})
 
-/** A role added at runtime via the "Role Permissions" screen (Super Admin/Admin only). */
+/** A role added at runtime via the "Role Permissions" screen (Super Admin/Admin only).
+ *  `baseRole` is what actually gets written as the user's real `role` (Firestore doc +
+ *  Auth custom claim) — Firestore security rules and gspi-app (mobile) only ever
+ *  understand the 7 built-in roles, so a custom role can't be a standalone access tier.
+ *  The custom role id itself becomes a cosmetic label + desktop-only permission-checklist
+ *  overlay, carried on the user doc as `customRoleId` (see users.store.ts). */
 export interface CustomRole {
   id: string
   label: string
+  baseRole: UserRole
 }
 
 export function isBuiltInRole(role: string): role is UserRole {
@@ -34,6 +40,18 @@ export function resolveRoleLabel(
 ): string {
   if (isBuiltInRole(role)) return t(`roles.${role}`)
   return customRoles.find((r) => r.id === role)?.label ?? role
+}
+
+/** The single place a role-dropdown selection resolves to what actually gets written:
+ *  a custom role always resolves to its `baseRole` (+ its id carried separately as
+ *  `customRoleId`); a built-in role passes through unchanged with no custom id. */
+export function resolveRoleAssignment(
+  selected: RoleId,
+  customRoles: CustomRole[]
+): { role: UserRole; customRoleId: string | null } {
+  const custom = customRoles.find((r) => r.id === selected)
+  if (custom) return { role: custom.baseRole, customRoleId: custom.id }
+  return { role: selected as UserRole, customRoleId: null }
 }
 
 export const ROLE_HOME: Record<UserRole, string> = {
@@ -69,17 +87,18 @@ export const ALL_PERMISSIONS = [
   'manage:invoices',
   'view:customers',
   'manage:customers',
-  'view:expenses',
-  'manage:expenses',
   'view:vendors',
   'manage:vendors',
-  'view:items',
-  'manage:items',
   'view:reports',
+  'manage:reports',
   'view:employees',
   'manage:employees',
   'view:troops',
   'manage:troops',
+  'view:programReports',
+  'manage:programReports',
+  'view:trainingReports',
+  'manage:trainingReports',
   'view:attendance',
   'manage:attendance',
   'view:leave',
@@ -91,12 +110,21 @@ export const ALL_PERMISSIONS = [
   'manage:vouchers',
   'view:rentals',
   'manage:rentals',
+  'view:visitors',
+  'manage:visitors',
+  'view:facilityCalendar',
   'view:scrd',
   'manage:scrd',
   'manage:users',
   'view:auditLog',
   'view:goals',
-  'manage:goals'
+  'manage:goals',
+  'view:devices',
+  'manage:devices',
+  'view:announcements',
+  'manage:announcements',
+  'view:budget',
+  'manage:budget'
 ] as const
 
 export type Permission = (typeof ALL_PERMISSIONS)[number]
@@ -105,27 +133,32 @@ export type Permission = (typeof ALL_PERMISSIONS)[number]
  *  (Settings/About are personal preferences, not system config — intentionally ungated). */
 export const MODULE_PERMISSIONS: Record<string, Permission | undefined> = {
   dashboard: 'view:dashboard',
+  announcements: 'view:announcements',
+  budget: 'view:budget',
   pos: 'view:pos',
   products: 'view:products',
   members: 'view:members',
   invoices: 'view:invoices',
   customers: 'view:customers',
-  expenses: 'view:expenses',
   vendors: 'view:vendors',
-  items: 'view:items',
   reports: 'view:reports',
   employees: 'view:employees',
   troops: 'view:troops',
+  programReports: 'view:programReports',
+  trainingReports: 'view:trainingReports',
   attendance: 'view:attendance',
   leave: 'view:leave',
   payroll: 'view:payroll',
   orgChart: 'view:orgChart',
   vouchers: 'view:vouchers',
   rentals: 'view:rentals',
+  visitors: 'view:visitors',
+  facilityCalendar: 'view:facilityCalendar',
   scrd: 'view:scrd',
   users: 'manage:users',
   auditLog: 'view:auditLog',
   goals: 'view:goals',
+  devices: 'view:devices',
   settings: undefined,
   about: undefined
 }
@@ -133,33 +166,72 @@ export const MODULE_PERMISSIONS: Record<string, Permission | undefined> = {
 /** Human-readable module names, keyed the same as `MODULE_PERMISSIONS` — used by the Role Permissions editor. */
 export const MODULE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard',
+  announcements: 'Announcements',
+  budget: 'Council Budget',
   pos: 'Point of Sale',
   products: 'Inventory',
   members: 'Members',
   invoices: 'Invoices',
   customers: 'Customers',
-  expenses: 'Expenses',
   vendors: 'Vendors',
-  items: 'Products & Services',
   reports: 'Reports',
   employees: 'Employees',
   troops: 'Troops & Membership',
+  programReports: 'Program Reports',
+  trainingReports: 'Training Reports',
   attendance: 'Attendance',
   leave: 'Leave Requests',
   payroll: 'Payroll',
   orgChart: 'Organizational Chart',
   vouchers: 'Vouchers',
   rentals: 'Rental Bookings',
+  visitors: 'Visitors Logbook',
+  facilityCalendar: 'Facility Calendar',
   scrd: 'Cash Receipts & Disb.',
   users: 'User Accounts',
   auditLog: 'Audit Log',
-  goals: 'Goals & Objectives'
+  goals: 'Goals & Objectives',
+  devices: 'Devices'
 }
 
 /** Every module that has a real permission requirement, in nav order (excludes Settings/About). */
 export const PERMISSION_MODULES = Object.keys(MODULE_PERMISSIONS).filter(
   (key) => MODULE_PERMISSIONS[key] !== undefined
 )
+
+/** Route path for each module key — same keys as `MODULE_PERMISSIONS`/`MODULE_LABELS`.
+ *  Used by global search to link a matched module straight to its page. */
+export const MODULE_ROUTES: Record<string, string> = {
+  dashboard: '/dashboard',
+  announcements: '/announcements',
+  budget: '/budget',
+  pos: '/pos',
+  products: '/products',
+  members: '/members',
+  invoices: '/invoices',
+  customers: '/customers',
+  vendors: '/vendors',
+  reports: '/reports',
+  employees: '/employees',
+  troops: '/troops',
+  programReports: '/program-reports',
+  trainingReports: '/training-reports',
+  attendance: '/attendance',
+  leave: '/leave',
+  payroll: '/payroll',
+  orgChart: '/org-chart',
+  vouchers: '/vouchers',
+  rentals: '/rentals',
+  visitors: '/visitors',
+  facilityCalendar: '/facility-calendar',
+  scrd: '/scrd',
+  users: '/users',
+  auditLog: '/audit-log',
+  goals: '/goals',
+  devices: '/devices',
+  settings: '/settings',
+  about: '/about'
+}
 
 /** Roles staff accounts can be assigned to. Excludes `super_admin`, which is always
  *  full-access and reserved for the bootstrap owner account (not assignable/editable via the UI). */
@@ -182,7 +254,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'view:members',
     'manage:members',
     'view:rentals',
-    'manage:rentals'
+    'manage:rentals',
+    'view:visitors',
+    'manage:visitors',
+    'view:facilityCalendar',
+    'view:announcements'
   ],
   accountant: [
     'view:dashboard',
@@ -192,13 +268,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'manage:invoices',
     'view:customers',
     'manage:customers',
-    'view:expenses',
-    'manage:expenses',
     'view:vendors',
     'manage:vendors',
-    'view:items',
-    'manage:items',
     'view:reports',
+    'manage:reports',
     'view:payroll',
     'manage:payroll',
     'view:vouchers',
@@ -206,7 +279,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'view:scrd',
     'manage:scrd',
     'view:goals',
-    'manage:goals'
+    'manage:goals',
+    'view:announcements',
+    'view:budget',
+    'manage:budget'
   ],
   hr: [
     'view:dashboard',
@@ -220,9 +296,17 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'manage:payroll',
     'view:orgChart',
     'view:troops',
-    'manage:troops'
+    'manage:troops',
+    'view:programReports',
+    'manage:programReports',
+    'view:trainingReports',
+    'manage:trainingReports',
+    'view:visitors',
+    'manage:visitors',
+    'view:facilityCalendar',
+    'view:announcements'
   ],
-  inventory_clerk: ['view:products', 'manage:products', 'view:items', 'manage:items'],
+  inventory_clerk: ['view:products', 'manage:products', 'view:announcements'],
   manager: [
     'view:dashboard',
     'view:members',
@@ -231,13 +315,22 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'view:orgChart',
     'view:troops',
     'manage:troops',
+    'view:programReports',
+    'manage:programReports',
+    'view:trainingReports',
+    'manage:trainingReports',
     'view:vouchers',
     'manage:vouchers',
     'view:rentals',
     'manage:rentals',
+    'view:visitors',
+    'manage:visitors',
+    'view:facilityCalendar',
     'view:scrd',
     'manage:scrd',
     'view:goals',
-    'manage:goals'
+    'manage:goals',
+    'view:announcements',
+    'view:budget'
   ]
 }

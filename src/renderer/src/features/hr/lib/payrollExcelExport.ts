@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 import { signatories, orgHeader } from '@/shared/data/signatories.data'
+import { formatDate } from '@/shared/lib/utils'
 import type { Employee, PayrollEntry } from '../types/hr.types'
 import {
   createPdf,
@@ -16,6 +17,10 @@ import {
   saveDocx
 } from '@/shared/lib/docxExport'
 import { addWorksheetLogo } from '@/shared/lib/excelReport'
+
+/** A payroll entry annotated with the display fields usePayroll's rows already carry —
+ *  avoids a separate Employee lookup just to print a payslip's name/position. */
+type PayslipEntry = PayrollEntry & { employeeName: string; position: string }
 
 function downloadWorkbook(wb: ExcelJS.Workbook, filename: string) {
   wb.xlsx.writeBuffer().then((buffer) => {
@@ -39,7 +44,6 @@ export async function exportPayrollRegister(
 ) {
   const wb = new ExcelJS.Workbook()
   const sheet = wb.addWorksheet('Payroll')
-  await addWorksheetLogo(wb, sheet)
   sheet.columns = [
     { width: 26 },
     { width: 22 },
@@ -48,14 +52,17 @@ export async function exportPayrollRegister(
     { width: 12 },
     { width: 12 },
     { width: 12 },
+    { width: 12 },
+    { width: 12 },
     { width: 14 },
     { width: 12 },
     { width: 12 },
     { width: 12 },
-    { width: 12 },
+    { width: 14 },
     { width: 14 },
     { width: 16 }
   ]
+  await addWorksheetLogo(wb, sheet, { startCol: 2, endCol: 16 })
 
   const headerLines = [
     orgHeader.orgName,
@@ -64,14 +71,14 @@ export async function exportPayrollRegister(
     `For the Period of ${periodLabel}`
   ]
   headerLines.forEach((line, i) => {
-    sheet.mergeCells(i + 1, 2, i + 1, 14)
+    sheet.mergeCells(i + 1, 2, i + 1, 16)
     const cell = sheet.getCell(i + 1, 2)
     cell.value = line
     cell.alignment = { horizontal: 'center' }
     cell.font = { bold: i >= 2, size: i === 2 ? 13 : 11 }
   })
 
-  sheet.mergeCells('B6:N7')
+  sheet.mergeCells('B6:P7')
   sheet.getCell('B6').value =
     `We acknowledge to have received from the Girl Scouts of the Philippines, ${orgHeader.council.toUpperCase()} the sum herein specified opposite our respective names, in full compensation for our services for the period stated.`
   sheet.getCell('B6').alignment = { wrapText: true }
@@ -85,6 +92,8 @@ export async function exportPayrollRegister(
     'SEMI-MONTHLY SALARY',
     'COLA',
     'REPRESENTATION',
+    '13TH MONTH PAY',
+    'CASH GIFT',
     'TOTAL EARNED FOR PERIOD',
     'SSS PREMIUM',
     'PAG-IBIG',
@@ -105,6 +114,8 @@ export async function exportPayrollRegister(
     totalSemi = 0,
     totalCola = 0,
     totalRepresentation = 0,
+    totalThirteenth = 0,
+    totalCashGift = 0,
     totalEarned = 0
   let totalSss = 0,
     totalPagibig = 0,
@@ -114,8 +125,15 @@ export async function exportPayrollRegister(
 
   for (const entry of entries) {
     const monthly = entry.employee?.salary ?? entry.basicSalary
+    const thirteenthMonthPay = entry.thirteenthMonthPay ?? 0
+    const cashGift = entry.cashGift ?? 0
     const totalEarnedForPeriod =
-      entry.basicSalary + entry.cola + entry.representation + entry.overtimePay
+      entry.basicSalary +
+      entry.cola +
+      entry.representation +
+      entry.overtimePay +
+      thirteenthMonthPay +
+      cashGift
     sheet.getCell(r, 1).value = entry.employee?.fullName ?? entry.employeeId
     sheet.getCell(r, 2).value = entry.employee?.position ?? ''
     sheet.getCell(r, 3).value = 'Permanent'
@@ -123,18 +141,22 @@ export async function exportPayrollRegister(
     sheet.getCell(r, 5).value = entry.basicSalary
     sheet.getCell(r, 6).value = entry.cola
     sheet.getCell(r, 7).value = entry.representation
-    sheet.getCell(r, 8).value = totalEarnedForPeriod
-    sheet.getCell(r, 9).value = entry.sss
-    sheet.getCell(r, 10).value = entry.pagibig
-    sheet.getCell(r, 11).value = entry.philhealth
-    sheet.getCell(r, 12).value = entry.unpaidLeaveDeduction
-    sheet.getCell(r, 13).value = entry.netSalary
-    for (let c = 4; c <= 13; c++) sheet.getCell(r, c).numFmt = '#,##0.00'
+    sheet.getCell(r, 8).value = thirteenthMonthPay
+    sheet.getCell(r, 9).value = cashGift
+    sheet.getCell(r, 10).value = totalEarnedForPeriod
+    sheet.getCell(r, 11).value = entry.sss
+    sheet.getCell(r, 12).value = entry.pagibig
+    sheet.getCell(r, 13).value = entry.philhealth
+    sheet.getCell(r, 14).value = entry.unpaidLeaveDeduction
+    sheet.getCell(r, 15).value = entry.netSalary
+    for (let c = 4; c <= 15; c++) sheet.getCell(r, c).numFmt = '#,##0.00'
 
     totalMonthly += monthly
     totalSemi += entry.basicSalary
     totalCola += entry.cola
     totalRepresentation += entry.representation
+    totalThirteenth += thirteenthMonthPay
+    totalCashGift += cashGift
     totalEarned += totalEarnedForPeriod
     totalSss += entry.sss
     totalPagibig += entry.pagibig
@@ -151,6 +173,8 @@ export async function exportPayrollRegister(
     totalSemi,
     totalCola,
     totalRepresentation,
+    totalThirteenth,
+    totalCashGift,
     totalEarned,
     totalSss,
     totalPagibig,
@@ -167,13 +191,16 @@ export async function exportPayrollRegister(
 
   r += 4
   sheet.getCell(r, 2).value = 'PREPARED BY:'
-  sheet.getCell(r, 9).value = 'APPROVED:'
+  sheet.getCell(r, 7).value = 'CERTIFIED CORRECT:'
+  sheet.getCell(r, 12).value = 'APPROVED:'
   r += 3
   sheet.getCell(r, 2).value = signatories.accountingClerk.toUpperCase()
-  sheet.getCell(r, 9).value = signatories.councilPresident.toUpperCase()
+  sheet.getCell(r, 7).value = signatories.councilExecutive.toUpperCase()
+  sheet.getCell(r, 12).value = signatories.councilPresident.toUpperCase()
   r++
   sheet.getCell(r, 2).value = 'Accounting Clerk'
-  sheet.getCell(r, 9).value = 'Council President'
+  sheet.getCell(r, 7).value = 'Council Executive'
+  sheet.getCell(r, 12).value = 'Council President'
 
   downloadWorkbook(wb, `Payroll_Register_${periodLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`)
 }
@@ -186,6 +213,8 @@ const payrollCols = [
   'SEMI-MONTHLY',
   'COLA',
   'REPRESENTATION',
+  '13TH MONTH',
+  'CASH GIFT',
   'TOTAL EARNED',
   'SSS',
   'PAG-IBIG',
@@ -200,6 +229,8 @@ function payrollRows(entries: (PayrollEntry & { employee?: Employee })[]) {
     semi: 0,
     cola: 0,
     representation: 0,
+    thirteenth: 0,
+    cashGift: 0,
     earned: 0,
     sss: 0,
     pagibig: 0,
@@ -209,12 +240,21 @@ function payrollRows(entries: (PayrollEntry & { employee?: Employee })[]) {
   }
   const rows: (string | number)[][] = entries.map((entry) => {
     const monthly = entry.employee?.salary ?? entry.basicSalary
+    const thirteenthMonthPay = entry.thirteenthMonthPay ?? 0
+    const cashGift = entry.cashGift ?? 0
     const totalEarnedForPeriod =
-      entry.basicSalary + entry.cola + entry.representation + entry.overtimePay
+      entry.basicSalary +
+      entry.cola +
+      entry.representation +
+      entry.overtimePay +
+      thirteenthMonthPay +
+      cashGift
     totals.monthly += monthly
     totals.semi += entry.basicSalary
     totals.cola += entry.cola
     totals.representation += entry.representation
+    totals.thirteenth += thirteenthMonthPay
+    totals.cashGift += cashGift
     totals.earned += totalEarnedForPeriod
     totals.sss += entry.sss
     totals.pagibig += entry.pagibig
@@ -229,6 +269,8 @@ function payrollRows(entries: (PayrollEntry & { employee?: Employee })[]) {
       entry.basicSalary.toFixed(2),
       entry.cola.toFixed(2),
       entry.representation.toFixed(2),
+      thirteenthMonthPay.toFixed(2),
+      cashGift.toFixed(2),
       totalEarnedForPeriod.toFixed(2),
       entry.sss.toFixed(2),
       entry.pagibig.toFixed(2),
@@ -245,6 +287,8 @@ function payrollRows(entries: (PayrollEntry & { employee?: Employee })[]) {
     totals.semi.toFixed(2),
     totals.cola.toFixed(2),
     totals.representation.toFixed(2),
+    totals.thirteenth.toFixed(2),
+    totals.cashGift.toFixed(2),
     totals.earned.toFixed(2),
     totals.sss.toFixed(2),
     totals.pagibig.toFixed(2),
@@ -255,7 +299,7 @@ function payrollRows(entries: (PayrollEntry & { employee?: Employee })[]) {
   return { rows, totalsRow }
 }
 
-export async function exportPayrollRegisterPdf(
+export async function buildPayrollRegisterPdfDoc(
   entries: (PayrollEntry & { employee?: Employee })[],
   periodLabel: string
 ) {
@@ -280,7 +324,7 @@ export async function exportPayrollRegisterPdf(
     body: rows,
     foot: [totalsRow],
     columnStyles: Object.fromEntries(
-      Array.from({ length: 10 }, (_, i) => [i + 3, { halign: 'right' as const }])
+      Array.from({ length: 12 }, (_, i) => [i + 3, { halign: 'right' as const }])
     )
   })
   addSignatories(doc, y, [
@@ -290,11 +334,24 @@ export async function exportPayrollRegisterPdf(
       role: 'Accounting Clerk'
     },
     {
+      label: 'Certified Correct:',
+      name: signatories.councilExecutive.toUpperCase(),
+      role: 'Council Executive'
+    },
+    {
       label: 'Approved:',
       name: signatories.councilPresident.toUpperCase(),
       role: 'Council President'
     }
   ])
+  return doc
+}
+
+export async function exportPayrollRegisterPdf(
+  entries: (PayrollEntry & { employee?: Employee })[],
+  periodLabel: string
+) {
+  const doc = await buildPayrollRegisterPdfDoc(entries, periodLabel)
   savePdf(doc, `Payroll_Register_${periodLabel.replace(/[^0-9a-z]/gi, '_')}.pdf`)
 }
 
@@ -323,6 +380,11 @@ export async function exportPayrollRegisterDocx(
         role: 'Accounting Clerk'
       },
       {
+        label: 'Certified Correct:',
+        name: signatories.councilExecutive.toUpperCase(),
+        role: 'Council Executive'
+      },
+      {
         label: 'Approved:',
         name: signatories.councilPresident.toUpperCase(),
         role: 'Council President'
@@ -330,4 +392,155 @@ export async function exportPayrollRegisterDocx(
     ])
   ]
   await saveDocx(children, `Payroll_Register_${periodLabel.replace(/[^0-9a-z]/gi, '_')}.docx`, true)
+}
+
+function payslipLineItems(entry: PayslipEntry) {
+  const thirteenthMonthPay = entry.thirteenthMonthPay ?? 0
+  const cashGift = entry.cashGift ?? 0
+  const grossPay =
+    entry.basicSalary +
+    entry.cola +
+    entry.representation +
+    entry.overtimePay +
+    thirteenthMonthPay +
+    cashGift
+  return [
+    { label: 'Basic Pay (Daily Rate × Days Worked)', value: entry.basicSalary },
+    { label: 'COLA', value: entry.cola },
+    { label: 'Representation', value: entry.representation },
+    { label: 'Overtime Pay', value: entry.overtimePay },
+    // Only shown on the November/December payslip that actually carries them.
+    ...(thirteenthMonthPay ? [{ label: '13th Month Pay', value: thirteenthMonthPay }] : []),
+    ...(cashGift ? [{ label: 'Cash Gift', value: cashGift }] : []),
+    { label: 'Gross Pay', value: grossPay },
+    { label: 'Less: SSS', value: entry.sss },
+    { label: 'Less: PhilHealth', value: entry.philhealth },
+    { label: 'Less: Pag-IBIG', value: entry.pagibig },
+    { label: 'Less: Withholding Tax', value: entry.taxDeducted },
+    { label: 'Less: Unpaid Leave Deduction', value: entry.unpaidLeaveDeduction },
+    { label: 'Total Deductions', value: entry.deductions }
+  ]
+}
+
+function payslipHeaderLines(entry: PayslipEntry, periodLabel: string) {
+  return [
+    orgHeader.orgName,
+    orgHeader.council,
+    'PAYSLIP',
+    `${entry.employeeName} — ${entry.position}`,
+    `Payroll #${entry.payrollNumber}  •  ${periodLabel}`
+  ]
+}
+
+function payslipFilename(entry: PayslipEntry, ext: string) {
+  return `Payslip_${entry.employeeName.replace(/[^0-9a-z]/gi, '_')}_${entry.payrollNumber}.${ext}`
+}
+
+// Individual acknowledgement slip for a single payroll entry — same figures as
+// one row of the Payroll Register, broken out per employee for handing out or
+// filing separately.
+export async function exportPayslip(entry: PayslipEntry) {
+  const wb = new ExcelJS.Workbook()
+  const sheet = wb.addWorksheet('Payslip')
+  sheet.columns = [{ width: 4 }, { width: 32 }, { width: 16 }]
+  await addWorksheetLogo(wb, sheet, { startCol: 2, endCol: 3 })
+
+  const periodLabel = `${formatDate(entry.periodStart)} – ${formatDate(entry.periodEnd)}`
+  const headerLines = payslipHeaderLines(entry, periodLabel)
+  headerLines.forEach((line, i) => {
+    sheet.mergeCells(i + 1, 2, i + 1, 3)
+    const cell = sheet.getCell(i + 1, 2)
+    cell.value = line
+    cell.alignment = { horizontal: 'center' }
+    cell.font = { bold: i >= 2, size: i === 2 ? 13 : 11 }
+  })
+
+  let r = 8
+  for (const item of payslipLineItems(entry)) {
+    sheet.getCell(r, 2).value = item.label
+    sheet.getCell(r, 3).value = item.value
+    sheet.getCell(r, 3).numFmt = '#,##0.00'
+    r++
+  }
+  r++
+  sheet.getCell(r, 2).value = 'Net Pay'
+  sheet.getCell(r, 2).font = { bold: true }
+  sheet.getCell(r, 3).value = entry.netSalary
+  sheet.getCell(r, 3).numFmt = '#,##0.00'
+  sheet.getCell(r, 3).font = { bold: true }
+
+  r += 3
+  sheet.getCell(r, 2).value = 'Prepared by:'
+  sheet.getCell(r, 3).value = 'Received by:'
+  r += 2
+  sheet.getCell(r, 2).value = signatories.accountingClerk.toUpperCase()
+  sheet.getCell(r, 3).value = entry.employeeName.toUpperCase()
+  r++
+  sheet.getCell(r, 2).value = 'Accounting Clerk'
+  sheet.getCell(r, 3).value = entry.position
+
+  downloadWorkbook(wb, payslipFilename(entry, 'xlsx'))
+}
+
+export async function buildPayslipPdfDoc(entry: PayslipEntry) {
+  const periodLabel = `${formatDate(entry.periodStart)} – ${formatDate(entry.periodEnd)}`
+  const doc = createPdf('portrait')
+  const y = await addHeaderLines(doc, [
+    { text: orgHeader.orgName, bold: true },
+    { text: orgHeader.council },
+    { text: 'PAYSLIP', bold: true, size: 12 },
+    { text: `${entry.employeeName} — ${entry.position}` },
+    { text: `Payroll #${entry.payrollNumber}  •  ${periodLabel}` }
+  ])
+  const tableEndY = addTable(doc, {
+    startY: y,
+    head: [],
+    body: payslipLineItems(entry).map((item) => [item.label, item.value.toFixed(2)]),
+    foot: [['Net Pay', entry.netSalary.toFixed(2)]],
+    columnStyles: { 1: { halign: 'right' } }
+  })
+  addSignatories(doc, tableEndY, [
+    {
+      label: 'Prepared by:',
+      name: signatories.accountingClerk.toUpperCase(),
+      role: 'Accounting Clerk'
+    },
+    { label: 'Received by:', name: entry.employeeName.toUpperCase(), role: entry.position }
+  ])
+  return doc
+}
+
+export async function exportPayslipPdf(entry: PayslipEntry) {
+  const doc = await buildPayslipPdfDoc(entry)
+  savePdf(doc, payslipFilename(entry, 'pdf'))
+}
+
+export async function exportPayslipDocx(entry: PayslipEntry) {
+  const periodLabel = `${formatDate(entry.periodStart)} – ${formatDate(entry.periodEnd)}`
+  const children = [
+    ...(await headerParagraphs([
+      { text: orgHeader.orgName, bold: true },
+      { text: orgHeader.council },
+      { text: 'PAYSLIP', bold: true, size: 24 },
+      { text: `${entry.employeeName} — ${entry.position}` },
+      { text: `Payroll #${entry.payrollNumber}  •  ${periodLabel}` }
+    ])),
+    spacer(),
+    buildTable(
+      [],
+      payslipLineItems(entry).map((item) => [item.label, item.value.toFixed(2)]),
+      ['Net Pay', entry.netSalary.toFixed(2)]
+    ),
+    spacer(),
+    spacer(),
+    signatoryTable([
+      {
+        label: 'Prepared by:',
+        name: signatories.accountingClerk.toUpperCase(),
+        role: 'Accounting Clerk'
+      },
+      { label: 'Received by:', name: entry.employeeName.toUpperCase(), role: entry.position }
+    ])
+  ]
+  await saveDocx(children, payslipFilename(entry, 'docx'))
 }
