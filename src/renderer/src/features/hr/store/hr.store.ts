@@ -463,6 +463,13 @@ export const useHRStore = create<HRState>()((set, get) => ({
     ) {
       get().grantOvertimeCredit(saved.employeeId, saved.hoursWorked - OVERTIME_THRESHOLD_HOURS)
     }
+    const emp = get().employees.find((e) => e.id === saved.employeeId)
+    appendAuditLog({
+      action: 'attendance_recorded',
+      actorName: actorName(),
+      entityType: 'attendance',
+      summary: `Attendance for ${emp?.fullName ?? 'employee'} on ${saved.date} recorded manually.`
+    })
   },
 
   deleteAttendanceRecord: (id) => {
