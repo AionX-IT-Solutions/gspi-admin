@@ -23,7 +23,8 @@ import {
   ClipboardList,
   GraduationCap,
   Receipt,
-  Landmark
+  Landmark,
+  CalendarRange
 } from 'lucide-react'
 import { useElectron } from '../hooks/useElectron'
 import { useAppStore } from '../store/app.store'
@@ -151,6 +152,7 @@ const searchTypeIcon: Record<SearchResultType, ReactNode> = {
   payroll: <Wallet size={13} />,
   rental: <DoorOpen size={13} />,
   visitor: <UserPlus size={13} />,
+  activity: <CalendarRange size={13} />,
   goal: <Target size={13} />,
   programReport: <ClipboardList size={13} />,
   trainingReport: <GraduationCap size={13} />,

@@ -1,4 +1,4 @@
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'partial'
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'partial' | 'void'
 
 export interface InvoiceLineItem {
   id: string

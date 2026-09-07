@@ -62,7 +62,8 @@ const CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE: Record<string, CashReceipt['catego
     'Associate',
     'Career Woman',
     'Honorary Member'
-  ]
+  ],
+  'training fees': ['Training Fees']
 }
 
 interface AutoActualSources {

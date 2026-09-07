@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Plus, Pencil, RefreshCw, UserX, Trash2 } from 'lucide-react'
+import { ArrowLeft, Banknote, Eye, Plus, Pencil, RefreshCw, UserX, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
 import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
@@ -19,6 +19,8 @@ import { formatDate } from '@/shared/lib/utils'
 import { useTroopsStore } from '../store/troops.store'
 import { useTroopProfile } from '../hooks/useTroopProfile'
 import { ScoutMemberFormModal } from '../components/ScoutMemberFormModal'
+import { RecordMemberPaymentModal } from '../components/RecordMemberPaymentModal'
+import { ViewMemberModal } from '../components/ViewMemberModal'
 import { RosterExportMenu } from '../components/RosterExportMenu'
 import type { RosterExportRow } from '../lib/rosterExport'
 import type { ScoutMember } from '../types/troop.types'
@@ -48,7 +50,11 @@ export function TroopProfile() {
     deleteTarget,
     setDeleteTarget,
     handleConfirmDelete,
-    handleRenew
+    handleRenew,
+    paymentTarget,
+    setPaymentTarget,
+    viewMemberId,
+    setViewMemberId
   } = useTroopProfile(troop)
 
   const rosterExportRows: RosterExportRow[] = useMemo(
@@ -92,6 +98,14 @@ export function TroopProfile() {
     actionsColumn<ScoutMember>(
       (r) => (
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setViewMemberId(r.id)}
+            title={t('common.view')}
+          >
+            <Eye size={13} />
+          </Button>
           {canManage && !isCurrent(r) && (
             <Button
               size="sm"
@@ -105,6 +119,16 @@ export function TroopProfile() {
           {canManage && (
             <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
               <Pencil size={13} />
+            </Button>
+          )}
+          {canManage && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setPaymentTarget(r)}
+              title={t('troops.roster.paymentButton')}
+            >
+              <Banknote size={13} />
             </Button>
           )}
           {canManage && (
@@ -256,6 +280,14 @@ export function TroopProfile() {
         currentMembershipYear={currentMembershipYear}
         editTarget={editTarget}
       />
+
+      <RecordMemberPaymentModal
+        open={!!paymentTarget}
+        onOpenChange={(open) => !open && setPaymentTarget(null)}
+        member={paymentTarget}
+      />
+
+      <ViewMemberModal memberId={viewMemberId} onClose={() => setViewMemberId(null)} />
 
       <ConfirmDialog
         open={!!toggleTarget}

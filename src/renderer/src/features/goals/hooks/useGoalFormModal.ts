@@ -7,14 +7,16 @@ import type { GoalDialogState } from '../components/GoalFormModal'
 
 export function useGoalFormModal(
   dialog: GoalDialogState | null,
+  programYear: string,
   onClose: () => void,
   onCreated: (goalId: string) => void
 ) {
   const { t } = useTranslation()
   const toast = useToast()
-  const goals = useGoalsStore((s) => s.goals)
+  const allGoals = useGoalsStore((s) => s.goals)
   const addGoal = useGoalsStore((s) => s.addGoal)
   const updateGoal = useGoalsStore((s) => s.updateGoal)
+  const goals = allGoals.filter((g) => g.fiscalYear === programYear)
   const [form, setForm] = useState({ code: '', title: '' })
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export function useGoalFormModal(
     } else {
       const goal: Goal = {
         id: crypto.randomUUID(),
+        fiscalYear: programYear,
         code: form.code.trim() || String(goals.length + 1),
         title: form.title.trim(),
         objectives: []

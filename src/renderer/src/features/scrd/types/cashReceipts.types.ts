@@ -6,6 +6,7 @@ export type CashReceiptCategory =
   | 'Career Woman'
   | 'Honorary Member'
   | 'Thinking Day Fund'
+  | 'Training Fees'
   | 'Interest Income'
   | 'Other Operations'
 

@@ -11,7 +11,8 @@ export const statusBadgeVariant: Record<
   sent: 'primary',
   paid: 'success',
   overdue: 'danger',
-  partial: 'warning'
+  partial: 'warning',
+  void: 'default'
 }
 
 export function invoiceStatusLabel(t: TFn, status: InvoiceStatus): string {

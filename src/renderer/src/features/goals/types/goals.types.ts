@@ -15,10 +15,14 @@ export interface GoalObjective {
 
 export interface Goal {
   id: string
+  fiscalYear: string
   code: GoalCode
   title: string
   objectives: GoalObjective[]
 }
+
+/** Program year used for any goal doc predating per-year tracking (see goals.store.ts). */
+export const DEFAULT_PROGRAM_YEAR = '2025-2026'
 
 export const PROGRAM_MONTHS = [
   'Jul',

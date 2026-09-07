@@ -33,7 +33,8 @@ import {
   UserCheck,
   GraduationCap,
   Megaphone,
-  Wallet2
+  Wallet2,
+  CalendarRange
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -76,6 +77,12 @@ const coreNavItems: NavItem[] = [
     labelKey: 'sidebar.nav.announcements',
     icon: <Megaphone size={16} />,
     permission: MODULE_PERMISSIONS.announcements
+  },
+  {
+    path: '/activities',
+    labelKey: 'sidebar.nav.activities',
+    icon: <CalendarRange size={16} />,
+    permission: MODULE_PERMISSIONS.activities
   },
   {
     path: '/pos',

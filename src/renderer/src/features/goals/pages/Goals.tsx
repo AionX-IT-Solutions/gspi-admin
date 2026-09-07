@@ -1,13 +1,15 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Target, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
+import { Modal } from '@/shared/components/ui/Modal'
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/Tabs'
 import { DataTable, type Column } from '@/shared/components/ui/DataTable'
-import { FieldInput, FieldSelect } from '@/shared/components/ui/FormField'
+import { FormField, FieldInput, FieldSelect } from '@/shared/components/ui/FormField'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { formatCurrency } from '@/shared/lib/utils'
 import { PROGRAM_MONTHS, type GoalObjective } from '../types/goals.types'
@@ -40,6 +42,10 @@ export function Goals() {
   const {
     canManage,
     programYear,
+    setSelectedProgramYear,
+    availableProgramYears,
+    suggestedNextProgramYear,
+    handleCreateProgramYear,
     goals,
     setMonthlyAchieved,
     monthIndex,
@@ -60,6 +66,8 @@ export function Goals() {
     handleConfirmDeleteObjective
   } = useGoals()
   const hydrate = useGoalsStore((s) => s.hydrate)
+  const [newYearOpen, setNewYearOpen] = useState(false)
+  const [newYearLabel, setNewYearLabel] = useState('')
 
   const columns: Column<ObjectiveRow>[] = [
     { key: 'code', header: t('goals.table.code'), width: '80px' },
@@ -165,10 +173,30 @@ export function Goals() {
     >
       <PageHeader
         title={t('goals.title')}
-        subtitle={t('goals.programYear', { year: programYear })}
         icon={<Target size={18} />}
         actions={
           <>
+            {availableProgramYears.length > 0 && (
+              <FieldSelect
+                value={programYear}
+                onChange={(e) => setSelectedProgramYear(e.target.value)}
+                options={availableProgramYears.map((y) => ({ value: y, label: y }))}
+                style={{ width: 140 }}
+              />
+            )}
+            {canManage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Plus size={13} />}
+                onClick={() => {
+                  setNewYearLabel(suggestedNextProgramYear)
+                  setNewYearOpen(true)
+                }}
+              >
+                {t('goals.newProgramYearButton')}
+              </Button>
+            )}
             <RefreshButton onRefresh={() => hydrate(true)} />
             {canManage && (
               <Button
@@ -186,7 +214,12 @@ export function Goals() {
               options={PROGRAM_MONTHS.map((m, i) => ({ value: String(i), label: m }))}
               style={{ width: 100 }}
             />
-            <GoalsExportMenu achievedFor={achievedFor} monthIndex={monthIndex} />
+            <GoalsExportMenu
+              goals={goals}
+              programYear={programYear}
+              achievedFor={achievedFor}
+              monthIndex={monthIndex}
+            />
           </>
         }
       />
@@ -282,6 +315,7 @@ export function Goals() {
 
       <GoalFormModal
         dialog={goalDialog}
+        programYear={programYear}
         onClose={() => setGoalDialog(null)}
         onCreated={setActiveGoalId}
       />
@@ -309,6 +343,40 @@ export function Goals() {
         onConfirm={handleConfirmDeleteObjective}
         onCancel={() => setDeletingObjective(null)}
       />
+
+      <Modal
+        open={newYearOpen}
+        onOpenChange={setNewYearOpen}
+        title={t('goals.newProgramYearModal.title')}
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setNewYearOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                handleCreateProgramYear(newYearLabel)
+                setNewYearOpen(false)
+              }}
+            >
+              {t('goals.newProgramYearModal.createButton')}
+            </Button>
+          </>
+        }
+      >
+        <FormField label={t('goals.newProgramYearModal.yearLabel')} required>
+          <FieldInput
+            value={newYearLabel}
+            onChange={(e) => setNewYearLabel(e.target.value)}
+            placeholder="2027-2028"
+          />
+        </FormField>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.5 }}>
+          {t('goals.newProgramYearModal.hint', { year: programYear })}
+        </p>
+      </Modal>
     </motion.div>
   )
 }

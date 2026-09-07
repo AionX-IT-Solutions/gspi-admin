@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { FileText, Plus, Pencil, Trash2, Eye } from 'lucide-react'
+import { FileText, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { Card } from '@/shared/components/ui/Card'
@@ -107,15 +107,10 @@ export function Invoices() {
       render: (r) => formatCurrency(r.balanceDue)
     },
     actionsColumn<Invoice>((r) => (
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setViewingId(r.id)}
-          title={t('common.view')}
-        >
-          <Eye size={13} />
-        </Button>
+      <div
+        style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {canManage && (
           <Button
             size="sm"
@@ -220,6 +215,7 @@ export function Invoices() {
           hiddenColumns={hiddenColumns}
           loading={loading}
           emptyMessage={t('invoices.table.empty')}
+          onRowClick={(r) => setViewingId(r.id)}
         />
       </Card>
 

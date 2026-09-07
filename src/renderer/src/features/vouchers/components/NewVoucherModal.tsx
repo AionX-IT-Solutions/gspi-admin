@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Plus, Trash2 } from 'lucide-react'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField, FieldInput, FieldSelect, FieldTextArea } from '@/shared/components/ui/FormField'
+import { formatCurrency } from '@/shared/lib/utils'
 import { useBanksStore, bankDisplayName } from '@/features/scrd/store/banks.store'
 import { useAccountingStore } from '@/features/accounting/store/accounting.store'
 import { useBudgetStore } from '@/features/budget/store/budget.store'
@@ -17,40 +19,36 @@ interface NewVoucherModalProps {
 
 export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherModalProps) {
   const { t } = useTranslation()
-  const { form, setForm, handleSubmit, resetForm } = useNewVoucherModal(onOpenChange, editTarget)
+  const {
+    form,
+    setForm,
+    totalAmount,
+    addAccountLine,
+    removeAccountLine,
+    updateAccountLine,
+    handleSubmit,
+    resetForm
+  } = useNewVoucherModal(onOpenChange, editTarget)
   const allBanks = useBanksStore((s) => s.banks)
   const banks = useMemo(() => allBanks.filter((b) => b.isActive), [allBanks])
 
   const budgetCategories = useBudgetStore((s) => s.categories)
-  // Council Budget's own expense line items are the only valid GL accounts — vouchers
-  // used to take free text here, which meant a typo or slightly different wording never
-  // matched the budget category name and silently broke that line's auto-actuals link
-  // (see budgetAutoActuals.ts's normalizeCategoryName comparison). Latest fiscal year
-  // only, same as the Budget page's own default.
+  // Council Budget's own expense line items are suggested as account titles — vouchers
+  // also allow free text (e.g. "SSS Premium Payable"), since real disbursement
+  // vouchers debit balance-sheet accounts the Budget doesn't track alongside expense
+  // lines it does. Latest fiscal year only, same as the Budget page's own default.
   const latestFiscalYear = useMemo(
     () => [...new Set(budgetCategories.map((c) => c.fiscalYear))].sort().at(-1),
     [budgetCategories]
   )
-  const expenseAccountOptions = useMemo(
+  const expenseAccountSuggestions = useMemo(
     () =>
       budgetCategories
         .filter((c) => c.fiscalYear === latestFiscalYear && c.section === 'expense')
         .sort((a, b) => a.order - b.order)
-        .map((c) => ({ value: c.name, label: c.name })),
+        .map((c) => c.name),
     [budgetCategories, latestFiscalYear]
   )
-  // Keeps an existing voucher's account selectable even if it predates this budget-linked
-  // dropdown (free-text legacy value) or doesn't otherwise match a current expense line —
-  // editing must never silently blank out or discard what was actually recorded.
-  const accountOptions = useMemo(() => {
-    if (!form.accountName || expenseAccountOptions.some((o) => o.value === form.accountName)) {
-      return expenseAccountOptions
-    }
-    return [
-      { value: form.accountName, label: `${form.accountName} (current)` },
-      ...expenseAccountOptions
-    ]
-  }, [expenseAccountOptions, form.accountName])
 
   const allVendors = useAccountingStore((s) => s.vendors)
   const vendors = useMemo(() => allVendors.filter((v) => v.status === 'active'), [allVendors])
@@ -238,21 +236,64 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
             options={banks.map((b) => ({ value: bankDisplayName(b), label: bankDisplayName(b) }))}
           />
         </FormField>
-        <FormField label={t('vouchers.form.glAccount')} required>
-          <FieldSelect
-            value={form.accountName}
-            onChange={(e) => setForm((f) => ({ ...f, accountName: e.target.value }))}
-            placeholder={t('vouchers.form.glAccountPlaceholder')}
-            options={accountOptions}
-          />
-        </FormField>
-        <FormField label={t('vouchers.form.amount')} required>
-          <FieldInput
-            type="number"
-            min={0}
-            value={form.amount}
-            onChange={(e) => setForm((f) => ({ ...f, amount: parseFloat(e.target.value) || 0 }))}
-          />
+        <FormField label={t('vouchers.form.accountLinesLabel')} required className="col-span-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {form.accountLines.map((line, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <AccountTitleField
+                  value={line.account}
+                  onChange={(value) => updateAccountLine(i, { account: value })}
+                  suggestions={expenseAccountSuggestions}
+                  placeholder={t('vouchers.form.accountPlaceholder')}
+                />
+                <FieldInput
+                  type="number"
+                  min={0}
+                  value={line.amount || ''}
+                  onChange={(e) =>
+                    updateAccountLine(i, { amount: parseFloat(e.target.value) || 0 })
+                  }
+                  placeholder="0.00"
+                  style={{ width: 130, textAlign: 'right' }}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeAccountLine(i)}
+                  disabled={form.accountLines.length <= 1}
+                  aria-label={t('common.delete')}
+                  style={{ width: 30, height: 30, padding: 0, flexShrink: 0 }}
+                >
+                  <Trash2 size={13} color="#f87171" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<Plus size={12} />}
+              onClick={addAccountLine}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {t('vouchers.form.addAccountLine')}
+            </Button>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 8,
+                fontSize: 13,
+                fontWeight: 700,
+                paddingTop: 8,
+                marginTop: 2,
+                borderTop: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              <span>{t('vouchers.form.totalAmount')}:</span>
+              <span>{formatCurrency(totalAmount)}</span>
+            </div>
+          </div>
         </FormField>
         <FormField label={t('vouchers.form.particulars')} className="col-span-2">
           <FieldTextArea
@@ -262,5 +303,96 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
         </FormField>
       </div>
     </Modal>
+  )
+}
+
+interface AccountTitleFieldProps {
+  value: string
+  onChange: (value: string) => void
+  suggestions: string[]
+  placeholder?: string
+}
+
+// Free-text account title with a searchable, scrollable suggestion list — same visual
+// language as the Payee vendor search above, since a native <datalist> renders as an
+// unstyled, unbounded browser popup that clashes with the rest of the form.
+function AccountTitleField({ value, onChange, suggestions, placeholder }: AccountTitleFieldProps) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const filtered = useMemo(() => {
+    const q = value.trim().toLowerCase()
+    const list = q ? suggestions.filter((s) => s.toLowerCase().includes(q)) : suggestions
+    return list.slice(0, 50)
+  }, [suggestions, value])
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', flex: 1 }}>
+      <FieldInput
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+          setOpen(true)
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            border: '1px solid var(--border-default)',
+            borderRadius: 8,
+            maxHeight: 220,
+            overflowY: 'auto',
+            backgroundColor: '#ffffff',
+            zIndex: 20,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+          }}
+        >
+          {filtered.map((name) => (
+            <div
+              key={name}
+              onClick={() => {
+                onChange(name)
+                setOpen(false)
+              }}
+              style={{
+                padding: '8px 12px',
+                cursor: 'pointer',
+                borderBottom: '1px solid var(--border-subtle)',
+                fontSize: 13,
+                color: 'var(--text-primary)',
+                backgroundColor: '#ffffff',
+                transition: 'background-color 0.15s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f5f5f5'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffffff'
+              }}
+            >
+              {name}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

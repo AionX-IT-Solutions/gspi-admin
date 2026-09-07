@@ -23,6 +23,8 @@ export function useTroopProfile(troop: Troop | null) {
   const [editTarget, setEditTarget] = useState<ScoutMember | null>(null)
   const [toggleTarget, setToggleTarget] = useState<ScoutMember | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ScoutMember | null>(null)
+  const [paymentTarget, setPaymentTarget] = useState<ScoutMember | null>(null)
+  const [viewMemberId, setViewMemberId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
   const currentMembershipYear = useMemo(() => getMembershipYearLabel(startMonth), [startMonth])
@@ -111,6 +113,10 @@ export function useTroopProfile(troop: Troop | null) {
     deleteTarget,
     setDeleteTarget,
     handleConfirmDelete,
-    handleRenew
+    handleRenew,
+    paymentTarget,
+    setPaymentTarget,
+    viewMemberId,
+    setViewMemberId
   }
 }

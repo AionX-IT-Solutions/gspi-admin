@@ -12,6 +12,16 @@ export interface Troop {
   isActive: boolean
 }
 
+export type MemberPaymentCategory = 'membership' | 'training'
+
+export interface MemberPayment {
+  id: string
+  /** ISO date this payment was collected — feeds the Reports > Daily Collections tab. */
+  date: string
+  amount: number
+  category: MemberPaymentCategory
+}
+
 export interface ScoutMember {
   id: string
   troopId: string
@@ -26,8 +36,10 @@ export interface ScoutMember {
   membershipYear: string
   /** ISO date of the last registration/renewal. */
   renewedAt: string
-  /** Amount collected for this member's registration/renewal on `renewedAt` — feeds the
-   *  Reports > Daily Collections tab. Unset/0 = fee waived or not yet recorded. */
-  registrationFee?: number
+  /** Fees collected for this member over time (membership dues, training fees, etc.) —
+   *  recorded one at a time via the roster's "Record Payment" action, each tagged with
+   *  a category. Feeds the Reports > Daily Collections tab. Unset on members synced
+   *  before this field existed — read as `payments ?? []`. */
+  payments?: MemberPayment[]
   isActive: boolean
 }

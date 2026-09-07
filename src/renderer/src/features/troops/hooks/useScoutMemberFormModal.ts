@@ -12,8 +12,7 @@ function emptyForm() {
     level: '',
     guardianName: '',
     guardianContact: '',
-    address: '',
-    registrationFee: 0
+    address: ''
   }
 }
 
@@ -24,8 +23,7 @@ function formFromMember(member: ScoutMember) {
     level: member.level ?? '',
     guardianName: member.guardianName ?? '',
     guardianContact: member.guardianContact ?? '',
-    address: member.address ?? '',
-    registrationFee: member.registrationFee ?? 0
+    address: member.address ?? ''
   }
 }
 
@@ -59,8 +57,7 @@ export function useScoutMemberFormModal(
       level: form.level.trim() || undefined,
       guardianName: form.guardianName.trim() || undefined,
       guardianContact: form.guardianContact.trim() || undefined,
-      address: form.address.trim() || undefined,
-      registrationFee: form.registrationFee || undefined
+      address: form.address.trim() || undefined
     }
     if (editTarget) {
       updateScoutMember(editTarget.id, payload)
@@ -72,6 +69,7 @@ export function useScoutMemberFormModal(
         ...payload,
         membershipYear: currentMembershipYear,
         renewedAt: new Date().toISOString().slice(0, 10),
+        payments: [],
         isActive: true
       })
       toast.success(t('troops.roster.toast.created', { name: payload.fullName }))

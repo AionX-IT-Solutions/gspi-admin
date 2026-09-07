@@ -11,7 +11,8 @@ const filterTabKeys: ('all' | InvoiceStatus)[] = [
   'sent',
   'overdue',
   'partial',
-  'paid'
+  'paid',
+  'void'
 ]
 
 export function useInvoices() {

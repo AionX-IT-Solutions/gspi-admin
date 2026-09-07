@@ -715,6 +715,21 @@ export async function exportMonthlyInventoryReport(
   r++
   sheet.getCell(r, 1).value = 'C.E.S. In-Charge'
   sheet.getCell(r, 7).value = 'Accounting Clerk'
+  r += 3
+  sheet.getCell(r, 7).value = 'Verified Correct:'
+  r += 2
+  sheet.getCell(r, 7).value = signatories.councilExecutive.toUpperCase()
+  r++
+  sheet.getCell(r, 7).value = 'Council Executive'
+  r += 3
+  sheet.getCell(r, 1).value = 'Recommending Approval:'
+  sheet.getCell(r, 7).value = 'Approved:'
+  r += 2
+  sheet.getCell(r, 1).value = signatories.nesCommitteeChairman.toUpperCase()
+  sheet.getCell(r, 7).value = signatories.councilPresident.toUpperCase()
+  r++
+  sheet.getCell(r, 1).value = 'Chairman - NES Committee'
+  sheet.getCell(r, 7).value = 'Council President'
 
   downloadWorkbook(
     wb,
@@ -816,7 +831,7 @@ export async function buildMonthlyInventoryReportPdfDoc(
       Array.from({ length: 11 }, (_, i) => [i + 1, { halign: 'right' as const }])
     )
   })
-  addSignatories(doc, tableEndY, [
+  let signY = addSignatories(doc, tableEndY, [
     {
       label: 'Prepared by:',
       name: signatories.cesInCharge.toUpperCase(),
@@ -826,6 +841,26 @@ export async function buildMonthlyInventoryReportPdfDoc(
       label: 'Certified Correct:',
       name: signatories.accountingClerk.toUpperCase(),
       role: 'Accounting Clerk'
+    }
+  ])
+  signY = addSignatories(doc, signY, [
+    { label: '', name: '', role: '' },
+    {
+      label: 'Verified Correct:',
+      name: signatories.councilExecutive.toUpperCase(),
+      role: 'Council Executive'
+    }
+  ])
+  addSignatories(doc, signY, [
+    {
+      label: 'Recommending Approval:',
+      name: signatories.nesCommitteeChairman.toUpperCase(),
+      role: 'Chairman - NES Committee'
+    },
+    {
+      label: 'Approved:',
+      name: signatories.councilPresident.toUpperCase(),
+      role: 'Council President'
     }
   ])
   return doc
@@ -881,6 +916,28 @@ export async function exportMonthlyInventoryReportDocx(
         label: 'Certified Correct:',
         name: signatories.accountingClerk.toUpperCase(),
         role: 'Accounting Clerk'
+      }
+    ]),
+    spacer(),
+    signatoryTable([
+      { label: '', name: '', role: '' },
+      {
+        label: 'Verified Correct:',
+        name: signatories.councilExecutive.toUpperCase(),
+        role: 'Council Executive'
+      }
+    ]),
+    spacer(),
+    signatoryTable([
+      {
+        label: 'Recommending Approval:',
+        name: signatories.nesCommitteeChairman.toUpperCase(),
+        role: 'Chairman - NES Committee'
+      },
+      {
+        label: 'Approved:',
+        name: signatories.councilPresident.toUpperCase(),
+        role: 'Council President'
       }
     ])
   ]

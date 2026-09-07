@@ -73,6 +73,9 @@ const Troops = lazy(() =>
 const TroopProfile = lazy(() =>
   import('@/features/troops/pages/TroopProfile').then((m) => ({ default: m.TroopProfile }))
 )
+const Activities = lazy(() =>
+  import('@/features/activities/pages/Activities').then((m) => ({ default: m.Activities }))
+)
 const Attendance = lazy(() =>
   import('@/features/hr/pages/Attendance').then((m) => ({ default: m.Attendance }))
 )
@@ -241,6 +244,14 @@ function AuthenticatedShell() {
                   element={
                     <RequirePermission permission={MODULE_PERMISSIONS.troops}>
                       <TroopProfile />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/activities"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.activities}>
+                      <Activities />
                     </RequirePermission>
                   }
                 />

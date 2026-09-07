@@ -11,13 +11,14 @@ export interface GoalDialogState {
 
 interface GoalFormModalProps {
   dialog: GoalDialogState | null
+  programYear: string
   onClose: () => void
   onCreated: (goalId: string) => void
 }
 
-export function GoalFormModal({ dialog, onClose, onCreated }: GoalFormModalProps) {
+export function GoalFormModal({ dialog, programYear, onClose, onCreated }: GoalFormModalProps) {
   const { t } = useTranslation()
-  const { form, setForm, handleSave } = useGoalFormModal(dialog, onClose, onCreated)
+  const { form, setForm, handleSave } = useGoalFormModal(dialog, programYear, onClose, onCreated)
 
   return (
     <Modal

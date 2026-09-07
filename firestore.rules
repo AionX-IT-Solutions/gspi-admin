@@ -87,8 +87,13 @@ service cloud.firestore {
     match /troops/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
     }
+
+    // Council Programs: Activities (troop camps, trainings, meetings, community service).
+    match /activities/{id} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+    }
     // Read also granted to accountant — Reports > Daily Collections rolls up each
-    // member's registrationFee as a cash-collection line.
+    // member's recorded payments as cash-collection lines.
     match /scoutMembers/{id} {
       allow read: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager', 'accountant']);
       allow write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);

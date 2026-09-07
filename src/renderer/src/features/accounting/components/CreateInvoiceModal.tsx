@@ -29,7 +29,6 @@ export function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalPro
     removeLine,
     updateLine,
     subtotal,
-    tax,
     total,
     handleSave,
     resetForm
@@ -390,16 +389,6 @@ export function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalPro
             style={{ fontSize: 12, color: 'var(--text-primary)', minWidth: 90, textAlign: 'right' }}
           >
             {formatCurrency(subtotal)}
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 24 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            {t('invoices.detail.tax')}
-          </span>
-          <span
-            style={{ fontSize: 12, color: 'var(--text-primary)', minWidth: 90, textAlign: 'right' }}
-          >
-            {formatCurrency(tax)}
           </span>
         </div>
         <div style={{ display: 'flex', gap: 24 }}>

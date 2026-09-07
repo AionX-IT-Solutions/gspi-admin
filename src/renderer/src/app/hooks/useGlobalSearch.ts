@@ -6,6 +6,7 @@ import { useTroopsStore } from '@/features/troops/store/troops.store'
 import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
 import { useRentalsStore } from '@/features/rentals/store/rentals.store'
 import { useVisitorsStore } from '@/features/visitors/store/visitors.store'
+import { useActivitiesStore } from '@/features/activities/store/activities.store'
 import { useGoalsStore } from '@/features/goals/store/goals.store'
 import { useProgramReportsStore } from '@/features/programReports/store/programReports.store'
 import { useTrainingReportsStore } from '@/features/trainingReports/store/trainingReports.store'
@@ -33,6 +34,7 @@ export type SearchResultType =
   | 'payroll'
   | 'rental'
   | 'visitor'
+  | 'activity'
   | 'goal'
   | 'programReport'
   | 'trainingReport'
@@ -70,6 +72,7 @@ export function useGlobalSearch(query: string): SearchResult[] {
   const rentalBookings = useRentalsStore((s) => s.bookings)
   const rentalSpaces = useRentalsStore((s) => s.spaces)
   const visitors = useVisitorsStore((s) => s.visitors)
+  const activities = useActivitiesStore((s) => s.activities)
   const goals = useGoalsStore((s) => s.goals)
   const programReportItems = useProgramReportsStore((s) => s.lineItems)
   const trainingReports = useTrainingReportsStore((s) => s.trainingReports)
@@ -276,6 +279,20 @@ export function useGlobalSearch(query: string): SearchResult[] {
       }
     }
 
+    if (hasPermission('view:activities')) {
+      for (const a of activities) {
+        if (matches(a.title, a.location, a.organizer)) {
+          results.push({
+            id: `activity-${a.id}`,
+            type: 'activity',
+            title: a.title,
+            subtitle: a.location,
+            path: '/activities'
+          })
+        }
+      }
+    }
+
     if (hasPermission('view:goals')) {
       for (const g of goals) {
         if (matches(g.title, g.code)) {
@@ -372,6 +389,7 @@ export function useGlobalSearch(query: string): SearchResult[] {
     rentalBookings,
     rentalSpaces,
     visitors,
+    activities,
     goals,
     programReportItems,
     trainingReports,

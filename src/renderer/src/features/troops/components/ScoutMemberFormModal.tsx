@@ -85,16 +85,6 @@ export function ScoutMemberFormModal({
             onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
           />
         </FormField>
-        <FormField label={t('troops.roster.form.registrationFee')}>
-          <FieldInput
-            type="number"
-            min={0}
-            value={form.registrationFee}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, registrationFee: parseFloat(e.target.value) || 0 }))
-            }
-          />
-        </FormField>
       </div>
     </Modal>
   )

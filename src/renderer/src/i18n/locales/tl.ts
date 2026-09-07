@@ -83,6 +83,7 @@ const tl = {
       members: 'Mga Miyembro',
       employees: 'Mga Empleyado',
       troops: 'Mga Troop',
+      activities: 'Mga Aktibidad',
       attendance: 'Attendance',
       leave: 'Mga Leave Request',
       payroll: 'Payroll',
@@ -136,6 +137,7 @@ const tl = {
       payroll: 'Payroll',
       rental: 'Rental',
       visitor: 'Bisita',
+      activity: 'Aktibidad',
       goal: 'Layunin',
       programReport: 'Ulat ng Programa',
       trainingReport: 'Ulat ng Pagsasanay',
@@ -618,6 +620,7 @@ const tl = {
       searchPlaceholder: 'Maghanap sa roster…',
       empty: 'Wala pang nakarehistrong miyembro sa troop na ito',
       renewButton: 'I-renew para sa membership year na ito',
+      paymentButton: 'Magtala ng Bayad',
       table: {
         fullName: 'Pangalan',
         birthdate: 'Petsa ng Kapanganakan',
@@ -637,8 +640,22 @@ const tl = {
         level: 'Level',
         guardianName: 'Pangalan ng Guardian',
         guardianContact: 'Contact ng Guardian',
-        address: 'Address',
-        registrationFee: 'Bayad sa Rehistrasyon'
+        address: 'Address'
+      },
+      payment: {
+        title: 'Magtala ng Bayad — {{name}}',
+        amountLabel: 'Halaga',
+        categoryLabel: 'Kategorya',
+        categoryMembership: 'Membership',
+        categoryTraining: 'Training',
+        dateLabel: 'Petsa',
+        submitButton: 'Itala ang Bayad',
+        historyTitle: 'Kasaysayan ng Bayad',
+        historyEmpty: 'Wala pang naitalang bayad',
+        toast: {
+          validationRequired: 'Maglagay ng halagang higit sa zero',
+          recorded: 'Naitala ang bayad ni {{name}}'
+        }
       },
       confirmDeactivate: {
         title: 'I-deactivate ang Miyembro',
@@ -948,6 +965,74 @@ const tl = {
         "I-unenroll si {{name}} sa biometric attendance? Hindi sila makaka-clock in/out sa terminal hangga't hindi ulit na-enroll."
     }
   },
+  activities: {
+    title: 'Mga Aktibidad',
+    newActivityButton: 'Bagong Aktibidad',
+    empty: 'Wala pang naka-iskedyul na aktibidad',
+    searchPlaceholder: 'Maghanap ng aktibidad…',
+    tabs: {
+      list: 'Listahan',
+      calendar: 'Kalendaryo'
+    },
+    table: {
+      title: 'Aktibidad',
+      category: 'Kategorya',
+      date: 'Petsa',
+      location: 'Lokasyon',
+      status: 'Katayuan',
+      action: 'Aksyon'
+    },
+    category: {
+      meeting: 'Miting',
+      camp: 'Kampo',
+      training: 'Pagsasanay',
+      communityService: 'Serbisyo sa Komunidad',
+      ceremony: 'Seremonya',
+      other: 'Iba pa'
+    },
+    status: {
+      scheduled: 'Naka-iskedyul',
+      ongoing: 'Kasalukuyang Nagaganap'
+    },
+    modal: {
+      title: 'Bagong Aktibidad',
+      editTitle: 'I-edit ang Aktibidad',
+      createButton: 'Gumawa ng Aktibidad'
+    },
+    form: {
+      title: 'Pamagat',
+      category: 'Kategorya',
+      status: 'Katayuan',
+      startDate: 'Petsa ng Simula',
+      endDate: 'Petsa ng Tapos (opsyonal)',
+      startTime: 'Oras ng Simula',
+      endTime: 'Oras ng Tapos',
+      location: 'Lokasyon',
+      organizer: 'Organisador / Troop na Namamahala',
+      description: 'Deskripsyon'
+    },
+    toast: {
+      validationRequired: 'Kailangan ang pamagat at petsa ng simula',
+      created: 'Nagawa ang aktibidad',
+      updated: 'Na-update ang aktibidad',
+      deleted: 'Naalis ang aktibidad',
+      statusUpdated: 'Na-update ang katayuan ng aktibidad'
+    },
+    confirmDelete: {
+      title: 'Alisin ang aktibidad na ito?',
+      message: 'Permanenteng aalisin ang "{{title}}".'
+    },
+    calendar: {
+      todayButton: 'Ngayon',
+      moreCount: '+{{count}} pa',
+      summary: {
+        activities: 'Mga Aktibidad'
+      },
+      dayModal: {
+        noActivities: 'Walang aktibidad sa araw na ito.'
+      }
+    }
+  },
   rentals: {
     title: 'Pamamahala ng Facility at Rental',
     newBookingButton: 'Bagong Booking',
@@ -1133,7 +1218,8 @@ const tl = {
       budgeted: 'Badyet',
       actual: 'Aktwal Hanggang Ngayon',
       variance: 'Variance',
-      subtotal: 'Sub-total'
+      subtotal: 'Sub-total',
+      groupTotal: 'Kabuuan ng {{group}}'
     },
     editModal: {
       subtitle: 'I-update ang badyet at buwanang aktwal na halaga ng line item na ito.',
@@ -1211,14 +1297,15 @@ const tl = {
       payeeAddress: 'Address ng Payee',
       bankAccount: 'Bank Account (para sa Credit)',
       bankAccountPlaceholder: 'hal. DBP #00-500128590-5',
-      glAccount: 'GL Account (Debit)',
-      glAccountPlaceholder: 'Pumili ng account title mula sa Council Budget',
-      amount: 'Halaga',
+      accountLinesLabel: 'Mga Account Title (Debit)',
+      accountPlaceholder: 'Account title, hal. Office Supplies',
+      addAccountLine: 'Magdagdag ng Account Line',
+      totalAmount: 'Kabuuang Halaga',
       particulars: 'Mga Detalye',
       createButton: 'Gumawa ng Voucher'
     },
     toast: {
-      missingFields: 'Kailangan ang payee, account, at halaga',
+      missingFields: 'Kailangan ang payee at kahit isang account line na may halaga',
       created: 'Nagawa na ang voucher',
       updated: 'Na-update ang voucher',
       deleted: 'Nabura ang voucher',
@@ -1246,10 +1333,12 @@ const tl = {
     newInvoiceButton: 'Bagong Invoice',
     searchPlaceholder: 'Maghanap ng invoice…',
     markAsPaidButton: 'Markahan bilang Nabayaran',
+    voidButton: 'I-void',
     defaultMemo: 'Salamat po sa inyong suporta.',
     status: {
       sent: 'Naipadala',
-      partial: 'Bahagyang Bayad'
+      partial: 'Bahagyang Bayad',
+      void: 'Void'
     },
     filter: {
       all: 'Lahat'
@@ -1277,7 +1366,6 @@ const tl = {
       qty: 'Dami',
       rate: 'Rate',
       subtotal: 'Subtotal',
-      tax: 'Buwis (12%)',
       total: 'Kabuuan'
     },
     form: {
@@ -1298,12 +1386,13 @@ const tl = {
       lineItemRequired: 'Magdagdag ng kahit isang line item.',
       sent: '{{number}} ay naipadala kay {{customer}}',
       savedAsDraft: '{{number}} ay na-save bilang draft',
-      markedPaid: '{{number}} ay minarkahan bilang nabayaran'
+      markedPaid: '{{number}} ay minarkahan bilang nabayaran',
+      voided: '{{number}} ay na-void',
+      deleted: '{{number}} ay na-delete'
     },
-    confirmMarkPaid: {
-      title: 'Markahan ang Invoice bilang Nabayaran',
-      message:
-        'Markahan ang invoice {{number}} ({{amount}}) bilang lubos na nabayaran? Hindi na ito maaaring bawiin.'
+    confirmDelete: {
+      title: 'Burahin ang Invoice',
+      message: 'Burahin ang invoice {{number}}? Hindi na ito maaaring bawiin.'
     }
   },
   customers: {
@@ -1842,7 +1931,13 @@ const tl = {
   },
   goals: {
     title: 'Mga Layunin at Tunguhin',
-    programYear: 'Taon ng Programa {{year}}',
+    newProgramYearButton: 'Bagong Taon ng Programa',
+    newProgramYearModal: {
+      title: 'Magsimula ng Bagong Taon ng Programa',
+      yearLabel: 'Taon ng Programa',
+      createButton: 'Gawin',
+      hint: 'Kokopyahin ang lahat ng layunin at objective mula {{year}} papunta sa bagong taon na parehong istruktura — magsisimula sa 0 ang mga taunang target hanggang aprubahan ng konseho, at mare-reset sa zero ang buwanang progress.'
+    },
     exportLabel: 'I-export ang Ulat',
     goalLabel: 'Layunin {{code}}',
     empty: 'Walang nahanap na objective',
@@ -1895,7 +1990,11 @@ const tl = {
       goalDeleted: 'Nabura ang layunin',
       objectiveCreated: 'Naidagdag ang objective',
       objectiveUpdated: 'Na-update ang objective',
-      objectiveDeleted: 'Nabura ang objective'
+      objectiveDeleted: 'Nabura ang objective',
+      programYearRequired: 'Maglagay ng taon ng programa',
+      programYearExists: 'Mayroon nang ganitong taon ng programa',
+      noSourceYear: 'Walang existing na taon ng programa na kokopyahin',
+      programYearCreated: 'Nagawa ang {{year}}'
     }
   },
   trainingReports: {

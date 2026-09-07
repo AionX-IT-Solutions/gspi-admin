@@ -5,8 +5,17 @@ import { useToast } from '@/app/hooks/useToast'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import type { ModeOfPayment, Voucher, VoucherType } from '../types/vouchers.types'
 
+export interface VoucherAccountLineForm {
+  account: string
+  amount: number
+}
+
 function todayIso() {
   return new Date().toISOString()
+}
+
+function emptyAccountLine(): VoucherAccountLineForm {
+  return { account: '', amount: 0 }
 }
 
 function emptyForm() {
@@ -17,9 +26,8 @@ function emptyForm() {
     payee: '',
     payeeAddress: '',
     bankAccountRef: '',
-    amount: 0,
     particulars: '',
-    accountName: ''
+    accountLines: [emptyAccountLine()]
   }
 }
 
@@ -31,9 +39,11 @@ function formFromVoucher(voucher: Voucher) {
     payee: voucher.payee,
     payeeAddress: voucher.payeeAddress ?? '',
     bankAccountRef: voucher.bankAccountRef ?? '',
-    amount: voucher.amount,
     particulars: voucher.particulars,
-    accountName: voucher.accountLines[0]?.account ?? ''
+    accountLines:
+      voucher.accountLines.length > 0
+        ? voucher.accountLines.map((l) => ({ account: l.account, amount: l.debit || l.credit }))
+        : [emptyAccountLine()]
   }
 }
 
@@ -48,12 +58,35 @@ export function useNewVoucherModal(
   const updateVoucher = useVouchersStore((s) => s.updateVoucher)
   const [form, setForm] = useState(editTarget ? formFromVoucher(editTarget) : emptyForm())
 
+  const totalAmount = form.accountLines.reduce((sum, l) => sum + (l.amount || 0), 0)
+
+  function addAccountLine() {
+    setForm((f) => ({ ...f, accountLines: [...f.accountLines, emptyAccountLine()] }))
+  }
+
+  function removeAccountLine(index: number) {
+    setForm((f) => ({
+      ...f,
+      accountLines:
+        f.accountLines.length > 1 ? f.accountLines.filter((_, i) => i !== index) : f.accountLines
+    }))
+  }
+
+  function updateAccountLine(index: number, patch: Partial<VoucherAccountLineForm>) {
+    setForm((f) => ({
+      ...f,
+      accountLines: f.accountLines.map((l, i) => (i === index ? { ...l, ...patch } : l))
+    }))
+  }
+
   function handleSubmit() {
     if (!hasPermission('manage:vouchers')) return
-    if (!form.payee.trim() || !form.amount || !form.accountName.trim()) {
+    const validLines = form.accountLines.filter((l) => l.account.trim() && l.amount > 0)
+    if (!form.payee.trim() || validLines.length === 0) {
       toast.error(t('vouchers.toast.missingFields'))
       return
     }
+    const amount = validLines.reduce((sum, l) => sum + l.amount, 0)
 
     const payload = {
       voucherType: form.voucherType,
@@ -63,9 +96,13 @@ export function useNewVoucherModal(
       payee: form.payee.trim(),
       payeeAddress: form.payeeAddress.trim() || undefined,
       bankAccountRef: form.bankAccountRef.trim() || undefined,
-      amount: form.amount,
+      amount,
       particulars: form.particulars.trim(),
-      accountLines: [{ account: form.accountName.trim(), debit: form.amount, credit: 0 }]
+      accountLines: validLines.map((l) => ({
+        account: l.account.trim(),
+        debit: l.amount,
+        credit: 0
+      }))
     }
 
     if (editTarget) {
@@ -88,5 +125,14 @@ export function useNewVoucherModal(
     setForm(editTarget ? formFromVoucher(editTarget) : emptyForm())
   }
 
-  return { form, setForm, handleSubmit, resetForm }
+  return {
+    form,
+    setForm,
+    totalAmount,
+    addAccountLine,
+    removeAccountLine,
+    updateAccountLine,
+    handleSubmit,
+    resetForm
+  }
 }

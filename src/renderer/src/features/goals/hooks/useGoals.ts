@@ -4,6 +4,7 @@ import { useGoalsStore } from '../store/goals.store'
 import { usePOSStore } from '@/features/pos/store/pos.store'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { useToast } from '@/app/hooks/useToast'
+import { nextFiscalYearLabel } from '@/shared/lib/fiscalYear'
 import type { Goal, GoalObjective } from '../types/goals.types'
 import type { GoalDialogState } from '../components/GoalFormModal'
 import type { ObjectiveDialogState } from '../components/ObjectiveFormModal'
@@ -14,14 +15,30 @@ export function useGoals() {
   const { hasPermission } = usePermissions()
   const canManage = hasPermission('manage:goals')
 
-  const programYear = useGoalsStore((s) => s.programYear)
-  const goals = useGoalsStore((s) => s.goals)
+  const allGoals = useGoalsStore((s) => s.goals)
   const setMonthlyAchieved = useGoalsStore((s) => s.setMonthlyAchieved)
   const deleteGoal = useGoalsStore((s) => s.deleteGoal)
   const addGoal = useGoalsStore((s) => s.addGoal)
   const deleteObjective = useGoalsStore((s) => s.deleteObjective)
   const addObjective = useGoalsStore((s) => s.addObjective)
+  const createProgramYearAction = useGoalsStore((s) => s.createProgramYear)
   const sales = usePOSStore((s) => s.sales)
+
+  const [selectedProgramYear, setSelectedProgramYear] = useState('')
+  const availableProgramYears = useMemo(
+    () => [...new Set(allGoals.map((g) => g.fiscalYear))].sort(),
+    [allGoals]
+  )
+  // Falls back to the latest known year until the user picks a different one, and
+  // recovers automatically if the selected year's data ever disappears.
+  const programYear = availableProgramYears.includes(selectedProgramYear)
+    ? selectedProgramYear
+    : (availableProgramYears.at(-1) ?? '')
+
+  const goals = useMemo(
+    () => allGoals.filter((g) => g.fiscalYear === programYear),
+    [allGoals, programYear]
+  )
 
   const currentMonthIndex =
     new Date().getMonth() >= 6 ? new Date().getMonth() - 6 : new Date().getMonth() + 6
@@ -75,11 +92,31 @@ export function useGoals() {
     setDeletingObjective(null)
   }
 
+  function handleCreateProgramYear(newProgramYear: string) {
+    if (!canManage) return
+    const trimmed = newProgramYear.trim()
+    if (!trimmed) {
+      toast.error(t('goals.toast.programYearRequired'))
+      return
+    }
+    const result = createProgramYearAction(trimmed)
+    if (!result.ok) {
+      toast.error(t(result.error))
+      return
+    }
+    setSelectedProgramYear(trimmed)
+    toast.success(t('goals.toast.programYearCreated', { year: trimmed }))
+  }
+
   const activeGoal = goals.find((g) => g.id === activeGoalId)
 
   return {
     canManage,
     programYear,
+    setSelectedProgramYear,
+    availableProgramYears,
+    suggestedNextProgramYear: nextFiscalYearLabel(availableProgramYears.at(-1) ?? ''),
+    handleCreateProgramYear,
     goals,
     setMonthlyAchieved,
     monthIndex,

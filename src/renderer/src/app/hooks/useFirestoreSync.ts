@@ -7,6 +7,7 @@ import { useCategoriesStore } from '@/features/pos/store/categories.store'
 import { useGoalsStore } from '@/features/goals/store/goals.store'
 import { useRentalsStore } from '@/features/rentals/store/rentals.store'
 import { useVisitorsStore } from '@/features/visitors/store/visitors.store'
+import { useActivitiesStore } from '@/features/activities/store/activities.store'
 import { useCashReceiptsStore } from '@/features/scrd/store/cashReceipts.store'
 import { useBanksStore } from '@/features/scrd/store/banks.store'
 import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
@@ -34,6 +35,7 @@ export function useFirestoreSync() {
   const hydrateGoals = useGoalsStore((s) => s.hydrate)
   const hydrateRentals = useRentalsStore((s) => s.hydrate)
   const hydrateVisitors = useVisitorsStore((s) => s.hydrate)
+  const hydrateActivities = useActivitiesStore((s) => s.hydrate)
   const hydrateCashReceipts = useCashReceiptsStore((s) => s.hydrate)
   const hydrateBanks = useBanksStore((s) => s.hydrate)
   const hydrateVouchers = useVouchersStore((s) => s.hydrate)
@@ -55,6 +57,7 @@ export function useFirestoreSync() {
     hydrateGoals()
     hydrateRentals()
     hydrateVisitors()
+    hydrateActivities()
     hydrateCashReceipts()
     hydrateBanks()
     hydrateVouchers()
@@ -75,6 +78,7 @@ export function useFirestoreSync() {
     hydrateGoals,
     hydrateRentals,
     hydrateVisitors,
+    hydrateActivities,
     hydrateCashReceipts,
     hydrateBanks,
     hydrateVouchers,

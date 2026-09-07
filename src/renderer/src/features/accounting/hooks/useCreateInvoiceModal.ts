@@ -53,8 +53,7 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
   }
 
   const subtotal = lines.reduce((s, l) => s + l.amount, 0)
-  const tax = Math.round(subtotal * 0.12)
-  const total = subtotal + tax
+  const total = subtotal
 
   function handleSave(status: 'draft' | 'sent') {
     if (!hasPermission('manage:invoices')) return
@@ -84,7 +83,7 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
       status,
       lineItems: validLines,
       subtotal,
-      tax,
+      tax: 0,
       total,
       balanceDue: status === 'draft' ? 0 : total,
       memo: t('invoices.defaultMemo')
@@ -115,7 +114,6 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
     removeLine,
     updateLine,
     subtotal,
-    tax,
     total,
     handleSave,
     resetForm

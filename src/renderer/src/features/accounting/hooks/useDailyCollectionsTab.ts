@@ -143,19 +143,20 @@ export function useDailyCollectionsTab() {
     }
 
     for (const m of scoutMembers) {
-      const fee = m.registrationFee ?? 0
-      if (fee <= 0 || m.renewedAt !== selectedDate) continue
-      rows.push({
-        siNo: troops.find((tr) => tr.id === m.troopId)?.troopNumber ?? '',
-        receivedFrom: m.fullName,
-        nes: 0,
-        bcFee: 0,
-        csf: 0,
-        iccg: 0,
-        memReg: fee,
-        rentals: 0,
-        amount: fee
-      })
+      for (const payment of m.payments ?? []) {
+        if (payment.amount <= 0 || payment.date !== selectedDate) continue
+        rows.push({
+          siNo: troops.find((tr) => tr.id === m.troopId)?.troopNumber ?? '',
+          receivedFrom: m.fullName,
+          nes: 0,
+          bcFee: 0,
+          csf: 0,
+          iccg: 0,
+          memReg: payment.amount,
+          rentals: 0,
+          amount: payment.amount
+        })
+      }
     }
 
     return rows

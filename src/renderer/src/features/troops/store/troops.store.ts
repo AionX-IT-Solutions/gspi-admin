@@ -7,7 +7,7 @@ import {
 } from '@/shared/lib/firestoreSync'
 import { appendAuditLog } from '@/app/store/auditLog.store'
 import { useAppStore } from '@/app/store/app.store'
-import type { ScoutMember, Troop } from '../types/troop.types'
+import type { MemberPayment, ScoutMember, Troop } from '../types/troop.types'
 
 function actorName() {
   return useAppStore.getState().currentUser?.fullName ?? 'System'
@@ -28,6 +28,7 @@ interface TroopsState {
   updateScoutMember: (id: string, patch: Partial<ScoutMember>) => void
   deleteScoutMember: (id: string) => void
   renewScoutMember: (id: string, membershipYear: string) => void
+  addMemberPayment: (memberId: string, payment: MemberPayment) => void
 }
 
 export const useTroopsStore = create<TroopsState>()((set, get) => ({
@@ -135,6 +136,21 @@ export const useTroopsStore = create<TroopsState>()((set, get) => ({
       actorName: actorName(),
       entityType: 'scout_member',
       summary: `${member?.fullName ?? id} renewed for membership year ${membershipYear}.`
+    })
+  },
+  addMemberPayment: (memberId, payment) => {
+    set((s) => ({
+      scoutMembers: s.scoutMembers.map((m) =>
+        m.id === memberId ? { ...m, payments: [...(m.payments ?? []), payment] } : m
+      )
+    }))
+    const member = get().scoutMembers.find((m) => m.id === memberId)
+    if (member) persist('scoutMembers', memberId, member)
+    appendAuditLog({
+      action: 'scout_member_payment_recorded',
+      actorName: actorName(),
+      entityType: 'scout_member',
+      summary: `${member?.fullName ?? memberId} paid ₱${payment.amount.toFixed(2)} (${payment.category}).`
     })
   }
 }))

@@ -22,6 +22,11 @@ const groupHeadingStyle: CSSProperties = {
   marginTop: 14,
   marginBottom: 4
 }
+const groupTotalStyle: CSSProperties = {
+  fontSize: 12.5,
+  fontWeight: 700,
+  color: 'var(--text-primary)'
+}
 const subGroupHeadingStyle: CSSProperties = {
   fontSize: 11.5,
   fontWeight: 600,
@@ -178,6 +183,37 @@ export function BudgetSectionTable({
               </div>
             </div>
           ))}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: GRID,
+              gap: 8,
+              padding: '8px 0',
+              marginTop: 2,
+              borderTop: '1px solid var(--border-default)',
+              borderBottom: '2px double var(--border-default)'
+            }}
+          >
+            <span style={groupTotalStyle}>
+              {t('budget.table.groupTotal', { group: group.group })}
+            </span>
+            <span style={{ ...amountStyle, fontWeight: 700 }}>
+              {formatCurrency(group.totalBudgeted)}
+            </span>
+            <span style={{ ...amountStyle, fontWeight: 700 }}>
+              {formatCurrency(group.totalActual)}
+            </span>
+            <span
+              style={{
+                ...amountStyle,
+                fontWeight: 700,
+                color: varianceColor(group.totalActual - group.totalBudgeted, section)
+              }}
+            >
+              {formatCurrency(group.totalActual - group.totalBudgeted)}
+            </span>
+            <span />
+          </div>
         </div>
       ))}
     </div>

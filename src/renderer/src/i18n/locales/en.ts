@@ -83,6 +83,7 @@ const en = {
       members: 'Members',
       employees: 'Employees',
       troops: 'Troops',
+      activities: 'Activities',
       attendance: 'Attendance',
       leave: 'Leave Requests',
       payroll: 'Payroll',
@@ -136,6 +137,7 @@ const en = {
       payroll: 'Payroll',
       rental: 'Rental',
       visitor: 'Visitor',
+      activity: 'Activity',
       goal: 'Goal',
       programReport: 'Program Report',
       trainingReport: 'Training Report',
@@ -610,6 +612,7 @@ const en = {
       searchPlaceholder: 'Search roster…',
       empty: 'No members registered in this troop yet',
       renewButton: 'Renew for this membership year',
+      paymentButton: 'Record Payment',
       table: {
         fullName: 'Name',
         birthdate: 'Birthdate',
@@ -629,8 +632,22 @@ const en = {
         level: 'Level',
         guardianName: 'Guardian Name',
         guardianContact: 'Guardian Contact',
-        address: 'Address',
-        registrationFee: 'Registration Fee'
+        address: 'Address'
+      },
+      payment: {
+        title: 'Record Payment — {{name}}',
+        amountLabel: 'Amount',
+        categoryLabel: 'Category',
+        categoryMembership: 'Membership',
+        categoryTraining: 'Training',
+        dateLabel: 'Date',
+        submitButton: 'Record Payment',
+        historyTitle: 'Payment History',
+        historyEmpty: 'No payments recorded yet',
+        toast: {
+          validationRequired: 'Enter an amount greater than zero',
+          recorded: 'Payment recorded for {{name}}'
+        }
       },
       confirmDeactivate: {
         title: 'Deactivate Member',
@@ -937,6 +954,74 @@ const en = {
         'Unenroll {{name}} from biometric attendance? They will not be able to clock in/out via the terminal until re-enrolled.'
     }
   },
+  activities: {
+    title: 'Activities',
+    newActivityButton: 'New Activity',
+    empty: 'No activities scheduled yet',
+    searchPlaceholder: 'Search activities…',
+    tabs: {
+      list: 'List',
+      calendar: 'Calendar'
+    },
+    table: {
+      title: 'Activity',
+      category: 'Category',
+      date: 'Date',
+      location: 'Location',
+      status: 'Status',
+      action: 'Action'
+    },
+    category: {
+      meeting: 'Meeting',
+      camp: 'Camp',
+      training: 'Training',
+      communityService: 'Community Service',
+      ceremony: 'Ceremony',
+      other: 'Other'
+    },
+    status: {
+      scheduled: 'Scheduled',
+      ongoing: 'Ongoing'
+    },
+    modal: {
+      title: 'New Activity',
+      editTitle: 'Edit Activity',
+      createButton: 'Create Activity'
+    },
+    form: {
+      title: 'Title',
+      category: 'Category',
+      status: 'Status',
+      startDate: 'Start Date',
+      endDate: 'End Date (optional)',
+      startTime: 'Start Time',
+      endTime: 'End Time',
+      location: 'Location',
+      organizer: 'Organizer / Troop in Charge',
+      description: 'Description'
+    },
+    toast: {
+      validationRequired: 'Title and start date are required',
+      created: 'Activity created',
+      updated: 'Activity updated',
+      deleted: 'Activity removed',
+      statusUpdated: 'Activity status updated'
+    },
+    confirmDelete: {
+      title: 'Delete this activity?',
+      message: '"{{title}}" will be permanently removed.'
+    },
+    calendar: {
+      todayButton: 'Today',
+      moreCount: '+{{count}} more',
+      summary: {
+        activities: 'Activities'
+      },
+      dayModal: {
+        noActivities: 'No activities for this day.'
+      }
+    }
+  },
   rentals: {
     title: 'Facility & Rental Management',
     newBookingButton: 'New Booking',
@@ -1122,7 +1207,8 @@ const en = {
       budgeted: 'Budgeted',
       actual: 'Actual to Date',
       variance: 'Variance',
-      subtotal: 'Sub-total'
+      subtotal: 'Sub-total',
+      groupTotal: '{{group}} Total'
     },
     editModal: {
       subtitle: 'Update this line item’s budgeted amount and monthly actuals.',
@@ -1200,14 +1286,15 @@ const en = {
       payeeAddress: 'Payee Address',
       bankAccount: 'Bank Account (for Credit)',
       bankAccountPlaceholder: 'e.g. DBP #00-500128590-5',
-      glAccount: 'GL Account (Debit)',
-      glAccountPlaceholder: 'Select an account title from the Council Budget',
-      amount: 'Amount',
+      accountLinesLabel: 'Account Titles (Debit)',
+      accountPlaceholder: 'Account title, e.g. Office Supplies',
+      addAccountLine: 'Add Account Line',
+      totalAmount: 'Total Amount',
       particulars: 'Particulars',
       createButton: 'Create Voucher'
     },
     toast: {
-      missingFields: 'Payee, account, and amount are required',
+      missingFields: 'Payee and at least one account line with an amount are required',
       created: 'Voucher created',
       updated: 'Voucher updated',
       deleted: 'Voucher deleted',
@@ -1234,10 +1321,12 @@ const en = {
     newInvoiceButton: 'New Invoice',
     searchPlaceholder: 'Search invoices…',
     markAsPaidButton: 'Mark as Paid',
+    voidButton: 'Void',
     defaultMemo: 'Thank you for your business.',
     status: {
       sent: 'Sent',
-      partial: 'Partial'
+      partial: 'Partial',
+      void: 'Void'
     },
     filter: {
       all: 'All'
@@ -1265,7 +1354,6 @@ const en = {
       qty: 'Qty',
       rate: 'Rate',
       subtotal: 'Subtotal',
-      tax: 'Tax (12%)',
       total: 'Total'
     },
     form: {
@@ -1286,11 +1374,13 @@ const en = {
       lineItemRequired: 'Add at least one line item.',
       sent: '{{number}} sent to {{customer}}',
       savedAsDraft: '{{number}} saved as draft',
-      markedPaid: '{{number}} marked as paid'
+      markedPaid: '{{number}} marked as paid',
+      voided: '{{number}} voided',
+      deleted: '{{number}} deleted'
     },
-    confirmMarkPaid: {
-      title: 'Mark Invoice as Paid',
-      message: 'Mark invoice {{number}} ({{amount}}) as fully paid? This cannot be undone.'
+    confirmDelete: {
+      title: 'Delete Invoice',
+      message: 'Delete invoice {{number}}? This cannot be undone.'
     }
   },
   customers: {
@@ -1826,7 +1916,13 @@ const en = {
   },
   goals: {
     title: 'Goals & Objectives',
-    programYear: 'Program Year {{year}}',
+    newProgramYearButton: 'New Program Year',
+    newProgramYearModal: {
+      title: 'Start a New Program Year',
+      yearLabel: 'Program Year',
+      createButton: 'Create',
+      hint: 'Copies every goal and objective from {{year}} into the new year with the same structure — annual targets start at 0 pending council approval, and monthly progress resets to zero.'
+    },
     exportLabel: 'Export Report',
     goalLabel: 'Goal {{code}}',
     empty: 'No objectives found',
@@ -1879,7 +1975,11 @@ const en = {
       goalDeleted: 'Goal deleted',
       objectiveCreated: 'Objective added',
       objectiveUpdated: 'Objective updated',
-      objectiveDeleted: 'Objective deleted'
+      objectiveDeleted: 'Objective deleted',
+      programYearRequired: 'Enter a program year label',
+      programYearExists: 'That program year already exists',
+      noSourceYear: 'No existing program year to copy from',
+      programYearCreated: '{{year}} created'
     }
   },
   trainingReports: {

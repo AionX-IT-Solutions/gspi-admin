@@ -57,6 +57,12 @@ function sectionRows(groups: BudgetGroupSummary[]): (string | number)[][] {
         sg.totalActual - sg.totalBudgeted
       ])
     }
+    rows.push([
+      `${group.group} TOTAL`,
+      group.totalBudgeted,
+      group.totalActual,
+      group.totalActual - group.totalBudgeted
+    ])
   }
   return rows
 }
