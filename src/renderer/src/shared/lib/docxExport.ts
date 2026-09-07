@@ -61,11 +61,15 @@ function cell(
     bold?: boolean
     color?: string
     align?: (typeof AlignmentType)[keyof typeof AlignmentType]
+    doubleRuleBottom?: boolean
   }
 ): TableCell {
   return new TableCell({
     verticalAlign: VerticalAlign.CENTER,
     margins: { top: 60, bottom: 60, left: 80, right: 80 },
+    borders: opts?.doubleRuleBottom
+      ? { bottom: { style: BorderStyle.DOUBLE, size: 6, color: '12122A' } }
+      : undefined,
     children: [
       new Paragraph({
         alignment: opts?.align ?? AlignmentType.LEFT,
@@ -99,8 +103,13 @@ export function buildTable(
   head: string[],
   rows: (string | number)[][],
   footRow?: (string | number | null)[],
-  groupHeader?: DocxGroupHeaderCell[]
+  groupHeader?: DocxGroupHeaderCell[],
+  /** Row indices (0-based, matching `rows`) to render bold — for reports that bold
+   *  running subtotal/heading lines mixed into the body instead of a trailing `footRow`
+   *  (e.g. SCRD's narrative statement layout). */
+  boldRowIndexes?: number[]
 ): Table {
+  const boldRows = boldRowIndexes ? new Set(boldRowIndexes) : null
   const groupHeaderRow = groupHeader
     ? new TableRow({
         tableHeader: true,
@@ -114,9 +123,9 @@ export function buildTable(
       : null
 
   const bodyRows = rows.map(
-    (row) =>
+    (row, i) =>
       new TableRow({
-        children: row.map((value) => cell(String(value)))
+        children: row.map((value) => cell(String(value), { bold: boldRows?.has(i) }))
       })
   )
 
@@ -128,7 +137,9 @@ export function buildTable(
   if (footRow) {
     rowsAll.push(
       new TableRow({
-        children: footRow.map((value) => cell(value === null ? '' : String(value), { bold: true }))
+        children: footRow.map((value) =>
+          cell(value === null ? '' : String(value), { bold: true, doubleRuleBottom: true })
+        )
       })
     )
   }

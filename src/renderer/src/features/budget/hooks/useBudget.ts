@@ -8,6 +8,7 @@ import { usePOSStore } from '@/features/pos/store/pos.store'
 import { useRentalsStore } from '@/features/rentals/store/rentals.store'
 import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
 import { useHRStore } from '@/features/hr/store/hr.store'
+import { useCashReceiptsStore } from '@/features/scrd/store/cashReceipts.store'
 import { useBudgetStore, type BudgetCategoryEdit } from '../store/budget.store'
 import { groupCategories, sectionTotals } from '../lib/budgetCalculations'
 import { computeBudgetAutoActuals } from '../lib/budgetAutoActuals'
@@ -46,6 +47,7 @@ export function useBudget() {
   const spaces = useRentalsStore((s) => s.spaces)
   const vouchers = useVouchersStore((s) => s.vouchers)
   const payroll = useHRStore((s) => s.payroll)
+  const cashReceipts = useCashReceiptsStore((s) => s.receipts)
 
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null)
   const [selectedFiscalYear, setSelectedFiscalYear] = useState('')
@@ -82,9 +84,10 @@ export function useBudget() {
         bookings,
         spaces,
         vouchers,
-        payroll
+        payroll,
+        cashReceipts
       }),
-    [categories, fiscalYear, sales, bookings, spaces, vouchers, payroll]
+    [categories, fiscalYear, sales, bookings, spaces, vouchers, payroll, cashReceipts]
   )
 
   function handleSaveCategory(id: string, edit: BudgetCategoryEdit) {

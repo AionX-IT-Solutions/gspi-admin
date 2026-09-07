@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 import { orgHeader, signatories } from '@/shared/data/signatories.data'
+import { formatAmount } from '@/shared/lib/utils'
 import {
   createPdf,
   addHeaderLines,
@@ -14,7 +15,7 @@ import {
   spacer,
   saveDocx
 } from '@/shared/lib/docxExport'
-import { addWorksheetLogo } from '@/shared/lib/excelReport'
+import { addWorksheetLogo, applyDoubleRule } from '@/shared/lib/excelReport'
 import {
   actualToDate,
   type BudgetGroupSummary,
@@ -33,13 +34,12 @@ export interface BudgetReportData {
 
 const TABLE_HEAD = ['Category', 'Budgeted', 'Actual to Date', 'Variance']
 
-function fmt(n: number): string {
-  return n.toFixed(2)
-}
-
 /** Flattens grouped categories into a single table body — group and sub-group headings
  *  as their own label-only rows, each line item indented under them, a sub-total row
- *  closing out every sub-group. */
+ *  closing out every sub-group. Amounts stay real `number`s (not pre-formatted strings)
+ *  so Excel's own numFmt can format them — a numeric cell holding a string value
+ *  silently ignores numFmt, which used to leave this report's line items as
+ *  plain unformatted text; PDF/DOCX format them via formatBudgetRows below instead. */
 function sectionRows(groups: BudgetGroupSummary[]): (string | number)[][] {
   const rows: (string | number)[][] = []
   for (const group of groups) {
@@ -48,22 +48,24 @@ function sectionRows(groups: BudgetGroupSummary[]): (string | number)[][] {
       if (sg.subGroup) rows.push([`  ${sg.subGroup}`, '', '', ''])
       for (const item of sg.items) {
         const actual = actualToDate(item)
-        rows.push([
-          `    ${item.name}`,
-          fmt(item.budgetedAmount),
-          fmt(actual),
-          fmt(actual - item.budgetedAmount)
-        ])
+        rows.push([`    ${item.name}`, item.budgetedAmount, actual, actual - item.budgetedAmount])
       }
       rows.push([
         '  Sub-total',
-        fmt(sg.totalBudgeted),
-        fmt(sg.totalActual),
-        fmt(sg.totalActual - sg.totalBudgeted)
+        sg.totalBudgeted,
+        sg.totalActual,
+        sg.totalActual - sg.totalBudgeted
       ])
     }
   }
   return rows
+}
+
+/** Renders a `sectionRows` body's numeric columns (everything past the label) as
+ *  comma-grouped display text — for PDF/DOCX, which print plain strings rather than
+ *  a spreadsheet's numFmt-aware numeric cell. */
+function formatBudgetRows(rows: (string | number)[][]): (string | number)[][] {
+  return rows.map((row) => row.map((v, i) => (i > 0 && v !== '' ? formatAmount(v as number) : v)))
 }
 
 function headerLines(fiscalYear: string) {
@@ -109,6 +111,9 @@ export async function exportBudgetExcel(data: BudgetReportData) {
     sheet.getCell(r, 4).numFmt = '#,##0.00'
     sheet.getCell(r, 5).value = actual - budgeted
     sheet.getCell(r, 5).numFmt = '#,##0.00'
+    // "Net" is this summary block's one grand-final figure (Income/Expenses above it
+    // are its inputs) — the accountant's double rule under a closing total.
+    if (label === 'Net') applyDoubleRule(sheet, r, 2, 5)
     r++
   }
 
@@ -149,6 +154,7 @@ export async function exportBudgetExcel(data: BudgetReportData) {
     sheet.getCell(r, 5).value = totals.variance
     sheet.getCell(r, 5).numFmt = '#,##0.00'
     ;[2, 3, 4, 5].forEach((c) => (sheet.getCell(r, c).font = { bold: true }))
+    applyDoubleRule(sheet, r, 2, 5)
     r += 3
   }
 
@@ -225,19 +231,24 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
     body: [
       [
         'Income',
-        fmt(data.incomeTotals.totalBudgeted),
-        fmt(data.incomeTotals.totalActual),
-        fmt(data.incomeTotals.variance)
+        formatAmount(data.incomeTotals.totalBudgeted),
+        formatAmount(data.incomeTotals.totalActual),
+        formatAmount(data.incomeTotals.variance)
       ],
       [
         'Expenses',
-        fmt(data.expenseTotals.totalBudgeted),
-        fmt(data.expenseTotals.totalActual),
-        fmt(data.expenseTotals.variance)
+        formatAmount(data.expenseTotals.totalBudgeted),
+        formatAmount(data.expenseTotals.totalActual),
+        formatAmount(data.expenseTotals.variance)
       ]
     ],
     foot: [
-      ['Net', fmt(data.netBudgeted), fmt(data.netActual), fmt(data.netActual - data.netBudgeted)]
+      [
+        'Net',
+        formatAmount(data.netBudgeted),
+        formatAmount(data.netActual),
+        formatAmount(data.netActual - data.netBudgeted)
+      ]
     ],
     columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
   })
@@ -250,13 +261,13 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
   y = addTable(doc, {
     startY: y,
     head: [TABLE_HEAD],
-    body: sectionRows(data.incomeGroups),
+    body: formatBudgetRows(sectionRows(data.incomeGroups)),
     foot: [
       [
         'TOTAL INCOME',
-        fmt(data.incomeTotals.totalBudgeted),
-        fmt(data.incomeTotals.totalActual),
-        fmt(data.incomeTotals.variance)
+        formatAmount(data.incomeTotals.totalBudgeted),
+        formatAmount(data.incomeTotals.totalActual),
+        formatAmount(data.incomeTotals.variance)
       ]
     ],
     columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
@@ -274,13 +285,13 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
   y = addTable(doc, {
     startY: y,
     head: [TABLE_HEAD],
-    body: sectionRows(data.expenseGroups),
+    body: formatBudgetRows(sectionRows(data.expenseGroups)),
     foot: [
       [
         'TOTAL EXPENSES',
-        fmt(data.expenseTotals.totalBudgeted),
-        fmt(data.expenseTotals.totalActual),
-        fmt(data.expenseTotals.variance)
+        formatAmount(data.expenseTotals.totalBudgeted),
+        formatAmount(data.expenseTotals.totalActual),
+        formatAmount(data.expenseTotals.variance)
       ]
     ],
     columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
@@ -314,33 +325,38 @@ export async function exportBudgetDocx(data: BudgetReportData) {
       [
         [
           'Income',
-          fmt(data.incomeTotals.totalBudgeted),
-          fmt(data.incomeTotals.totalActual),
-          fmt(data.incomeTotals.variance)
+          formatAmount(data.incomeTotals.totalBudgeted),
+          formatAmount(data.incomeTotals.totalActual),
+          formatAmount(data.incomeTotals.variance)
         ],
         [
           'Expenses',
-          fmt(data.expenseTotals.totalBudgeted),
-          fmt(data.expenseTotals.totalActual),
-          fmt(data.expenseTotals.variance)
+          formatAmount(data.expenseTotals.totalBudgeted),
+          formatAmount(data.expenseTotals.totalActual),
+          formatAmount(data.expenseTotals.variance)
         ]
       ],
-      ['Net', fmt(data.netBudgeted), fmt(data.netActual), fmt(data.netActual - data.netBudgeted)]
+      [
+        'Net',
+        formatAmount(data.netBudgeted),
+        formatAmount(data.netActual),
+        formatAmount(data.netActual - data.netBudgeted)
+      ]
     ),
     spacer(),
     spacer(),
-    buildTable(TABLE_HEAD, sectionRows(data.incomeGroups), [
+    buildTable(TABLE_HEAD, formatBudgetRows(sectionRows(data.incomeGroups)), [
       'TOTAL INCOME',
-      fmt(data.incomeTotals.totalBudgeted),
-      fmt(data.incomeTotals.totalActual),
-      fmt(data.incomeTotals.variance)
+      formatAmount(data.incomeTotals.totalBudgeted),
+      formatAmount(data.incomeTotals.totalActual),
+      formatAmount(data.incomeTotals.variance)
     ]),
     spacer(),
-    buildTable(TABLE_HEAD, sectionRows(data.expenseGroups), [
+    buildTable(TABLE_HEAD, formatBudgetRows(sectionRows(data.expenseGroups)), [
       'TOTAL EXPENSES',
-      fmt(data.expenseTotals.totalBudgeted),
-      fmt(data.expenseTotals.totalActual),
-      fmt(data.expenseTotals.variance)
+      formatAmount(data.expenseTotals.totalBudgeted),
+      formatAmount(data.expenseTotals.totalActual),
+      formatAmount(data.expenseTotals.variance)
     ]),
     spacer(),
     spacer(),

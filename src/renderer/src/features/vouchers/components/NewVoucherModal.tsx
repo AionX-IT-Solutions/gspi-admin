@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/Button'
 import { FormField, FieldInput, FieldSelect, FieldTextArea } from '@/shared/components/ui/FormField'
 import { useBanksStore, bankDisplayName } from '@/features/scrd/store/banks.store'
 import { useAccountingStore } from '@/features/accounting/store/accounting.store'
+import { useBudgetStore } from '@/features/budget/store/budget.store'
 import type { ModeOfPayment, Voucher, VoucherType } from '../types/vouchers.types'
 import { useNewVoucherModal } from '../hooks/useNewVoucherModal'
 
@@ -19,6 +20,37 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
   const { form, setForm, handleSubmit, resetForm } = useNewVoucherModal(onOpenChange, editTarget)
   const allBanks = useBanksStore((s) => s.banks)
   const banks = useMemo(() => allBanks.filter((b) => b.isActive), [allBanks])
+
+  const budgetCategories = useBudgetStore((s) => s.categories)
+  // Council Budget's own expense line items are the only valid GL accounts — vouchers
+  // used to take free text here, which meant a typo or slightly different wording never
+  // matched the budget category name and silently broke that line's auto-actuals link
+  // (see budgetAutoActuals.ts's normalizeCategoryName comparison). Latest fiscal year
+  // only, same as the Budget page's own default.
+  const latestFiscalYear = useMemo(
+    () => [...new Set(budgetCategories.map((c) => c.fiscalYear))].sort().at(-1),
+    [budgetCategories]
+  )
+  const expenseAccountOptions = useMemo(
+    () =>
+      budgetCategories
+        .filter((c) => c.fiscalYear === latestFiscalYear && c.section === 'expense')
+        .sort((a, b) => a.order - b.order)
+        .map((c) => ({ value: c.name, label: c.name })),
+    [budgetCategories, latestFiscalYear]
+  )
+  // Keeps an existing voucher's account selectable even if it predates this budget-linked
+  // dropdown (free-text legacy value) or doesn't otherwise match a current expense line —
+  // editing must never silently blank out or discard what was actually recorded.
+  const accountOptions = useMemo(() => {
+    if (!form.accountName || expenseAccountOptions.some((o) => o.value === form.accountName)) {
+      return expenseAccountOptions
+    }
+    return [
+      { value: form.accountName, label: `${form.accountName} (current)` },
+      ...expenseAccountOptions
+    ]
+  }, [expenseAccountOptions, form.accountName])
 
   const allVendors = useAccountingStore((s) => s.vendors)
   const vendors = useMemo(() => allVendors.filter((v) => v.status === 'active'), [allVendors])
@@ -207,10 +239,11 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
           />
         </FormField>
         <FormField label={t('vouchers.form.glAccount')} required>
-          <FieldInput
+          <FieldSelect
             value={form.accountName}
             onChange={(e) => setForm((f) => ({ ...f, accountName: e.target.value }))}
             placeholder={t('vouchers.form.glAccountPlaceholder')}
+            options={accountOptions}
           />
         </FormField>
         <FormField label={t('vouchers.form.amount')} required>

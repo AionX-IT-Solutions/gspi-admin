@@ -82,3 +82,19 @@ export async function addWorksheetLogo(
   const col = centeredColumnIndex(sheet, logoSize, headerRange)
   sheet.addImage(imageId, { tl: { col, row: 0.05 }, ext: { width: logoSize, height: logoSize } })
 }
+
+/** Marks a row as a report's grand-final total the way an accountant would on paper —
+ *  a double rule under the figure. Only for the one truly final total of a report (a
+ *  section subtotal midway through stays single/bold); combine with the cell's own
+ *  bold font, which this doesn't touch. */
+export function applyDoubleRule(
+  sheet: ExcelJS.Worksheet,
+  row: number,
+  colStart: number,
+  colEnd: number
+): void {
+  for (let c = colStart; c <= colEnd; c++) {
+    const cell = sheet.getCell(row, c)
+    cell.border = { ...cell.border, bottom: { style: 'double' } }
+  }
+}

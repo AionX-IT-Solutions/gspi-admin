@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs'
 import { signatories, orgHeader } from '@/shared/data/signatories.data'
-import { formatDate } from '@/shared/lib/utils'
+import { formatDate, formatAmount } from '@/shared/lib/utils'
 import type { Voucher } from '../types/vouchers.types'
 import {
   createPdf,
@@ -127,11 +127,11 @@ export async function exportDisbursementVoucher(voucher: Voucher) {
 function accountLinesRows(voucher: Voucher): (string | number)[][] {
   const rows = voucher.accountLines.map((line) => [
     line.account,
-    line.debit ? line.debit.toFixed(2) : '',
-    line.credit ? line.credit.toFixed(2) : ''
+    line.debit ? formatAmount(line.debit) : '',
+    line.credit ? formatAmount(line.credit) : ''
   ])
   if (voucher.bankAccountRef) {
-    rows.push([voucher.bankAccountRef, '', voucher.amount.toFixed(2)])
+    rows.push([voucher.bankAccountRef, '', formatAmount(voucher.amount)])
   }
   return rows
 }
@@ -161,7 +161,7 @@ export async function buildDisbursementVoucherPdfDoc(voucher: Voucher) {
   y = addTable(doc, {
     startY: y + 6,
     head: [['PARTICULARS', 'AMOUNT']],
-    body: [[voucher.particulars, voucher.amount.toFixed(2)]],
+    body: [[voucher.particulars, formatAmount(voucher.amount)]],
     columnStyles: { 1: { halign: 'right' } }
   })
   y = addTable(doc, {
@@ -226,7 +226,7 @@ export async function exportDisbursementVoucherDocx(voucher: Voucher) {
       ]
     ),
     spacer(),
-    buildTable(['PARTICULARS', 'AMOUNT'], [[voucher.particulars, voucher.amount.toFixed(2)]]),
+    buildTable(['PARTICULARS', 'AMOUNT'], [[voucher.particulars, formatAmount(voucher.amount)]]),
     spacer(),
     buildTable(['Account', 'Debit', 'Credit'], accountLinesRows(voucher)),
     spacer(),
@@ -346,11 +346,11 @@ function cashAdvanceRows(voucher: Voucher): (string | number)[][] {
   if (voucher.cashAdvanceAmount === undefined) return []
   const refunded = voucher.amountRefunded ?? 0
   return [
-    ['AMOUNT OF CASH ADVANCE', voucher.cashAdvanceAmount.toFixed(2)],
-    ['AMOUNT REFUNDED', refunded.toFixed(2)],
+    ['AMOUNT OF CASH ADVANCE', formatAmount(voucher.cashAdvanceAmount)],
+    ['AMOUNT REFUNDED', formatAmount(refunded)],
     [
       'AMOUNT TO BE REIMBURSED',
-      Math.max(0, voucher.cashAdvanceAmount - refunded - voucher.amount).toFixed(2)
+      formatAmount(Math.max(0, voucher.cashAdvanceAmount - refunded - voucher.amount))
     ]
   ]
 }
@@ -372,7 +372,7 @@ export async function buildJournalVoucherPdfDoc(voucher: Voucher) {
   y = addTable(doc, {
     startY: y + 6,
     head: [['PARTICULARS', 'AMOUNT']],
-    body: [[voucher.particulars, voucher.amount.toFixed(2)]],
+    body: [[voucher.particulars, formatAmount(voucher.amount)]],
     columnStyles: { 1: { halign: 'right' } }
   })
   y = addTable(doc, {
@@ -380,8 +380,8 @@ export async function buildJournalVoucherPdfDoc(voucher: Voucher) {
     head: [['Account', 'Debit', 'Credit']],
     body: voucher.accountLines.map((line) => [
       line.account,
-      line.debit ? line.debit.toFixed(2) : '',
-      line.credit ? line.credit.toFixed(2) : ''
+      line.debit ? formatAmount(line.debit) : '',
+      line.credit ? formatAmount(line.credit) : ''
     ]),
     columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }
   })
@@ -437,14 +437,14 @@ export async function exportJournalVoucherDocx(voucher: Voucher) {
     spacer(),
     buildTable([], formRows),
     spacer(),
-    buildTable(['PARTICULARS', 'AMOUNT'], [[voucher.particulars, voucher.amount.toFixed(2)]]),
+    buildTable(['PARTICULARS', 'AMOUNT'], [[voucher.particulars, formatAmount(voucher.amount)]]),
     spacer(),
     buildTable(
       ['Account', 'Debit', 'Credit'],
       voucher.accountLines.map((line) => [
         line.account,
-        line.debit ? line.debit.toFixed(2) : '',
-        line.credit ? line.credit.toFixed(2) : ''
+        line.debit ? formatAmount(line.debit) : '',
+        line.credit ? formatAmount(line.credit) : ''
       ])
     ),
     ...(cashAdvance.length > 0 ? [spacer(), buildTable([], cashAdvance)] : []),

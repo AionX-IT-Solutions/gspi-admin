@@ -1,9 +1,9 @@
 import ExcelJS from 'exceljs'
 import { orgHeader } from '@/shared/data/signatories.data'
-import { formatDate } from '@/shared/lib/utils'
+import { formatDate, formatAmount } from '@/shared/lib/utils'
 import { createPdf, addHeaderLines, addTable, savePdf } from '@/shared/lib/pdfExport'
 import { headerParagraphs, buildTable, spacer, saveDocx } from '@/shared/lib/docxExport'
-import { addWorksheetLogo } from '@/shared/lib/excelReport'
+import { addWorksheetLogo, applyDoubleRule } from '@/shared/lib/excelReport'
 
 function downloadWorkbook(wb: ExcelJS.Workbook, filename: string) {
   wb.xlsx.writeBuffer().then((buffer) => {
@@ -44,42 +44,58 @@ export interface JournalRow {
 // one column per bank account — each row places its amount under the matching
 // category column AND the matching bank column (columns grow/shrink with the
 // data instead of a fixed ~20/40-column template that would mostly sit empty).
-function journalPivotData(rows: JournalRow[], fixedCols: string[], bankAccountNames: string[]) {
+// `bankFirst` puts the bank columns ahead of the category columns — the Cash
+// Disbursement report reads "which bank, then which expense", the opposite of
+// Cash Receipts' "which income category, then which bank" — and amounts stay
+// real `number`s (not pre-formatted strings) so Excel's own numFmt/PDF-DOCX's
+// comma-grouped display can each format the same underlying value correctly.
+function journalPivotData(
+  rows: JournalRow[],
+  fixedCols: string[],
+  bankAccountNames: string[],
+  bankFirst = false
+) {
   const categories = Array.from(new Set(rows.map((r) => r.category))).sort()
-  const allCols = [...fixedCols, ...categories, ...bankAccountNames]
   const categoryTotals = new Array(categories.length).fill(0)
   const bankTotals = new Array(bankAccountNames.length).fill(0)
 
   const body: (string | number)[][] = rows.map((row) => {
     const catIdx = categories.indexOf(row.category)
     const bankIdx = bankAccountNames.indexOf(row.bankAccount)
-    const catCells = categories.map((_, i) => {
+    const catCells: (string | number)[] = categories.map((_, i) => {
       if (i !== catIdx) return ''
       categoryTotals[i] += row.amount
-      return row.amount.toFixed(2)
+      return row.amount
     })
-    const bankCells = bankAccountNames.map((_, i) => {
+    const bankCells: (string | number)[] = bankAccountNames.map((_, i) => {
       if (i !== bankIdx) return ''
       bankTotals[i] += row.amount
-      return row.amount.toFixed(2)
+      return row.amount
     })
-    return [
-      formatDate(row.date),
-      row.name,
-      row.particulars,
-      row.reference ?? '',
-      ...catCells,
-      ...bankCells
-    ]
+    const valueCells = bankFirst ? [...bankCells, ...catCells] : [...catCells, ...bankCells]
+    return [formatDate(row.date), row.name, row.particulars, row.reference ?? '', ...valueCells]
   })
+
+  const allCols = bankFirst
+    ? [...fixedCols, ...bankAccountNames, ...categories]
+    : [...fixedCols, ...categories, ...bankAccountNames]
+  const totalsOrdered = bankFirst
+    ? [...bankTotals, ...categoryTotals]
+    : [...categoryTotals, ...bankTotals]
 
   const foot = [
     ...fixedCols.map((_, i) => (i === fixedCols.length - 1 ? 'TOTAL' : '')),
-    ...categoryTotals.map((t) => t.toFixed(2)),
-    ...bankTotals.map((t) => t.toFixed(2))
+    ...totalsOrdered
   ]
 
   return { allCols, categories, body, foot }
+}
+
+/** Renders the pivot's numeric cells (everything past `fixedCols`) as comma-grouped
+ *  display text — for PDF/DOCX, which print plain strings rather than a spreadsheet's
+ *  numFmt-aware numeric cell. */
+function formatPivotRow(row: (string | number)[], fixedColsLen: number): (string | number)[] {
+  return row.map((v, i) => (i >= fixedColsLen && v !== '' ? formatAmount(v as number) : v))
 }
 
 async function writeJournalSheet(
@@ -88,9 +104,15 @@ async function writeJournalSheet(
   headerLines: string[],
   fixedCols: string[],
   rows: JournalRow[],
-  bankAccountNames: string[]
+  bankAccountNames: string[],
+  bankFirst = false
 ) {
-  const { allCols, categories, body, foot } = journalPivotData(rows, fixedCols, bankAccountNames)
+  const { allCols, categories, body, foot } = journalPivotData(
+    rows,
+    fixedCols,
+    bankAccountNames,
+    bankFirst
+  )
   sheet.columns = allCols.map((_, i) => ({ width: i < fixedCols.length ? 20 : 15 }))
   await addWorksheetLogo(wb, sheet)
   addHeader(sheet, headerLines, allCols.length)
@@ -108,7 +130,7 @@ async function writeJournalSheet(
     cells.forEach((value, i) => {
       const cell = sheet.getCell(r, i + 1)
       if (i >= fixedCols.length && value !== '') {
-        cell.value = parseFloat(value as string)
+        cell.value = value as number
         cell.numFmt = '#,##0.00'
       } else {
         cell.value = value
@@ -118,16 +140,18 @@ async function writeJournalSheet(
   }
 
   r++
+  const totalRow = r
   foot.forEach((value, i) => {
     const cell = sheet.getCell(r, i + 1)
     if (i >= fixedCols.length && value !== '') {
-      cell.value = parseFloat(value as string)
+      cell.value = value as number
       cell.numFmt = '#,##0.00'
     } else {
       cell.value = value
     }
     cell.font = { bold: true }
   })
+  applyDoubleRule(sheet, totalRow, 1, allCols.length)
 
   return { allCols, categories }
 }
@@ -178,8 +202,8 @@ export async function buildCashReceiptsJournalPdfDoc(
   addTable(doc, {
     startY: y,
     head: [allCols],
-    body,
-    foot: [foot],
+    body: body.map((row) => formatPivotRow(row, 4)),
+    foot: [formatPivotRow(foot, 4)],
     columnStyles: Object.fromEntries(
       Array.from({ length: allCols.length - 4 }, (_, i) => [4 + i, { halign: 'right' as const }])
     )
@@ -215,7 +239,11 @@ export async function exportCashReceiptsJournalDocx(
       { text: `For the Month of ${monthLabel}` }
     ])),
     spacer(),
-    buildTable(allCols, body, foot)
+    buildTable(
+      allCols,
+      body.map((row) => formatPivotRow(row, 4)),
+      formatPivotRow(foot, 4)
+    )
   ]
   await saveDocx(
     children,
@@ -224,7 +252,16 @@ export async function exportCashReceiptsJournalDocx(
   )
 }
 
-// ─── Cash Disbursement Journal — categorized + multi-bank-account layout ───
+// ─── Cash Disbursement Journal — bank-first + expense-category layout ──────
+// Disbursements always leave through an actual bank account (checks are drawn
+// against a real bank, never petty cash), so unlike Cash Receipts (whose
+// Cash on Hand column absorbs undeposited sales), this report drops Cash on
+// Hand entirely and reads "which bank, then which expense category" — the
+// reverse column order from Cash Receipts.
+function disbursementBankNames(bankAccountNames: string[]): string[] {
+  return bankAccountNames.filter((name) => name !== 'Cash on Hand')
+}
+
 export async function exportCashDisbursementJournal(
   rows: JournalRow[],
   monthLabel: string,
@@ -244,7 +281,8 @@ export async function exportCashDisbursementJournal(
     ],
     ['DATE', 'PAYEE', 'EXPLANATION', 'CV #'],
     rows,
-    bankAccountNames
+    disbursementBankNames(bankAccountNames),
+    true
   )
   downloadWorkbook(wb, `Cash_Disbursement_Journal_${monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`)
 }
@@ -257,7 +295,8 @@ export async function buildCashDisbursementJournalPdfDoc(
   const { allCols, body, foot } = journalPivotData(
     rows,
     ['DATE', 'PAYEE', 'EXPLANATION', 'CV #'],
-    bankAccountNames
+    disbursementBankNames(bankAccountNames),
+    true
   )
   const doc = createPdf('landscape')
   const y = await addHeaderLines(doc, [
@@ -270,8 +309,8 @@ export async function buildCashDisbursementJournalPdfDoc(
   addTable(doc, {
     startY: y,
     head: [allCols],
-    body,
-    foot: [foot],
+    body: body.map((row) => formatPivotRow(row, 4)),
+    foot: [formatPivotRow(foot, 4)],
     columnStyles: Object.fromEntries(
       Array.from({ length: allCols.length - 4 }, (_, i) => [4 + i, { halign: 'right' as const }])
     )
@@ -296,7 +335,8 @@ export async function exportCashDisbursementJournalDocx(
   const { allCols, body, foot } = journalPivotData(
     rows,
     ['DATE', 'PAYEE', 'EXPLANATION', 'CV #'],
-    bankAccountNames
+    disbursementBankNames(bankAccountNames),
+    true
   )
   const children = [
     ...(await headerParagraphs([
@@ -307,7 +347,11 @@ export async function exportCashDisbursementJournalDocx(
       { text: `FOR THE MONTH OF ${monthLabel.toUpperCase()}` }
     ])),
     spacer(),
-    buildTable(allCols, body, foot)
+    buildTable(
+      allCols,
+      body.map((row) => formatPivotRow(row, 4)),
+      formatPivotRow(foot, 4)
+    )
   ]
   await saveDocx(
     children,
@@ -415,56 +459,79 @@ function scrdSummaryRows(params: SCRDSummaryParams) {
     (b) => BANK_ACCOUNT_BUCKET[b.account] === 'capital'
   )
 
+  // Amounts stay real `number`s (not pre-formatted strings) so Excel's numFmt and
+  // PDF/DOCX's comma-grouped display can each format the same value correctly.
   const rows: (string | number)[][] = [
-    ['CASH BALANCE AVAILABLE AT THE BEGINNING', params.beginningBalance.toFixed(2)],
+    ['CASH BALANCE AVAILABLE AT THE BEGINNING', params.beginningBalance],
     ['ADD: CASH RECEIPTS', ''],
     ['I. Operations', ''],
     ['   A. General Operations', ''],
-    ...params.generalReceiptCategories.map((c) => [`      ${c.category}`, c.amount.toFixed(2)]),
-    ['      Sub-total', f.generalReceipts.toFixed(2)],
+    ...params.generalReceiptCategories.map((c) => [`      ${c.category}`, c.amount]),
+    ['      Sub-total', f.generalReceipts],
     ['   B. National Equipment Service (NES)', ''],
-    ['      Sales: NES Items', params.nesSalesTotal.toFixed(2)],
-    ['II. Rental Income', params.rentalIncomeTotal.toFixed(2)],
-    ['III. Interest Income', params.interestIncome.toFixed(2)],
+    ['      Sales: NES Items', params.nesSalesTotal],
+    ['II. Rental Income', params.rentalIncomeTotal],
+    ['III. Interest Income', params.interestIncome],
     ['IV. Other Income', ''],
-    ...params.otherIncomeCategories.map((c) => [`      ${c.category}`, c.amount.toFixed(2)]),
-    ['      Sub-total', f.otherIncomeTotal.toFixed(2)],
-    ['TOTAL CASH RECEIPTS', f.totalReceipts.toFixed(2)],
-    ['TOTAL CASH AVAILABLE', f.totalCashAvailable.toFixed(2)],
+    ...params.otherIncomeCategories.map((c) => [`      ${c.category}`, c.amount]),
+    ['      Sub-total', f.otherIncomeTotal],
+    ['TOTAL CASH RECEIPTS', f.totalReceipts],
+    ['TOTAL CASH AVAILABLE', f.totalCashAvailable],
     ['LESS: CASH DISBURSEMENTS', ''],
     ['I. Operations', ''],
     ['   A. Operating Expenses', ''],
-    ...params.generalDisbursementCategories.map((c) => [
-      `      ${c.category}`,
-      c.amount.toFixed(2)
-    ]),
-    ['      Sub-total', f.generalDisbursements.toFixed(2)],
+    ...params.generalDisbursementCategories.map((c) => [`      ${c.category}`, c.amount]),
+    ['      Sub-total', f.generalDisbursements],
     ['   B. National Equipment Services', ''],
-    ['      Purchases', params.nesPurchasesTotal.toFixed(2)],
+    ['      Purchases', params.nesPurchasesTotal],
     ['II. Capital Outlay', ''],
-    ...params.capitalOutlayCategories.map((c) => [`      ${c.category}`, c.amount.toFixed(2)]),
-    ['      Sub-total', f.capitalOutlayTotal.toFixed(2)],
+    ...params.capitalOutlayCategories.map((c) => [`      ${c.category}`, c.amount]),
+    ['      Sub-total', f.capitalOutlayTotal],
     ['III. Other Expenses', ''],
-    ...params.otherExpenseCategories.map((c) => [`      ${c.category}`, c.amount.toFixed(2)]),
-    ['      Sub-total', f.otherExpensesTotal.toFixed(2)],
-    ['TOTAL CASH DISBURSEMENTS', f.totalDisbursements.toFixed(2)],
-    ['TOTAL CASH BALANCE', f.endingBalance.toFixed(2)],
+    ...params.otherExpenseCategories.map((c) => [`      ${c.category}`, c.amount]),
+    ['      Sub-total', f.otherExpensesTotal],
+    ['TOTAL CASH DISBURSEMENTS', f.totalDisbursements],
+    ['TOTAL CASH BALANCE', f.endingBalance],
     ['', ''],
     ['ACCOUNTED FOR AS FOLLOWS:', ''],
     ['I. Operations', ''],
     ['   A. General Operations', ''],
-    ...generalBanks.map((b) => [`      ${b.account}`, b.closing.toFixed(2)]),
-    ['      Sub-total', f.generalBucketTotal.toFixed(2)],
+    ...generalBanks.map((b) => [`      ${b.account}`, b.closing]),
+    ['      Sub-total', f.generalBucketTotal],
     ['   B. Retirement Fund', ''],
-    ...retirementBanks.map((b) => [`      ${b.account}`, b.closing.toFixed(2)]),
-    ['      Sub-total', f.retirementBucketTotal.toFixed(2)],
+    ...retirementBanks.map((b) => [`      ${b.account}`, b.closing]),
+    ['      Sub-total', f.retirementBucketTotal],
     ['II. Capital Outlay', ''],
     ['   A. Building/NES/Transitory Fees', ''],
-    ...capitalBanks.map((b) => [`      ${b.account}`, b.closing.toFixed(2)]),
-    ['      Sub-total', f.capitalBucketTotal.toFixed(2)],
-    ['TOTAL CASH BALANCE (ACCOUNTED FOR)', f.endingBalance.toFixed(2)]
+    ...capitalBanks.map((b) => [`      ${b.account}`, b.closing]),
+    ['      Sub-total', f.capitalBucketTotal],
+    ['TOTAL CASH BALANCE (ACCOUNTED FOR)', f.endingBalance]
   ]
   return { rows, ending: f.endingBalance }
+}
+
+/** Every "total"/section-heading line in the statement gets bold — matching the
+ *  Council's real ledger convention where roman-numeral headings, sub-totals, and
+ *  running totals all stand out, not just the one grand-final figure at the bottom
+ *  (which additionally gets the double rule — see the last row's `foot` treatment
+ *  in the PDF/DOCX builders below). */
+function isScrdHeadingLabel(label: string | number): boolean {
+  const trimmed = typeof label === 'string' ? label.trim() : ''
+  return (
+    /^(I{1,3}\.|IV\.)/.test(trimmed) ||
+    trimmed.startsWith('TOTAL') ||
+    trimmed.startsWith('CASH BALANCE') ||
+    trimmed.startsWith('ADD:') ||
+    trimmed.startsWith('LESS:') ||
+    trimmed.startsWith('ACCOUNTED') ||
+    trimmed.includes('Sub-total')
+  )
+}
+
+/** Renders an SCRD row's amount (column 1) as comma-grouped display text — for
+ *  PDF/DOCX, which print plain strings rather than a numFmt-aware numeric cell. */
+function formatScrdRow(row: (string | number)[]): (string | number)[] {
+  return row.map((v, i) => (i === 1 && v !== '' ? formatAmount(v as number) : v))
 }
 
 export async function exportSCRDSummary(params: SCRDSummaryParams) {
@@ -487,32 +554,33 @@ export async function exportSCRDSummary(params: SCRDSummaryParams) {
   )
 
   let r = 7
-  for (const [label, amount] of rows) {
-    const trimmed = typeof label === 'string' ? label.trim() : ''
-    const isHeading =
-      /^(I{1,3}\.|IV\.)/.test(trimmed) ||
-      trimmed.startsWith('TOTAL') ||
-      trimmed.startsWith('CASH BALANCE') ||
-      trimmed.startsWith('ADD:') ||
-      trimmed.startsWith('LESS:') ||
-      trimmed.startsWith('ACCOUNTED') ||
-      trimmed.includes('Sub-total')
+  rows.forEach(([label, amount], idx) => {
+    const isHeading = isScrdHeadingLabel(label)
     const col = typeof label === 'string' && label.startsWith('      ') ? 3 : 1
     sheet.getCell(r, col).value = label
     if (isHeading) sheet.getCell(r, col).font = { bold: true }
     if (amount !== '') {
-      sheet.getCell(r, 4).value = parseFloat(amount as string)
+      sheet.getCell(r, 4).value = amount as number
       sheet.getCell(r, 4).numFmt = '#,##0.00'
       if (isHeading) sheet.getCell(r, 4).font = { bold: true }
     }
+    if (idx === rows.length - 1) applyDoubleRule(sheet, r, 1, 4)
     r++
-  }
+  })
 
   downloadWorkbook(wb, `SCRD_${params.monthLabel.replace(/[^0-9a-z]/gi, '_')}.xlsx`)
 }
 
 export async function buildSCRDSummaryPdfDoc(params: SCRDSummaryParams) {
   const { rows } = scrdSummaryRows(params)
+  // The statement's one true grand-final total is its last row ("TOTAL CASH BALANCE
+  // (ACCOUNTED FOR)") — split it into `foot` so it gets the shared bold+double-rule
+  // treatment; every other heading/sub-total line is still bold via boldBodyRowIndexes.
+  const bodyRows = rows.slice(0, -1)
+  const finalRow = rows[rows.length - 1]
+  const boldBodyRowIndexes = bodyRows
+    .map((row, i) => (isScrdHeadingLabel(row[0]) ? i : -1))
+    .filter((i) => i !== -1)
   const doc = createPdf('portrait')
   const y = await addHeaderLines(doc, [
     { text: orgHeader.orgName, bold: true },
@@ -524,8 +592,10 @@ export async function buildSCRDSummaryPdfDoc(params: SCRDSummaryParams) {
   addTable(doc, {
     startY: y,
     head: [],
-    body: rows,
-    columnStyles: { 1: { halign: 'right' } }
+    body: bodyRows.map(formatScrdRow),
+    foot: [formatScrdRow(finalRow)],
+    columnStyles: { 1: { halign: 'right' } },
+    boldBodyRowIndexes
   })
   return doc
 }
@@ -537,6 +607,11 @@ export async function exportSCRDSummaryPdf(params: SCRDSummaryParams) {
 
 export async function exportSCRDSummaryDocx(params: SCRDSummaryParams) {
   const { rows } = scrdSummaryRows(params)
+  const bodyRows = rows.slice(0, -1)
+  const finalRow = rows[rows.length - 1]
+  const boldBodyRowIndexes = bodyRows
+    .map((row, i) => (isScrdHeadingLabel(row[0]) ? i : -1))
+    .filter((i) => i !== -1)
   const children = [
     ...(await headerParagraphs([
       { text: orgHeader.orgName, bold: true },
@@ -546,7 +621,13 @@ export async function exportSCRDSummaryDocx(params: SCRDSummaryParams) {
       { text: `For the Month Ended, ${params.monthLabel}` }
     ])),
     spacer(),
-    buildTable([], rows)
+    buildTable(
+      [],
+      bodyRows.map(formatScrdRow),
+      formatScrdRow(finalRow),
+      undefined,
+      boldBodyRowIndexes
+    )
   ]
   await saveDocx(children, `SCRD_${params.monthLabel.replace(/[^0-9a-z]/gi, '_')}.docx`)
 }

@@ -1201,7 +1201,7 @@ const en = {
       bankAccount: 'Bank Account (for Credit)',
       bankAccountPlaceholder: 'e.g. DBP #00-500128590-5',
       glAccount: 'GL Account (Debit)',
-      glAccountPlaceholder: 'e.g. Telephone and Communications',
+      glAccountPlaceholder: 'Select an account title from the Council Budget',
       amount: 'Amount',
       particulars: 'Particulars',
       createButton: 'Create Voucher'

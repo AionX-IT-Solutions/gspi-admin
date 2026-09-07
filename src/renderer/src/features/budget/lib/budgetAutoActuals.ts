@@ -2,6 +2,7 @@ import type { Sale } from '@/features/pos/types/pos.types'
 import type { RentalBooking, RentalSpace } from '@/features/rentals/types/rentals.types'
 import type { Voucher } from '@/features/vouchers/types/vouchers.types'
 import type { PayrollEntry } from '@/features/hr/types/hr.types'
+import type { CashReceipt } from '@/features/scrd/types/cashReceipts.types'
 import { getExpenseVouchers, voucherCategory } from '@/features/vouchers/lib/expenseVouchers'
 import type { BudgetCategory } from '../types/budget.types'
 
@@ -48,12 +49,29 @@ const PAYROLL_FIELD_BY_CATEGORY: Record<string, keyof PayrollEntry> = {
   'cost of living allowance': 'cola'
 }
 
+// Membership-dues income budget lines matched against the manually-recorded Cash
+// Receipts categories that fund them (see SCRD > Receipts) — "Troop, BC/DC Fees"
+// rolls up every individual/troop membership category the Council collects under
+// it (Troop Fees, Barangay Committee, Associate, Career Woman, Honorary Member),
+// not just the two its name literally spells out.
+const CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE: Record<string, CashReceipt['category'][]> = {
+  'council support fund': ['Council Support Fund'],
+  'troop, bc/dc fees': [
+    'Troop Fees',
+    'Barangay Committee',
+    'Associate',
+    'Career Woman',
+    'Honorary Member'
+  ]
+}
+
 interface AutoActualSources {
   sales: Sale[]
   bookings: RentalBooking[]
   spaces: RentalSpace[]
   vouchers: Voucher[]
   payroll: PayrollEntry[]
+  cashReceipts: CashReceipt[]
 }
 
 /** For each budget category with a recognized real-data source, sums that source into
@@ -101,6 +119,14 @@ export function computeBudgetAutoActuals(
           if (!isThisCategory) continue
           const idx = fiscalMonthIndex(b.bookingDate, fiscalYear)
           if (idx !== null) months[idx] += b.amountPaid ?? b.totalAmount
+        }
+      } else if (CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE[normalized]) {
+        matched = true
+        const wantedCategories = CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE[normalized]
+        for (const r of sources.cashReceipts) {
+          if (!wantedCategories.includes(r.category)) continue
+          const idx = fiscalMonthIndex(r.date, fiscalYear)
+          if (idx !== null) months[idx] += r.amount
         }
       }
     } else {

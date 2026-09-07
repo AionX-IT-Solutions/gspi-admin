@@ -156,6 +156,8 @@ export const LEGACY_SEEDED_MONTHLY_ACTUALS: {
 // personnel lines) — these are never included in the zero-out cleanup, regardless of
 // whether live source data happens to exist yet.
 export const AUTO_ACTUAL_CATEGORY_NAMES = new Set([
+  '1. Council Support Fund',
+  '2. Troop, BC/DC Fees',
   '1. Council Equipment Service',
   '1.1 Space Rental',
   '1.2 Hall Rental',

@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 import { orgHeader, signatories } from '@/shared/data/signatories.data'
+import { formatAmount } from '@/shared/lib/utils'
 import type { Product, Purchase, Sale } from '../types/pos.types'
 import {
   createPdf,
@@ -47,7 +48,7 @@ function computeSalesReportRows(sales: Sale[]) {
   let totalAmount = 0
   const rows: (string | number)[][] = []
   for (const [name, data] of byProduct) {
-    rows.push([name, data.qty, data.price.toFixed(2), data.amount.toFixed(2)])
+    rows.push([name, data.qty, formatAmount(data.price), formatAmount(data.amount)])
     totalQty += data.qty
     totalAmount += data.amount
   }
@@ -159,7 +160,7 @@ export async function buildMonthlySalesReportPdfDoc(
     startY: y,
     head: [['Particulars', 'Quantity', 'Selling Price', 'Amount']],
     body: rows,
-    foot: [['TOTAL', totalQty, '', totalAmount.toFixed(2)]],
+    foot: [['TOTAL', totalQty, '', formatAmount(totalAmount)]],
     columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
   })
   addSignatories(doc, y, [
@@ -211,7 +212,7 @@ export async function exportMonthlySalesReportDocx(
       'TOTAL',
       totalQty,
       '',
-      totalAmount.toFixed(2)
+      formatAmount(totalAmount)
     ]),
     spacer(),
     spacer(),
@@ -395,14 +396,14 @@ export async function buildNesIncomeStatementPdfDoc(params: NesIncomeStatementPa
     startY: y,
     head: [],
     body: [
-      ['Beginning Inventory', params.beginningInventory.toFixed(2)],
-      ['Add: Purchases', params.purchases.toFixed(2)],
-      ['Total Goods Available for Sale', totalAvailable.toFixed(2)],
-      ['Less: Ending Inventory', params.endingInventory.toFixed(2)],
-      ['Cost of Goods Sold', cogs.toFixed(2)],
-      ['Less: Cash Sales', params.cashSales.toFixed(2)]
+      ['Beginning Inventory', formatAmount(params.beginningInventory)],
+      ['Add: Purchases', formatAmount(params.purchases)],
+      ['Total Goods Available for Sale', formatAmount(totalAvailable)],
+      ['Less: Ending Inventory', formatAmount(params.endingInventory)],
+      ['Cost of Goods Sold', formatAmount(cogs)],
+      ['Less: Cash Sales', formatAmount(params.cashSales)]
     ],
-    foot: [['Net Income', netIncome.toFixed(2)]],
+    foot: [['Net Income', formatAmount(netIncome)]],
     columnStyles: { 1: { halign: 'right' } }
   })
   y = addSignatories(doc, y, [
@@ -468,14 +469,14 @@ export async function exportNesIncomeStatementDocx(params: {
     buildTable(
       [],
       [
-        ['Beginning Inventory', params.beginningInventory.toFixed(2)],
-        ['Add: Purchases', params.purchases.toFixed(2)],
-        ['Total Goods Available for Sale', totalAvailable.toFixed(2)],
-        ['Less: Ending Inventory', params.endingInventory.toFixed(2)],
-        ['Cost of Goods Sold', cogs.toFixed(2)],
-        ['Less: Cash Sales', params.cashSales.toFixed(2)]
+        ['Beginning Inventory', formatAmount(params.beginningInventory)],
+        ['Add: Purchases', formatAmount(params.purchases)],
+        ['Total Goods Available for Sale', formatAmount(totalAvailable)],
+        ['Less: Ending Inventory', formatAmount(params.endingInventory)],
+        ['Cost of Goods Sold', formatAmount(cogs)],
+        ['Less: Cash Sales', formatAmount(params.cashSales)]
       ],
-      ['Net Income', netIncome.toFixed(2)]
+      ['Net Income', formatAmount(netIncome)]
     ),
     spacer(),
     spacer(),
@@ -701,6 +702,19 @@ export async function exportMonthlyInventoryReport(
     cell.font = { bold: true }
     if (i >= 6) cell.numFmt = '#,##0.00'
   })
+  for (let c = 1; c <= 12; c++) {
+    sheet.getCell(r, c).border = { ...sheet.getCell(r, c).border, bottom: { style: 'double' } }
+  }
+
+  r += 3
+  sheet.getCell(r, 1).value = 'Prepared by:'
+  sheet.getCell(r, 7).value = 'Certified Correct:'
+  r += 3
+  sheet.getCell(r, 1).value = signatories.cesInCharge.toUpperCase()
+  sheet.getCell(r, 7).value = signatories.accountingClerk.toUpperCase()
+  r++
+  sheet.getCell(r, 1).value = 'C.E.S. In-Charge'
+  sheet.getCell(r, 7).value = 'Accounting Clerk'
 
   downloadWorkbook(
     wb,
@@ -751,13 +765,13 @@ function inventoryReportRows(movements: InventoryMovement[]) {
       m.purchasesQty,
       m.salesQty,
       m.endingQty,
-      m.product.costPrice.toFixed(2),
-      m.product.sellingPrice.toFixed(2),
-      m.beginningValue.toFixed(2),
-      m.purchasesValue.toFixed(2),
-      m.salesValue.toFixed(2),
-      m.cogs.toFixed(2),
-      m.endingValue.toFixed(2)
+      formatAmount(m.product.costPrice),
+      formatAmount(m.product.sellingPrice),
+      formatAmount(m.beginningValue),
+      formatAmount(m.purchasesValue),
+      formatAmount(m.salesValue),
+      formatAmount(m.cogs),
+      formatAmount(m.endingValue)
     ]
   })
   const totalsRow = [
@@ -768,11 +782,11 @@ function inventoryReportRows(movements: InventoryMovement[]) {
     totals.endQty,
     '',
     '',
-    totals.begVal.toFixed(2),
-    totals.purVal.toFixed(2),
-    totals.salesVal.toFixed(2),
-    totals.cogs.toFixed(2),
-    totals.endVal.toFixed(2)
+    formatAmount(totals.begVal),
+    formatAmount(totals.purVal),
+    formatAmount(totals.salesVal),
+    formatAmount(totals.cogs),
+    formatAmount(totals.endVal)
   ]
   return { rows, totalsRow }
 }
@@ -793,7 +807,7 @@ export async function buildMonthlyInventoryReportPdfDoc(
     { text: `${reportPeriodHeading(periodType)} Inventory Report`, bold: true, size: 12 },
     { text: monthLabel }
   ])
-  addTable(doc, {
+  const tableEndY = addTable(doc, {
     startY: y,
     head: [inventoryReportCols],
     body: rows,
@@ -802,6 +816,18 @@ export async function buildMonthlyInventoryReportPdfDoc(
       Array.from({ length: 11 }, (_, i) => [i + 1, { halign: 'right' as const }])
     )
   })
+  addSignatories(doc, tableEndY, [
+    {
+      label: 'Prepared by:',
+      name: signatories.cesInCharge.toUpperCase(),
+      role: 'C.E.S. In-Charge'
+    },
+    {
+      label: 'Certified Correct:',
+      name: signatories.accountingClerk.toUpperCase(),
+      role: 'Accounting Clerk'
+    }
+  ])
   return doc
 }
 
@@ -842,7 +868,21 @@ export async function exportMonthlyInventoryReportDocx(
       { text: monthLabel }
     ])),
     spacer(),
-    buildTable(inventoryReportCols, rows, totalsRow)
+    buildTable(inventoryReportCols, rows, totalsRow),
+    spacer(),
+    spacer(),
+    signatoryTable([
+      {
+        label: 'Prepared by:',
+        name: signatories.cesInCharge.toUpperCase(),
+        role: 'C.E.S. In-Charge'
+      },
+      {
+        label: 'Certified Correct:',
+        name: signatories.accountingClerk.toUpperCase(),
+        role: 'Accounting Clerk'
+      }
+    ])
   ]
   await saveDocx(
     children,

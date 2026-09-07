@@ -57,6 +57,16 @@ export function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
+/** Comma-grouped, 2-decimal figure with no currency symbol — for PDF/DOCX report
+ *  cells, which print plain text rather than a numeric cell a spreadsheet can format
+ *  itself (contrast Excel exports, which set numFmt '#,##0.00' on a real numeric value). */
+export function formatAmount(amount: number): string {
+  return new Intl.NumberFormat('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount)
+}
+
 export function nowDateString(): string {
   const now = new Date()
   const datePart = now.toLocaleDateString('en-PH', {

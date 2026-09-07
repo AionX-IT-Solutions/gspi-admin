@@ -49,9 +49,14 @@ export interface PdfTableOptions {
   foot?: (string | number)[][]
   startY: number
   columnStyles?: UserOptions['columnStyles']
+  /** Body row indices (0-based, matching `body`) to render bold — for reports that
+   *  bold running subtotal/heading lines mixed into the body rather than a single
+   *  trailing `foot` row (e.g. SCRD's narrative statement layout). */
+  boldBodyRowIndexes?: number[]
 }
 
 export function addTable(doc: jsPDF, opts: PdfTableOptions): number {
+  const boldRows = opts.boldBodyRowIndexes ? new Set(opts.boldBodyRowIndexes) : null
   autoTable(doc, {
     head: opts.head,
     body: opts.body,
@@ -68,7 +73,22 @@ export function addTable(doc: jsPDF, opts: PdfTableOptions): number {
     headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold', halign: 'center' },
     footStyles: { fillColor: [219, 246, 235], textColor: [18, 18, 42], fontStyle: 'bold' },
     columnStyles: opts.columnStyles,
-    margin: { left: 30, right: 30 }
+    margin: { left: 30, right: 30 },
+    didParseCell: (data) => {
+      if (data.section === 'body' && boldRows?.has(data.row.index)) {
+        data.cell.styles.fontStyle = 'bold'
+      }
+    },
+    // A report's `foot` row is always its one grand-final total (running subtotals
+    // stay in `body` — see boldBodyRowIndexes) — an accountant's double rule under it.
+    didDrawCell: (data) => {
+      if (data.section !== 'foot') return
+      const { x, y, width, height } = data.cell
+      doc.setDrawColor(18, 18, 42)
+      doc.setLineWidth(0.75)
+      doc.line(x, y + height + 1.5, x + width, y + height + 1.5)
+      doc.line(x, y + height + 3.5, x + width, y + height + 3.5)
+    }
   })
   return (doc as unknown as AutoTableDoc).lastAutoTable.finalY
 }

@@ -1212,7 +1212,7 @@ const tl = {
       bankAccount: 'Bank Account (para sa Credit)',
       bankAccountPlaceholder: 'hal. DBP #00-500128590-5',
       glAccount: 'GL Account (Debit)',
-      glAccountPlaceholder: 'hal. Telephone and Communications',
+      glAccountPlaceholder: 'Pumili ng account title mula sa Council Budget',
       amount: 'Halaga',
       particulars: 'Mga Detalye',
       createButton: 'Gumawa ng Voucher'
