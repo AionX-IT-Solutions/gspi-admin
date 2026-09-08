@@ -126,7 +126,9 @@ export const ALL_PERMISSIONS = [
   'view:announcements',
   'manage:announcements',
   'view:budget',
-  'manage:budget'
+  'manage:budget',
+  'view:ptdg',
+  'manage:ptdg'
 ] as const
 
 export type Permission = (typeof ALL_PERMISSIONS)[number]
@@ -162,6 +164,7 @@ export const MODULE_PERMISSIONS: Record<string, Permission | undefined> = {
   auditLog: 'view:auditLog',
   goals: 'view:goals',
   devices: 'view:devices',
+  ptdg: 'view:ptdg',
   settings: undefined,
   about: undefined
 }
@@ -195,7 +198,8 @@ export const MODULE_LABELS: Record<string, string> = {
   users: 'User Accounts',
   auditLog: 'Audit Log',
   goals: 'Goals & Objectives',
-  devices: 'Devices'
+  devices: 'Devices',
+  ptdg: 'Program & Training Development Grant (PTDG)'
 }
 
 /** Every module that has a real permission requirement, in nav order (excludes Settings/About). */
@@ -234,6 +238,7 @@ export const MODULE_ROUTES: Record<string, string> = {
   auditLog: '/audit-log',
   goals: '/goals',
   devices: '/devices',
+  ptdg: '/ptdg',
   settings: '/settings',
   about: '/about'
 }
@@ -286,7 +291,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'manage:goals',
     'view:announcements',
     'view:budget',
-    'manage:budget'
+    'manage:budget',
+    'view:ptdg',
+    'manage:ptdg'
   ],
   hr: [
     'view:dashboard',
@@ -339,6 +346,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'view:goals',
     'manage:goals',
     'view:announcements',
-    'view:budget'
+    'view:budget',
+    'view:ptdg'
   ]
 }

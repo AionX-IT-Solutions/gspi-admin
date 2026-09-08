@@ -4,7 +4,7 @@ import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
-import { statusBadgeVariant, invoiceStatusLabel } from './invoiceStatus'
+import { statusBadgeVariant, invoiceStatusLabel, invoiceDisplayStatus } from './invoiceStatus'
 import { useViewInvoiceModal } from '../hooks/useViewInvoiceModal'
 
 interface ViewInvoiceModalProps {
@@ -97,8 +97,8 @@ export function ViewInvoiceModal({ invoiceId, onClose }: ViewInvoiceModalProps) 
               >
                 {t('invoices.table.status')}
               </p>
-              <Badge variant={statusBadgeVariant[invoice.status]}>
-                {invoiceStatusLabel(t, invoice.status)}
+              <Badge variant={statusBadgeVariant[invoiceDisplayStatus(invoice)]}>
+                {invoiceStatusLabel(t, invoiceDisplayStatus(invoice))}
               </Badge>
             </div>
           </div>

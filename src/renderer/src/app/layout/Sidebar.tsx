@@ -34,7 +34,8 @@ import {
   GraduationCap,
   Megaphone,
   Wallet2,
-  CalendarRange
+  CalendarRange,
+  Award
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -156,6 +157,12 @@ const navGroups: NavGroup[] = [
         labelKey: 'sidebar.nav.scrd',
         icon: <FileText size={16} />,
         permission: MODULE_PERMISSIONS.scrd
+      },
+      {
+        path: '/ptdg',
+        labelKey: 'sidebar.nav.ptdg',
+        icon: <Award size={16} />,
+        permission: MODULE_PERMISSIONS.ptdg
       }
     ]
   },

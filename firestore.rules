@@ -226,6 +226,15 @@ service cloud.firestore {
       allow write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
     }
 
+    // Program & Training Development Grant applications — requested FROM the Regional
+    // Office and funded from the Region's own PTDG allocation, not the Council budget
+    // (see budgetCategories above), so it's a separate collection with no cross-reads
+    // between the two. Same role gate as the rest of the Accounting module.
+    match /ptdgApplications/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
+    }
+
     // Audit Log — append-only from any signed-in user (every module writes to it), but
     // only readable/viewable by admins, and never editable/deletable by anyone client-side.
     match /auditLog/{id} {

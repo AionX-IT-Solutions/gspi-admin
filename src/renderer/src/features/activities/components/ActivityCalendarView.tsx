@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/Button'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Modal } from '@/shared/components/ui/Modal'
 import { FieldSelect } from '@/shared/components/ui/FormField'
-import type { ActivityStatus } from '../types/activities.types'
+import { ACTIVITY_CATEGORY_COLOR, type ActivityStatus } from '../types/activities.types'
 import { useActivitiesCalendar } from '../hooks/useActivitiesCalendar'
 
 const STATUS_VARIANT: Record<ActivityStatus, 'warning' | 'primary' | 'success' | 'outline'> = {
@@ -158,8 +158,8 @@ export function ActivityCalendarView() {
                         fontSize: 10,
                         padding: '2px 6px',
                         borderRadius: 6,
-                        background: 'rgba(99,102,241,0.12)',
-                        color: '#818cf8',
+                        background: ACTIVITY_CATEGORY_COLOR[a.category].bg,
+                        color: ACTIVITY_CATEGORY_COLOR[a.category].text,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
@@ -204,13 +204,16 @@ export function ActivityCalendarView() {
                     padding: '8px 10px',
                     borderRadius: 8,
                     background: 'var(--glass-bg)',
-                    border: '1px solid var(--border-subtle)'
+                    border: '1px solid var(--border-subtle)',
+                    borderLeft: `3px solid ${ACTIVITY_CATEGORY_COLOR[a.category].text}`
                   }}
                 >
                   <div>
                     <p style={{ fontSize: 13, fontWeight: 600 }}>{a.title}</p>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      {t(`activities.category.${a.category}`)}
+                      <span style={{ color: ACTIVITY_CATEGORY_COLOR[a.category].text }}>
+                        {t(`activities.category.${a.category}`)}
+                      </span>
                       {a.location && ` · ${a.location}`}
                       {a.startTime && (
                         <>

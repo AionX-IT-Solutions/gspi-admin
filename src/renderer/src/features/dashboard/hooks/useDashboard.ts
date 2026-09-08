@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { isInvoiceOverdue } from '@/features/accounting/components/invoiceStatus'
 import { useAccountingStore } from '@/features/accounting/store/accounting.store'
 import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
 import { getExpenseVouchers, voucherCategory } from '@/features/vouchers/lib/expenseVouchers'
@@ -19,10 +20,12 @@ export function useDashboard() {
     const expenseTotal = expenses.reduce((s, e) => s + e.amount, 0)
     const outstanding = invoices.reduce((s, i) => s + i.balanceDue, 0)
     const overdue = invoices
-      .filter((i) => i.status === 'overdue')
+      .filter((i) => isInvoiceOverdue(i))
       .reduce((s, i) => s + i.balanceDue, 0)
     const notDueYet = invoices
-      .filter((i) => i.status === 'sent' || i.status === 'partial')
+      .filter(
+        (i) => (i.status === 'unpaid' || i.status === 'partially_paid') && !isInvoiceOverdue(i)
+      )
       .reduce((s, i) => s + i.balanceDue, 0)
     const draft = invoices.filter((i) => i.status === 'draft').length
 

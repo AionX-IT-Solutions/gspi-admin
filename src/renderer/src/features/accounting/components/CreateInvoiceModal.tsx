@@ -70,7 +70,7 @@ export function CreateInvoiceModal({ open, onOpenChange }: CreateInvoiceModalPro
             variant="primary"
             size="sm"
             leftIcon={<Send size={13} />}
-            onClick={() => handleSave('sent')}
+            onClick={() => handleSave('unpaid')}
           >
             {t('invoices.form.saveAndSend')}
           </Button>

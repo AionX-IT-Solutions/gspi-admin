@@ -61,6 +61,28 @@ const COMP_TIME_MIN_OVERTIME_HOURS = 4
 const CREDIT_EXPIRY_MONTHS = 3
 export const COMP_TIME_LEAVE_TYPE_ID = 'lt-comp-time'
 
+// Standard GSPI leave types, seeded once so the leave type list isn't just Compensatory Time
+// Off — annual credit counts are editable afterward via "Edit Balances" on the Leave page.
+const STANDARD_LEAVE_TYPES: LeaveType[] = [
+  { id: 'lt-vacation', name: 'Vacation Leave', defaultAnnualCredits: 15, isPaid: true },
+  { id: 'lt-sick', name: 'Sick Leave', defaultAnnualCredits: 15, isPaid: true },
+  { id: 'lt-maternity', name: 'Maternity Leave', defaultAnnualCredits: 105, isPaid: true },
+  { id: 'lt-paternity', name: 'Paternity Leave', defaultAnnualCredits: 7, isPaid: true },
+  {
+    id: 'lt-special-privilege',
+    name: 'Special Privilege Leave',
+    defaultAnnualCredits: 3,
+    isPaid: true
+  },
+  { id: 'lt-solo-parent', name: 'Solo Parent Leave', defaultAnnualCredits: 7, isPaid: true },
+  {
+    id: 'lt-bereavement',
+    name: 'Bereavement/Emergency Leave',
+    defaultAnnualCredits: 3,
+    isPaid: true
+  }
+]
+
 // GSPI official workday start, plus a 15-minute grace period — a clock-in past
 // 8:15 AM is Late; anything at or before that is on time.
 const WORK_START_HOUR = 8
@@ -208,8 +230,18 @@ export const useHRStore = create<HRState>()((set, get) => ({
           defaultAnnualCredits: 0,
           isPaid: true
         }
-        resolvedLeaveTypes = [...leaveTypes, compTimeType]
+        resolvedLeaveTypes = [...resolvedLeaveTypes, compTimeType]
         persist('leaveTypes', compTimeType.id, compTimeType)
+      }
+
+      // Seed the standard leave types too, so a fresh (or pre-existing but incomplete)
+      // environment isn't stuck with only Compensatory Time Off in the dropdown.
+      const missingStandardTypes = STANDARD_LEAVE_TYPES.filter(
+        (standard) => !leaveTypes.some((lt) => lt.id === standard.id)
+      )
+      if (missingStandardTypes.length > 0) {
+        resolvedLeaveTypes = [...resolvedLeaveTypes, ...missingStandardTypes]
+        missingStandardTypes.forEach((lt) => persist('leaveTypes', lt.id, lt))
       }
 
       set({

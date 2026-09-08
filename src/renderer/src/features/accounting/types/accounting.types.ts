@@ -1,4 +1,8 @@
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'partial' | 'void'
+// Matches gspi-app's features/invoices/types/invoice.ts InvoiceStatus exactly —
+// "overdue" is deliberately not a member here (see isInvoiceOverdue in
+// components/invoiceStatus.ts): both apps compute it live from dueDate instead of
+// storing it, so a status never goes stale just because a day passed.
+export type InvoiceStatus = 'draft' | 'unpaid' | 'partially_paid' | 'paid' | 'void'
 
 export interface InvoiceLineItem {
   id: string

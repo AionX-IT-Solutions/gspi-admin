@@ -34,16 +34,29 @@ export interface BudgetReportData {
 
 const TABLE_HEAD = ['Category', 'Budgeted', 'Actual to Date', 'Variance']
 
+interface SectionRowsResult {
+  rows: (string | number)[][]
+  /** Indices into `rows` for group-heading, sub-total, and group-total lines — bolded
+   *  in every export format to match this table's own bold styling for these rows on
+   *  screen (see BudgetSectionTable.tsx's groupHeadingStyle/groupTotalStyle and its
+   *  inline sub-total row). */
+  boldRowIndexes: number[]
+}
+
 /** Flattens grouped categories into a single table body — group and sub-group headings
  *  as their own label-only rows, each line item indented under them, a sub-total row
  *  closing out every sub-group. Amounts stay real `number`s (not pre-formatted strings)
  *  so Excel's own numFmt can format them — a numeric cell holding a string value
  *  silently ignores numFmt, which used to leave this report's line items as
  *  plain unformatted text; PDF/DOCX format them via formatBudgetRows below instead. */
-function sectionRows(groups: BudgetGroupSummary[]): (string | number)[][] {
+function sectionRows(groups: BudgetGroupSummary[]): SectionRowsResult {
   const rows: (string | number)[][] = []
+  const boldRowIndexes: number[] = []
+  const markLastRowBold = () => boldRowIndexes.push(rows.length - 1)
+
   for (const group of groups) {
     rows.push([group.group.toUpperCase(), '', '', ''])
+    markLastRowBold()
     for (const sg of group.subGroups) {
       if (sg.subGroup) rows.push([`  ${sg.subGroup}`, '', '', ''])
       for (const item of sg.items) {
@@ -56,6 +69,7 @@ function sectionRows(groups: BudgetGroupSummary[]): (string | number)[][] {
         sg.totalActual,
         sg.totalActual - sg.totalBudgeted
       ])
+      markLastRowBold()
     }
     rows.push([
       `${group.group} TOTAL`,
@@ -63,8 +77,9 @@ function sectionRows(groups: BudgetGroupSummary[]): (string | number)[][] {
       group.totalActual,
       group.totalActual - group.totalBudgeted
     ])
+    markLastRowBold()
   }
-  return rows
+  return { rows, boldRowIndexes }
 }
 
 /** Renders a `sectionRows` body's numeric columns (everything past the label) as
@@ -143,14 +158,18 @@ export async function exportBudgetExcel(data: BudgetReportData) {
       cell.font = { bold: true }
     })
     r++
-    for (const row of sectionRows(groups)) {
+    const { rows, boldRowIndexes } = sectionRows(groups)
+    const boldRows = new Set(boldRowIndexes)
+    rows.forEach((row, idx) => {
+      const bold = boldRows.has(idx)
       row.forEach((v, i) => {
         const cell = sheet.getCell(r, i + 2)
         cell.value = v
         if (i > 0) cell.numFmt = '#,##0.00'
+        if (bold) cell.font = { bold: true }
       })
       r++
-    }
+    })
     sheet.getCell(r, 2).value = `Total ${title}`
     sheet.getCell(r, 2).font = { bold: true }
     sheet.getCell(r, 3).value = totals.totalBudgeted
@@ -260,6 +279,7 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
   })
   y += 20
 
+  const incomeSection = sectionRows(data.incomeGroups)
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
   doc.text('Income', 30, y)
@@ -267,7 +287,7 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
   y = addTable(doc, {
     startY: y,
     head: [TABLE_HEAD],
-    body: formatBudgetRows(sectionRows(data.incomeGroups)),
+    body: formatBudgetRows(incomeSection.rows),
     foot: [
       [
         'TOTAL INCOME',
@@ -276,7 +296,8 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
         formatAmount(data.incomeTotals.variance)
       ]
     ],
-    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
+    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+    boldBodyRowIndexes: incomeSection.boldRowIndexes
   })
   y += 24
 
@@ -284,6 +305,7 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
     doc.addPage()
     y = 40
   }
+  const expenseSection = sectionRows(data.expenseGroups)
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
   doc.text('Expenses', 30, y)
@@ -291,7 +313,7 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
   y = addTable(doc, {
     startY: y,
     head: [TABLE_HEAD],
-    body: formatBudgetRows(sectionRows(data.expenseGroups)),
+    body: formatBudgetRows(expenseSection.rows),
     foot: [
       [
         'TOTAL EXPENSES',
@@ -300,7 +322,8 @@ export async function buildBudgetPdfDoc(data: BudgetReportData) {
         formatAmount(data.expenseTotals.variance)
       ]
     ],
-    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
+    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+    boldBodyRowIndexes: expenseSection.boldRowIndexes
   })
 
   const sig = budgetSignatories()
@@ -318,6 +341,8 @@ export async function exportBudgetPdf(data: BudgetReportData) {
 
 export async function exportBudgetDocx(data: BudgetReportData) {
   const sig = budgetSignatories()
+  const incomeSection = sectionRows(data.incomeGroups)
+  const expenseSection = sectionRows(data.expenseGroups)
   const children = [
     ...(await headerParagraphs([
       { text: orgHeader.orgName, bold: true },
@@ -351,19 +376,31 @@ export async function exportBudgetDocx(data: BudgetReportData) {
     ),
     spacer(),
     spacer(),
-    buildTable(TABLE_HEAD, formatBudgetRows(sectionRows(data.incomeGroups)), [
-      'TOTAL INCOME',
-      formatAmount(data.incomeTotals.totalBudgeted),
-      formatAmount(data.incomeTotals.totalActual),
-      formatAmount(data.incomeTotals.variance)
-    ]),
+    buildTable(
+      TABLE_HEAD,
+      formatBudgetRows(incomeSection.rows),
+      [
+        'TOTAL INCOME',
+        formatAmount(data.incomeTotals.totalBudgeted),
+        formatAmount(data.incomeTotals.totalActual),
+        formatAmount(data.incomeTotals.variance)
+      ],
+      undefined,
+      incomeSection.boldRowIndexes
+    ),
     spacer(),
-    buildTable(TABLE_HEAD, formatBudgetRows(sectionRows(data.expenseGroups)), [
-      'TOTAL EXPENSES',
-      formatAmount(data.expenseTotals.totalBudgeted),
-      formatAmount(data.expenseTotals.totalActual),
-      formatAmount(data.expenseTotals.variance)
-    ]),
+    buildTable(
+      TABLE_HEAD,
+      formatBudgetRows(expenseSection.rows),
+      [
+        'TOTAL EXPENSES',
+        formatAmount(data.expenseTotals.totalBudgeted),
+        formatAmount(data.expenseTotals.totalActual),
+        formatAmount(data.expenseTotals.variance)
+      ],
+      undefined,
+      expenseSection.boldRowIndexes
+    ),
     spacer(),
     spacer(),
     signatoryTable(sig.primary),

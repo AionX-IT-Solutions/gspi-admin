@@ -106,7 +106,8 @@ const en = {
       enrollment: 'Enrollment',
       goals: 'Goals & Objectives',
       programReports: 'Program Reports',
-      trainingReports: 'Training Reports'
+      trainingReports: 'Training Reports',
+      ptdg: 'PTDG'
     }
   },
   titleBar: {
@@ -1316,6 +1317,71 @@ const en = {
       message: 'Delete voucher {{number}}? This cannot be undone.'
     }
   },
+  ptdg: {
+    title: 'Program & Training Development Grant',
+    subtitle:
+      'Grant requests to the Regional Office — funded from the Region’s own PTDG allocation, not the Council budget.',
+    newButton: 'New Application',
+    editButton: 'Edit Application',
+    searchPlaceholder: 'Search PTDG applications…',
+    filter: {
+      all: 'All'
+    },
+    status: {
+      submitted: 'Submitted',
+      approved: 'Approved',
+      disapproved: 'Disapproved'
+    },
+    table: {
+      number: 'App. #',
+      purpose: 'Purpose/Event/Activity',
+      eventDate: 'Date of Event',
+      amountRequested: 'Amount Requested',
+      status: 'Status',
+      empty: 'No PTDG applications found',
+      exportTooltip: 'Export application'
+    },
+    actions: {
+      recordDecision: 'Record Decision'
+    },
+    form: {
+      purpose: 'Purpose/Event/Activity',
+      purposePlaceholder: 'e.g. Regional Committee Meeting',
+      eventDate: 'Date of Event/Activity',
+      eventDatePlaceholder: 'e.g. September 5, 2026',
+      projectedSources: 'Projected Sources',
+      projectedExpenses: 'Projected Expenses',
+      particularsPlaceholder: 'Particulars',
+      addLine: 'Add Line',
+      subTotal: 'Sub Total',
+      total: 'Total',
+      amountRequested: 'Amount Requested',
+      saveAsDraft: 'Save as Draft',
+      submitButton: 'Submit'
+    },
+    decisionModal: {
+      title: 'Record Regional Decision',
+      decision: 'Decision',
+      approvedAmount: 'Approved Amount',
+      remarks: 'Remarks',
+      saveButton: 'Save Decision'
+    },
+    toast: {
+      missingFields: 'Purpose and date of event are required',
+      created: 'PTDG application created',
+      updated: 'PTDG application updated',
+      deleted: '{{number}} deleted',
+      approved: '{{number}} marked as approved',
+      disapproved: '{{number}} marked as disapproved',
+      excelGenerated: 'Excel file generated',
+      pdfGenerated: 'PDF file generated',
+      wordGenerated: 'Word document generated'
+    },
+    confirmDelete: {
+      title: 'Delete Application',
+      message: 'Delete PTDG application {{number}}? This cannot be undone.'
+    }
+  },
   invoices: {
     title: 'Invoices',
     newInvoiceButton: 'New Invoice',
@@ -1324,8 +1390,7 @@ const en = {
     voidButton: 'Void',
     defaultMemo: 'Thank you for your business.',
     status: {
-      sent: 'Sent',
-      partial: 'Partial',
+      partially_paid: 'Partially Paid',
       void: 'Void'
     },
     filter: {

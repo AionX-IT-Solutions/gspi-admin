@@ -55,7 +55,7 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
   const subtotal = lines.reduce((s, l) => s + l.amount, 0)
   const total = subtotal
 
-  function handleSave(status: 'draft' | 'sent') {
+  function handleSave(status: 'draft' | 'unpaid') {
     if (!hasPermission('manage:invoices')) return
     const customer = customers.find((c) => c.id === customerId)
     const customerName = customer ? (customer.company ?? customer.name) : manualCustomerName.trim()
@@ -93,7 +93,7 @@ export function useCreateInvoiceModal(onOpenChange: (open: boolean) => void) {
     onOpenChange(false)
     resetForm()
     toast.success(
-      status === 'sent'
+      status === 'unpaid'
         ? t('invoices.toast.sent', { number: newInvoice.number, customer: newInvoice.customerName })
         : t('invoices.toast.savedAsDraft', { number: newInvoice.number })
     )

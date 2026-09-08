@@ -106,7 +106,8 @@ const tl = {
       enrollment: 'Pag-enroll',
       goals: 'Mga Layunin at Tunguhin',
       programReports: 'Mga Ulat ng Programa',
-      trainingReports: 'Mga Ulat ng Pagsasanay'
+      trainingReports: 'Mga Ulat ng Pagsasanay',
+      ptdg: 'PTDG'
     }
   },
   titleBar: {
@@ -1328,6 +1329,71 @@ const tl = {
       message: 'Burahin ang voucher {{number}}? Hindi na ito maaaring bawiin.'
     }
   },
+  ptdg: {
+    title: 'Program & Training Development Grant',
+    subtitle:
+      'Mga hiling na grant sa Regional Office — pondo mula sa sariling PTDG allocation ng Region, hindi sa badyet ng Konseho.',
+    newButton: 'Bagong Application',
+    editButton: 'I-edit ang Application',
+    searchPlaceholder: 'Maghanap ng PTDG application…',
+    filter: {
+      all: 'Lahat'
+    },
+    status: {
+      submitted: 'Naisumite',
+      approved: 'Naaprubahan',
+      disapproved: 'Hindi Naaprubahan'
+    },
+    table: {
+      number: 'App. #',
+      purpose: 'Purpose/Event/Activity',
+      eventDate: 'Petsa ng Event',
+      amountRequested: 'Hiniling na Halaga',
+      status: 'Status',
+      empty: 'Walang nahanap na PTDG application',
+      exportTooltip: 'I-export ang application'
+    },
+    actions: {
+      recordDecision: 'I-record ang Desisyon'
+    },
+    form: {
+      purpose: 'Purpose/Event/Activity',
+      purposePlaceholder: 'hal. Regional Committee Meeting',
+      eventDate: 'Date of Event/Activity',
+      eventDatePlaceholder: 'hal. September 5, 2026',
+      projectedSources: 'Projected Sources',
+      projectedExpenses: 'Projected Expenses',
+      particularsPlaceholder: 'Particulars',
+      addLine: 'Magdagdag ng Line',
+      subTotal: 'Sub Total',
+      total: 'Total',
+      amountRequested: 'Hiniling na Halaga',
+      saveAsDraft: 'I-save bilang Draft',
+      submitButton: 'Isumite'
+    },
+    decisionModal: {
+      title: 'I-record ang Desisyon ng Region',
+      decision: 'Desisyon',
+      approvedAmount: 'Naaprubahang Halaga',
+      remarks: 'Mga Puna',
+      saveButton: 'I-save ang Desisyon'
+    },
+    toast: {
+      missingFields: 'Kailangan ang purpose at petsa ng event',
+      created: 'Nagawa ang PTDG application',
+      updated: 'Na-update ang PTDG application',
+      deleted: 'Nabura ang {{number}}',
+      approved: 'Naaprubahan ang {{number}}',
+      disapproved: 'Hindi naaprubahan ang {{number}}',
+      excelGenerated: 'Nagawa ang Excel file',
+      pdfGenerated: 'Nagawa ang PDF file',
+      wordGenerated: 'Nagawa ang Word document'
+    },
+    confirmDelete: {
+      title: 'Burahin ang Application',
+      message: 'Burahin ang PTDG application {{number}}? Hindi na ito maaaring bawiin.'
+    }
+  },
   invoices: {
     title: 'Mga Invoice',
     newInvoiceButton: 'Bagong Invoice',
@@ -1336,8 +1402,7 @@ const tl = {
     voidButton: 'I-void',
     defaultMemo: 'Salamat po sa inyong suporta.',
     status: {
-      sent: 'Naipadala',
-      partial: 'Bahagyang Bayad',
+      partially_paid: 'Bahagyang Bayad',
       void: 'Void'
     },
     filter: {

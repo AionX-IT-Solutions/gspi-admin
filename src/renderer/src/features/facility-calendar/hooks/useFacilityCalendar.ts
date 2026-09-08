@@ -45,6 +45,18 @@ function toDateKey(d: Date): string {
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// The council's rental/visitor records start with fiscal year 2026-2027 (see
+// startingBudget.ts) — the calendar never needs to look earlier than that, so it
+// opens on today's month within 2026+ (or January 2026 itself if the system clock
+// somehow reads earlier) instead of whatever month `new Date()` happens to return.
+const EARLIEST_YEAR = 2026
+
+function initialCursor(): Date {
+  const now = new Date()
+  if (now.getFullYear() < EARLIEST_YEAR) return new Date(EARLIEST_YEAR, 0, 1)
+  return new Date(now.getFullYear(), now.getMonth(), 1)
+}
+
 export function useFacilityCalendar() {
   const loading = useSkeletonLoading()
   const spaces = useRentalsStore((s) => s.spaces)
@@ -53,10 +65,7 @@ export function useFacilityCalendar() {
   const visitors = useVisitorsStore((s) => s.visitors)
   const hydrateVisitors = useVisitorsStore((s) => s.hydrate)
 
-  const [cursor, setCursor] = useState(() => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth(), 1)
-  })
+  const [cursor, setCursor] = useState(initialCursor)
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null)
 
   const monthLabel = cursor.toLocaleDateString('en-PH', { month: 'long' })
@@ -146,21 +155,20 @@ export function useFacilityCalendar() {
   }
 
   function goToToday() {
-    const now = new Date()
-    setCursor(new Date(now.getFullYear(), now.getMonth(), 1))
+    setCursor(initialCursor())
   }
 
   function setYear(year: number) {
     setCursor((c) => new Date(year, c.getMonth(), 1))
   }
 
-  // Always spans at least this year ± 5 — widened further if `cursor` (via
-  // Prev/Next) has already wandered outside that range, so the dropdown can
-  // never land on a year it doesn't actually list.
+  // Always spans at least this year ± 5 (never below EARLIEST_YEAR) — widened
+  // further if `cursor` (via Prev/Next) has already wandered outside that range,
+  // so the dropdown can never land on a year it doesn't actually list.
   const year = cursor.getFullYear()
-  const thisYear = new Date().getFullYear()
+  const thisYear = Math.max(new Date().getFullYear(), EARLIEST_YEAR)
   const yearOptions = useMemo(() => {
-    const start = Math.min(thisYear, year) - 5
+    const start = Math.max(EARLIEST_YEAR, Math.min(thisYear, year) - 5)
     const end = Math.max(thisYear, year) + 5
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   }, [thisYear, year])

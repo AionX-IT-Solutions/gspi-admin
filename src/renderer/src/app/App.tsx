@@ -94,6 +94,7 @@ const OrgChart = lazy(() =>
 const Vouchers = lazy(() =>
   import('@/features/vouchers/pages/Vouchers').then((m) => ({ default: m.Vouchers }))
 )
+const Ptdg = lazy(() => import('@/features/ptdg/pages/Ptdg').then((m) => ({ default: m.Ptdg })))
 const Rentals = lazy(() =>
   import('@/features/rentals/pages/Rentals').then((m) => ({ default: m.Rentals }))
 )
@@ -300,6 +301,14 @@ function AuthenticatedShell() {
                   element={
                     <RequirePermission permission={MODULE_PERMISSIONS.vouchers}>
                       <Vouchers />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/ptdg"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.ptdg}>
+                      <Ptdg />
                     </RequirePermission>
                   }
                 />

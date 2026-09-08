@@ -19,7 +19,11 @@ import { usePermissions } from '@/app/hooks/usePermissions'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
 import { actionsColumn } from '@/shared/lib/columnHelpers'
 import type { Invoice } from '../types/accounting.types'
-import { statusBadgeVariant, invoiceStatusLabel } from '../components/invoiceStatus'
+import {
+  statusBadgeVariant,
+  invoiceStatusLabel,
+  invoiceDisplayStatus
+} from '../components/invoiceStatus'
 import { InvoiceSummaryCards } from '../components/InvoiceSummaryCards'
 import { ViewInvoiceModal } from '../components/ViewInvoiceModal'
 import { CreateInvoiceModal } from '../components/CreateInvoiceModal'
@@ -90,9 +94,14 @@ export function Invoices() {
     {
       key: 'status',
       header: t('invoices.table.status'),
-      render: (r) => (
-        <Badge variant={statusBadgeVariant[r.status]}>{invoiceStatusLabel(t, r.status)}</Badge>
-      )
+      render: (r) => {
+        const displayStatus = invoiceDisplayStatus(r)
+        return (
+          <Badge variant={statusBadgeVariant[displayStatus]}>
+            {invoiceStatusLabel(t, displayStatus)}
+          </Badge>
+        )
+      }
     },
     {
       key: 'total',

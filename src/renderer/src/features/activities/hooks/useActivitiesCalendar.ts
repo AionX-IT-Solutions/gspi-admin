@@ -50,14 +50,23 @@ function dateRange(start: string, end: string | undefined): string[] {
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// The council's activity records start with fiscal year 2026-2027 (see
+// startingBudget.ts) — the calendar never needs to look earlier than that, so it
+// opens on today's month within 2026+ (or January 2026 itself if the system clock
+// somehow reads earlier) instead of whatever month `new Date()` happens to return.
+const EARLIEST_YEAR = 2026
+
+function initialCursor(): Date {
+  const now = new Date()
+  if (now.getFullYear() < EARLIEST_YEAR) return new Date(EARLIEST_YEAR, 0, 1)
+  return new Date(now.getFullYear(), now.getMonth(), 1)
+}
+
 export function useActivitiesCalendar() {
   const loading = useSkeletonLoading()
   const activities = useActivitiesStore((s) => s.activities)
 
-  const [cursor, setCursor] = useState(() => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth(), 1)
-  })
+  const [cursor, setCursor] = useState(initialCursor)
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null)
 
   const monthLabel = cursor.toLocaleDateString('en-PH', { month: 'long' })
@@ -130,8 +139,7 @@ export function useActivitiesCalendar() {
   }
 
   function goToToday() {
-    const now = new Date()
-    setCursor(new Date(now.getFullYear(), now.getMonth(), 1))
+    setCursor(initialCursor())
   }
 
   function setYear(year: number) {
@@ -139,9 +147,9 @@ export function useActivitiesCalendar() {
   }
 
   const year = cursor.getFullYear()
-  const thisYear = new Date().getFullYear()
+  const thisYear = Math.max(new Date().getFullYear(), EARLIEST_YEAR)
   const yearOptions = useMemo(() => {
-    const start = Math.min(thisYear, year) - 5
+    const start = Math.max(EARLIEST_YEAR, Math.min(thisYear, year) - 5)
     const end = Math.max(thisYear, year) + 5
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   }, [thisYear, year])

@@ -16,7 +16,11 @@ import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/Tabs'
 import { formatDate } from '@/shared/lib/utils'
-import type { Activity, ActivityStatus } from '../types/activities.types'
+import {
+  ACTIVITY_CATEGORY_COLOR,
+  type Activity,
+  type ActivityStatus
+} from '../types/activities.types'
 import { ActivityFormModal } from '../components/ActivityFormModal'
 import { ActivityCalendarView } from '../components/ActivityCalendarView'
 import { useActivities } from '../hooks/useActivities'
@@ -81,7 +85,20 @@ export function Activities() {
     {
       key: 'category',
       header: t('activities.table.category'),
-      render: (r) => t(`activities.category.${r.category}`)
+      render: (r) => (
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '2px 8px',
+            borderRadius: 999,
+            background: ACTIVITY_CATEGORY_COLOR[r.category].bg,
+            color: ACTIVITY_CATEGORY_COLOR[r.category].text
+          }}
+        >
+          {t(`activities.category.${r.category}`)}
+        </span>
+      )
     },
     {
       key: 'startDate',

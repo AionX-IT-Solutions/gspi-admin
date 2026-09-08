@@ -181,7 +181,7 @@ export const usePermissionsStore = create<PermissionsState>()(
         rolePermissions: state.rolePermissions,
         customRoles: state.customRoles
       }),
-      version: 12,
+      version: 13,
       migrate: (persistedState) => {
         const state = persistedState as PermissionsState
         const rolePermissions = { ...state.rolePermissions }
@@ -203,7 +203,8 @@ export const usePermissionsStore = create<PermissionsState>()(
                 p.endsWith(':facilityCalendar') ||
                 p.endsWith(':announcements') ||
                 p.endsWith(':budget') ||
-                p.endsWith(':activities'))
+                p.endsWith(':activities') ||
+                p.endsWith(':ptdg'))
           )
           rolePermissions[role] = [...existing, ...newDefaults]
         }

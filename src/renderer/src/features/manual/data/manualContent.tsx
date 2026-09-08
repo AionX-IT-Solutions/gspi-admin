@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import {
   LayoutDashboard,
   Megaphone,
+  CalendarRange,
   ShoppingCart,
   Boxes,
   Users,
@@ -10,6 +11,7 @@ import {
   Truck,
   Ticket,
   BarChart3,
+  Award,
   Tent,
   Target,
   ClipboardList,
@@ -100,6 +102,34 @@ export const manualSections: ManualSection[] = [
         }
       },
       {
+        key: 'activities',
+        icon: <CalendarRange size={16} />,
+        summary: {
+          en: 'Schedule and track council/troop activities — meetings, camps, trainings, community service, and ceremonies — with a list view and a monthly calendar.',
+          tl: 'Mag-iskedyul at subaybayan ang mga aktibidad ng konseho/troop — miting, kampo, pagsasanay, serbisyo sa komunidad, at seremonya — may list view at buwanang calendar.'
+        },
+        steps: {
+          en: [
+            'Click "New Activity" to schedule one — set its category, start date, an end date too if it spans several days (e.g. a camp), time, location, and organizer.',
+            'Switch to the Calendar tab to see everything scheduled for a month at a glance; click any day to see its full list.',
+            'Edit or delete an activity from the list view, and update its status as it happens (Scheduled → Ongoing → Completed, or Cancelled).'
+          ],
+          tl: [
+            'I-click ang "New Activity" para mag-iskedyul — itakda ang category, start date, at end date kung ilang araw ito (hal. kampo), oras, lokasyon, at organizer.',
+            'Lumipat sa Calendar tab para makita lahat ng naka-iskedyul sa isang buwan; i-click ang kahit anong araw para makita ang buong listahan doon.',
+            'I-edit o tanggalin ang aktibidad mula sa list view, at i-update ang status habang nagaganap (Scheduled → Ongoing → Completed, o Cancelled).'
+          ]
+        },
+        tips: {
+          en: [
+            "The calendar doesn't look earlier than 2026 — the council's first tracked year for this app."
+          ],
+          tl: [
+            'Hindi tumitingin ang calendar sa mas maaga sa 2026 — ang unang taong sinusubaybayan ng app na ito.'
+          ]
+        }
+      },
+      {
         key: 'pos',
         icon: <ShoppingCart size={16} />,
         summary: {
@@ -182,12 +212,14 @@ export const manualSections: ManualSection[] = [
           en: [
             'Create a new invoice, pick the customer, and add line items with quantities and prices.',
             'Save it as a draft or issue it — its status moves from Unpaid to Paid (or Overdue) as payments come in.',
-            'Open any invoice to view or export it for printing/emailing.'
+            'Open any invoice to view or export it for printing/emailing.',
+            'Mark as Paid applies instantly; Void an invoice to cancel it without deleting its record, or Delete it outright if it was created by mistake.'
           ],
           tl: [
             'Gumawa ng bagong invoice, piliin ang customer, at magdagdag ng line items kasama ang quantity at presyo.',
             'I-save bilang draft o i-issue — ang status ay magbabago mula Unpaid papuntang Paid (o Overdue) habang may bayad na dumadating.',
-            'Buksan ang kahit anong invoice para tingnan o i-export para sa pag-print/pag-email.'
+            'Buksan ang kahit anong invoice para tingnan o i-export para sa pag-print/pag-email.',
+            'Agad na mailalapat ang Mark as Paid; i-Void ang invoice para kanselahin nang hindi tinatanggal ang record, o i-Delete kapag pagkakamali ang paggawa nito.'
           ]
         }
       },
@@ -225,11 +257,25 @@ export const manualSections: ManualSection[] = [
         steps: {
           en: [
             "Review each line item's budgeted amount against its actual monthly spend.",
-            "Accountants can update a line item's budgeted amount or monthly actuals; Managers can view but not edit."
+            "Accountants can update a line item's budgeted amount or monthly actuals; Managers can view but not edit.",
+            'Switch between fiscal years with the selector at the top, or start a new one with "New Fiscal Year" once the current one wraps up.',
+            'Use Export (top right) to download the report as Excel, PDF, or Word, or View to preview it first.'
           ],
           tl: [
             'Suriin ang budgeted amount ng bawat line item kumpara sa aktwal na ginastos bawat buwan.',
-            'Pwedeng i-update ng Accountant ang budgeted amount o monthly actuals; ang Manager ay makakatingin lang, hindi makakapag-edit.'
+            'Pwedeng i-update ng Accountant ang budgeted amount o monthly actuals; ang Manager ay makakatingin lang, hindi makakapag-edit.',
+            'Lumipat sa ibang fiscal year gamit ang selector sa itaas, o magsimula ng bago gamit ang "New Fiscal Year" kapag tapos na ang kasalukuyan.',
+            'Gamitin ang Export (kanang itaas) para i-download ang report bilang Excel, PDF, o Word, o View para i-preview muna.'
+          ]
+        },
+        tips: {
+          en: [
+            'Sub-totals and group totals (e.g. Total Operating Income, Total Capital Expense) are bold both on screen and in every exported format.',
+            'A lightning-bolt icon next to a line item means the app already has a live figure for it (from POS sales, rental bookings, vouchers, payroll, or cash receipts) — open Edit to review and apply it; it never overwrites your entry on its own.'
+          ],
+          tl: [
+            'Bold ang mga sub-total at group total (hal. Total Operating Income, Total Capital Expense) sa screen at sa lahat ng na-export na format.',
+            'Ang lightning-bolt icon sa tabi ng isang line item ay nangangahulugang may live figure na ang app para dito (mula sa POS sales, rental booking, voucher, payroll, o cash receipt) — buksan ang Edit para suriin at ilapat ito; hindi ito automatic na papalit sa iyong entry.'
           ]
         }
       },
@@ -266,6 +312,14 @@ export const manualSections: ManualSection[] = [
           tl: [
             'Gumawa ng voucher para sa bawat disbursement: kanino binayaran, magkano, at para saan.',
             'Mag-attach o mag-refer ng supporting documents para audit-ready ang entry.'
+          ]
+        },
+        tips: {
+          en: [
+            "Account Titles (Debit) is a dropdown of the current fiscal year's budget expense lines, not free text — this keeps every voucher matched to a real budget category so it can post automatically to the Council Budget's actuals."
+          ],
+          tl: [
+            'Ang Account Titles (Debit) ay dropdown ng budget expense lines ng kasalukuyang fiscal year, hindi free text — para tama ang pagtugma ng bawat voucher sa tunay na budget category at automatic itong nakapag-post sa actuals ng Council Budget.'
           ]
         }
       },
@@ -306,6 +360,38 @@ export const manualSections: ManualSection[] = [
             'Automatic na nagre-recalculate ang current balance ng account — hindi mo ito direktang tina-type.'
           ]
         }
+      },
+      {
+        key: 'ptdg',
+        icon: <Award size={16} />,
+        summary: {
+          en: "Program & Training Development Grant applications — grant requests to the Regional Office, funded from the Region's own PTDG allocation rather than the Council budget.",
+          tl: 'Application para sa Program & Training Development Grant — hiling ng grant sa Regional Office, buhat sa PTDG allocation ng Region, hindi sa Council budget.'
+        },
+        steps: {
+          en: [
+            'Click "New Application" and fill in the purpose/event and its date, then list Projected Sources (other funding already lined up) and Projected Expenses — Amount Requested is the gap between the two, computed automatically.',
+            "Save as Draft to keep working on it later, or Submit once it's ready to send to the Region.",
+            'Once the Region mails back its decision, open "Record Decision" on a Submitted application to mark it Approved (with the approved amount and any remarks) or Disapproved.',
+            'Use the export icon on any application to View, or download it as Excel, PDF, or Word.'
+          ],
+          tl: [
+            'I-click ang "New Application" at punan ang purpose/event at petsa nito, pagkatapos ilista ang Projected Sources (ibang pondo na nakahanda) at Projected Expenses — automatic na kinakalkula ang Amount Requested bilang agwat sa dalawa.',
+            'I-save bilang Draft kung ituloy pa mamaya, o I-submit kapag handa na ipadala sa Region.',
+            'Kapag dumating na ang desisyon ng Region, buksan ang "Record Decision" sa isang Submitted application para markahan itong Approved (kasama ang approved amount at remarks) o Disapproved.',
+            'Gamitin ang export icon sa kahit anong application para View, o i-download bilang Excel, PDF, o Word.'
+          ]
+        },
+        tips: {
+          en: [
+            "This is separate from the Council Budget — PTDG amounts never post to it, since the grant is the Region's money, not the council's own.",
+            'Only Accountants can create, edit, delete, or record a decision; Managers can view only.'
+          ],
+          tl: [
+            'Hiwalay ito sa Council Budget — hindi kailanman nakikita ang PTDG amounts dito, dahil pera ito ng Region, hindi ng konseho.',
+            'Accountant lang ang makakagawa, mag-edit, magtanggal, o magrekord ng desisyon; ang Manager ay makakatingin lang.'
+          ]
+        }
       }
     ]
   },
@@ -324,12 +410,14 @@ export const manualSections: ManualSection[] = [
           en: [
             'Open a troop to see its member roster, or add a new troop.',
             "Add or edit a scout member's record from within their troop's profile.",
-            "Accountants can read this roster too — a member's registration fee feeds into Daily Collections."
+            'Record Membership or Training fee payments per member as they pay — each one feeds into Daily Collections.',
+            'Open View on a member to see their full profile alongside their payment history.'
           ],
           tl: [
             'Buksan ang troop para makita ang roster ng miyembro, o magdagdag ng bagong troop.',
             'Magdagdag o mag-edit ng record ng scout member mula sa profile ng kanilang troop.',
-            'Pwede ring basahin ng Accountant ang roster na ito — ang registration fee ng miyembro ay bahagi ng Daily Collections.'
+            'I-record ang Membership o Training fee ng bawat miyembro kapag nagbayad sila — bahagi ng Daily Collections ang bawat isa.',
+            'Buksan ang View sa isang miyembro para makita ang buong profile kasama ang history ng bayad nila.'
           ]
         }
       },
@@ -343,11 +431,13 @@ export const manualSections: ManualSection[] = [
         steps: {
           en: [
             'Add a goal with its target and track progress as the year goes on.',
-            'Accountants and Managers can both keep these updated.'
+            'Accountants and Managers can both keep these updated.',
+            'Switch between program years with the selector at the top, or start a new one with "New Program Year" once the current one wraps up.'
           ],
           tl: [
             'Magdagdag ng goal kasama ang target at subaybayan ang progreso habang tumatagal ang taon.',
-            'Pwedeng i-update ito ng Accountant at Manager.'
+            'Pwedeng i-update ito ng Accountant at Manager.',
+            'Lumipat sa ibang program year gamit ang selector sa itaas, o magsimula ng bago gamit ang "New Program Year" kapag tapos na ang kasalukuyan.'
           ]
         }
       },
@@ -530,6 +620,14 @@ export const manualSections: ManualSection[] = [
           ],
           tl: [
             'I-browse ayon sa araw/linggo/buwan para makita kung ano ang booked na bago kumpirmahin ang bago.'
+          ]
+        },
+        tips: {
+          en: [
+            "The calendar doesn't look earlier than 2026 — the council's first tracked year for this app."
+          ],
+          tl: [
+            'Hindi tumitingin ang calendar sa mas maaga sa 2026 — ang unang taong sinusubaybayan ng app na ito.'
           ]
         }
       }
