@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePOSStore } from '@/features/pos/store/pos.store'
 import { useHRStore } from '@/features/hr/store/hr.store'
+import { todayLocalIso } from '@/shared/lib/utils'
 
 export function useQuickOverviewRow() {
   const navigate = useNavigate()
@@ -16,7 +17,7 @@ export function useQuickOverviewRow() {
   )
 
   const todaysAttendance = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = todayLocalIso()
     const records = attendance.filter((a) => a.date === today)
     const present = records.filter((r) => r.status === 'present').length
     const absent = records.filter((r) => r.status === 'absent').length

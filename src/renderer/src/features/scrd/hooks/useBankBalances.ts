@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useCashReceiptsStore } from '../store/cashReceipts.store'
 import { useBanksStore, bankDisplayName } from '../store/banks.store'
 import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
+import { getExpenseVouchers } from '@/features/vouchers/lib/expenseVouchers'
+import { getReceiptRowsFromVouchers } from '@/features/vouchers/lib/receiptVouchers'
 import { usePOSStore } from '@/features/pos/store/pos.store'
 import { useRentalsStore } from '@/features/rentals/store/rentals.store'
+import { useTroopsStore } from '@/features/troops/store/troops.store'
 import type { BankAccountBalance } from '../lib/scrdExcelExport'
 
 /**
@@ -36,11 +38,12 @@ export function useBankBalances() {
   // useSyncExternalStore think the store changed on every render and can
   // spiral into "Maximum update depth exceeded".
   const banks = useMemo(() => allBanks.filter((b) => b.isActive), [allBanks])
-  const cashReceipts = useCashReceiptsStore((s) => s.receipts)
   const vouchers = useVouchersStore((s) => s.vouchers)
+  const cashReceipts = useMemo(() => getReceiptRowsFromVouchers(vouchers), [vouchers])
   const sales = usePOSStore((s) => s.sales)
   const purchases = usePOSStore((s) => s.purchases)
   const bookings = useRentalsStore((s) => s.bookings)
+  const scoutMembers = useTroopsStore((s) => s.scoutMembers)
 
   const receiptsByAccount = useMemo(() => {
     const map = new Map<string, number>()
@@ -55,19 +58,15 @@ export function useBankBalances() {
       // down-payment feature have no amountPaid recorded, so fall back to
       // totalAmount there (matches the old assume-paid-in-full behavior).
       .forEach((b) => add('Cash on Hand', b.amountPaid ?? b.totalAmount))
+    scoutMembers.forEach((m) => (m.payments ?? []).forEach((p) => add('Cash on Hand', p.amount)))
     return map
-  }, [cashReceipts, sales, bookings])
+  }, [cashReceipts, sales, bookings, scoutMembers])
 
   const disbursementsByAccount = useMemo(() => {
     const map = new Map<string, number>()
     const add = (account: string, amount: number) =>
       map.set(account, (map.get(account) ?? 0) + safeAmount(amount))
-    vouchers
-      .filter(
-        (v) =>
-          v.voucherType === 'check_voucher' && (v.status === 'posted' || v.status === 'approved')
-      )
-      .forEach((v) => add(v.bankAccountRef ?? 'Cash on Hand', v.amount))
+    getExpenseVouchers(vouchers).forEach((v) => add(v.bankAccountRef ?? 'Cash on Hand', v.amount))
     purchases.forEach((p) => add('Cash on Hand', p.amount))
     return map
   }, [vouchers, purchases])

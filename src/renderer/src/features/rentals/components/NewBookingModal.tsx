@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField, FieldInput, FieldSelect, FieldTextArea } from '@/shared/components/ui/FormField'
-import { formatCurrency } from '@/shared/lib/utils'
+import { formatCurrency, todayLocalIso } from '@/shared/lib/utils'
 import { computeBookingAmounts } from '../lib/bookingPricing'
 import type { BookingDiscountType, RentalBooking, RentalSpace } from '../types/rentals.types'
 
@@ -21,7 +21,7 @@ export interface BookingFormState {
 export function emptyBookingForm(): BookingFormState {
   return {
     rentalSpaceId: '',
-    bookingDate: new Date().toISOString().slice(0, 10),
+    bookingDate: todayLocalIso(),
     startTime: '',
     endTime: '',
     renterName: '',
@@ -52,7 +52,12 @@ export function NewBookingModal({
 }: NewBookingModalProps) {
   const { t } = useTranslation()
   const selectedSpace = spaces.find((sp) => sp.id === form.rentalSpaceId)
-  const amounts = computeBookingAmounts(selectedSpace?.ratePerDay ?? 0, form.discountType)
+  const amounts = computeBookingAmounts(
+    selectedSpace ?? { ratePerDay: 0 },
+    form.discountType,
+    form.startTime,
+    form.endTime
+  )
 
   return (
     <Modal
@@ -137,6 +142,18 @@ export function NewBookingModal({
               fontSize: 12
             }}
           >
+            {amounts.excessHours > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  color: 'var(--text-muted)'
+                }}
+              >
+                <span>{t('rentals.form.excessHoursLabel', { hours: amounts.excessHours })}</span>
+                <span>+{formatCurrency(amounts.excessAmount)}</span>
+              </div>
+            )}
             {amounts.discountAmount > 0 && (
               <div
                 style={{

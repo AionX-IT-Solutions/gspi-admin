@@ -40,8 +40,18 @@ export function buildOrgTree(employees: Employee[]): OrgChartTreeNode[] {
   }
 
   const tree = [...roots].sort(byName).map(toNode)
+  // A cycle (e.g. two employees managing each other) leaves every member of it unreached here,
+  // so all of them land in this list — but the first one's own traversal already reaches (and
+  // nests) the rest of the cycle. Checking `reached` again right before each call, rather than
+  // mapping the whole list up front, is what stops the later members from also rendering a
+  // second time as their own duplicate top-level root.
   const orphans = employees.filter((e) => !reached.has(e.id)).sort(byName)
-  return [...tree, ...orphans.map(toNode)]
+  const orphanNodes: OrgChartTreeNode[] = []
+  for (const orphan of orphans) {
+    if (reached.has(orphan.id)) continue
+    orphanNodes.push(toNode(orphan))
+  }
+  return [...tree, ...orphanNodes]
 }
 
 function findNode(tree: OrgChartTreeNode[], employeeId: string): OrgChartTreeNode | undefined {

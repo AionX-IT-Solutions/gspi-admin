@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/app/hooks/useToast'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { COMP_TIME_LEAVE_TYPE_ID, useHRStore } from '../store/hr.store'
 
 export function useLeaveBalancesEditModal(open: boolean, onClose: () => void) {
   const { t } = useTranslation()
   const toast = useToast()
+  const { hasPermission } = usePermissions()
   const leaveTypes = useHRStore((s) => s.leaveTypes)
   const updateLeaveTypeCredits = useHRStore((s) => s.updateLeaveTypeCredits)
 
@@ -26,6 +28,7 @@ export function useLeaveBalancesEditModal(open: boolean, onClose: () => void) {
   }
 
   function handleSave() {
+    if (!hasPermission('manage:leave')) return
     for (const lt of editableLeaveTypes) {
       const value = drafts[lt.id]
       if (value !== undefined && value !== lt.defaultAnnualCredits) {

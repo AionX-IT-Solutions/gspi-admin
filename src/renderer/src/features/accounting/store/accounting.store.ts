@@ -54,7 +54,13 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
     const invoice = get().invoices.find((i) => i.id === id)
     if (invoice) persistDoc('invoices', id, invoice)
   },
+  // A paid invoice can't be hard-deleted — Income Statement and the customer's Total Billed
+  // are computed live from the current invoice list, so removing one would retroactively
+  // rewrite an already-reconciled month's reported income. Void it instead (see
+  // useViewInvoiceModal's handleVoid), which keeps the record but zeroes its balance due.
   deleteInvoice: (id) => {
+    const invoice = get().invoices.find((i) => i.id === id)
+    if (invoice?.status === 'paid') return
     set((s) => ({ invoices: s.invoices.filter((i) => i.id !== id) }))
     deleteDocById('invoices', id)
   },

@@ -18,9 +18,15 @@ function emptyAccountLine(): VoucherAccountLineForm {
   return { account: '', amount: 0 }
 }
 
+export type VoucherDirection = 'debit' | 'credit'
+
 function emptyForm() {
   return {
     voucherType: 'check_voucher' as VoucherType,
+    // Only a Journal Voucher can be 'credit' (a receipt) — a Check Voucher is always a
+    // disbursement, so this stays 'debit' whenever voucherType is 'check_voucher' (see
+    // setVoucherType below).
+    direction: 'debit' as VoucherDirection,
     modeOfPayment: 'cash' as ModeOfPayment,
     checkNumber: '',
     payee: '',
@@ -32,8 +38,10 @@ function emptyForm() {
 }
 
 function formFromVoucher(voucher: Voucher) {
+  const isCredit = voucher.accountLines.some((l) => l.credit > 0)
   return {
     voucherType: voucher.voucherType,
+    direction: (isCredit ? 'credit' : 'debit') as VoucherDirection,
     modeOfPayment: voucher.modeOfPayment,
     checkNumber: voucher.checkNumber ?? '',
     payee: voucher.payee,
@@ -87,6 +95,10 @@ export function useNewVoucherModal(
       return
     }
     const amount = validLines.reduce((sum, l) => sum + l.amount, 0)
+    // A Check Voucher is always a disbursement — 'credit' direction only ever applies to a
+    // Journal Voucher, enforced here too in case form state somehow got out of sync with the
+    // voucherType selector.
+    const effectiveDirection = form.voucherType === 'check_voucher' ? 'debit' : form.direction
 
     const payload = {
       voucherType: form.voucherType,
@@ -100,8 +112,8 @@ export function useNewVoucherModal(
       particulars: form.particulars.trim(),
       accountLines: validLines.map((l) => ({
         account: l.account.trim(),
-        debit: l.amount,
-        credit: 0
+        debit: effectiveDirection === 'debit' ? l.amount : 0,
+        credit: effectiveDirection === 'credit' ? l.amount : 0
       }))
     }
 

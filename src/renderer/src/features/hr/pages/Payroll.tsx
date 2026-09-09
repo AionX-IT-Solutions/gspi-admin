@@ -152,12 +152,12 @@ export function Payroll() {
               {r.status === 'pending' ? t('payroll.approveButton') : t('payroll.markPaidButton')}
             </Button>
           )}
-          {canManage && (
+          {canManage && r.status !== 'paid' && (
             <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t('common.edit')}>
               <Pencil size={13} />
             </Button>
           )}
-          {canManage && (
+          {canManage && r.status !== 'paid' && (
             <Button
               size="sm"
               variant="ghost"

@@ -319,9 +319,11 @@ export async function exportJournalVoucher(voucher: Voucher) {
     sheet.getCell(`F${r}`).numFmt = '#,##0.00'
     r++
     sheet.getCell(`A${r}`).value = 'AMOUNT TO BE REIMBURSED'
+    // Owed back TO the employee when liquidated expenses exceed the net cash advance
+    // (advance minus whatever they already refunded) — not the other way around.
     sheet.getCell(`F${r}`).value = Math.max(
       0,
-      (voucher.cashAdvanceAmount ?? 0) - (voucher.amountRefunded ?? 0) - voucher.amount
+      voucher.amount - ((voucher.cashAdvanceAmount ?? 0) - (voucher.amountRefunded ?? 0))
     )
     sheet.getCell(`F${r}`).numFmt = '#,##0.00'
   }
@@ -350,7 +352,7 @@ function cashAdvanceRows(voucher: Voucher): (string | number)[][] {
     ['AMOUNT REFUNDED', formatAmount(refunded)],
     [
       'AMOUNT TO BE REIMBURSED',
-      formatAmount(Math.max(0, voucher.cashAdvanceAmount - refunded - voucher.amount))
+      formatAmount(Math.max(0, voucher.amount - (voucher.cashAdvanceAmount - refunded)))
     ]
   ]
 }

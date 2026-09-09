@@ -5,7 +5,7 @@ import { useAppStore } from '@/app/store/app.store'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { useDocumentPreview } from '@/shared/hooks/useDocumentPreview'
 import { uploadFile } from '@/shared/lib/storageSync'
-import { formatDate } from '@/shared/lib/utils'
+import { formatDate, toInputDate, todayLocalIso } from '@/shared/lib/utils'
 import { usePOSStore } from '@/features/pos/store/pos.store'
 import { useRentalsStore } from '@/features/rentals/store/rentals.store'
 import { useTroopsStore } from '@/features/troops/store/troops.store'
@@ -24,10 +24,6 @@ import {
   type DailyCollectionsData,
   type DailyCollectionReceiptRow
 } from '../lib/financialReportsExport'
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
 
 function newManualLine(): ManualReceiptLine {
   return {
@@ -69,7 +65,7 @@ export function useDailyCollectionsTab() {
   const troops = useTroopsStore((s) => s.troops)
   const banks = useBanksStore((s) => s.banks)
 
-  const [selectedDate, setSelectedDate] = useState(todayIso())
+  const [selectedDate, setSelectedDate] = useState(todayLocalIso())
   const existingReport = reports.find((r) => r.date === selectedDate) ?? null
 
   const [beginningBalance, setBeginningBalance] = useState(0)
@@ -111,7 +107,7 @@ export function useDailyCollectionsTab() {
     const rows: DailyCollectionReceiptRow[] = []
 
     for (const s of sales) {
-      if (s.voided || s.createdAt.slice(0, 10) !== selectedDate) continue
+      if (s.voided || toInputDate(s.createdAt) !== selectedDate) continue
       rows.push({
         siNo: s.saleNumber,
         receivedFrom: s.memberName ?? t('reports.dailyCollections.walkIn'),

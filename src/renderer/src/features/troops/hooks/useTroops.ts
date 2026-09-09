@@ -67,6 +67,11 @@ export function useTroops() {
     if (!deleteTarget || !canManage) return
     const deleted = deleteTarget
     const orphanedMembers = scoutMembers.filter((m) => m.troopId === deleted.id)
+    if (orphanedMembers.some((m) => (m.payments?.length ?? 0) > 0)) {
+      toast.error(t('troops.toast.cannotDeleteHasPayments', { troopNumber: deleted.troopNumber }))
+      setDeleteTarget(null)
+      return
+    }
     deleteTroop(deleted.id)
     toast.success(t('troops.toast.deleted', { troopNumber: deleted.troopNumber }), {
       duration: 6000,

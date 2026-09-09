@@ -5,6 +5,29 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs))
 }
 
+/** Local `YYYY-MM-DD` for "today" — never use `new Date().toISOString().slice(0, 10)` for this;
+ *  that gives the UTC calendar date, which still reads as "yesterday" in the Philippines (UTC+8)
+ *  from midnight until 8:00 AM local time, silently misdating anything defaulted or bucketed by
+ *  it during that window (a new record's default date, a report's day filter, etc.). */
+export function todayLocalIso(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Local `YYYY-MM-DD` for "N days ago" — see todayLocalIso for why this can't be
+ *  `new Date().toISOString().slice(0, 10)` after subtracting days. */
+export function daysAgoLocalIso(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export function toInputDate(dateStr: string | undefined | null): string {
   if (!dateStr) return ''
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) return dateStr.trim()

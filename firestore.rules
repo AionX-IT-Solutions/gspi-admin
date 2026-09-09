@@ -56,31 +56,34 @@ service cloud.firestore {
       allow write: if hasAnyRole(['super_admin', 'admin']);
     }
 
-    // HR module: Employees, Attendance, Biometric Enrollments, Leave, Payroll.
+    // HR module: Employees, Attendance, Biometric Enrollments, Leave, Payroll. 'manager' is
+    // deliberately absent from all of these — neither this app nor gspi-app's Role Permissions
+    // ever grant Manager any HR visibility, so this rule now matches that instead of quietly
+    // exceeding it.
     match /employees/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
     match /attendance/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
     match /biometricEnrollments/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
     match /leaveTypes/{id} {
-      allow read: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+      allow read: if hasAnyRole(['super_admin', 'admin', 'hr']);
       allow write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
     match /leaveRequests/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
     match /leaveCreditGrants/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
     match /payroll/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'accountant']);
     }
     match /employeeDocuments/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
 
     // Troops & Membership: Troops and their Girl Scout member rosters.
@@ -152,7 +155,11 @@ service cloud.firestore {
       allow write: if hasAnyRole(['super_admin', 'admin', 'cashier']);
     }
     match /purchases/{id} {
-      allow read, write: if hasAnyRole(['super_admin', 'admin', 'cashier', 'inventory_clerk']);
+      // Matches /products above — an accountant with manage:products sees the Restock
+      // button, so they need write access to the purchase-log entry it also creates.
+      allow read, write: if hasAnyRole([
+        'super_admin', 'admin', 'cashier', 'inventory_clerk', 'accountant'
+      ]);
     }
     // Vendor-linked restocking (gspi-app only) — same role gate as that app's
     // canManageVendors/canReceivePurchaseOrder permission checks.

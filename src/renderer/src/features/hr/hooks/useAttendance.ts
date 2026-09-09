@@ -1,20 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useSkeletonLoading } from '@/shared/hooks/useSkeletonLoading'
-import { useHRStore } from '../store/hr.store'
+import { overtimeHoursPastShiftEnd, useHRStore } from '../store/hr.store'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { useToast } from '@/app/hooks/useToast'
 import { useTranslation } from 'react-i18next'
+import { daysAgoLocalIso, todayLocalIso } from '@/shared/lib/utils'
 import type { AttendanceRecord } from '../types/hr.types'
-
-function daysAgoIso(days: number) {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString().slice(0, 10)
-}
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
 
 export interface AttendanceRow extends AttendanceRecord {
   id: string
@@ -32,8 +23,8 @@ export function useAttendance() {
   const { hasPermission } = usePermissions()
   const canManage = hasPermission('manage:attendance')
 
-  const [dateFrom, setDateFrom] = useState(daysAgoIso(13))
-  const [dateTo, setDateTo] = useState(todayIso())
+  const [dateFrom, setDateFrom] = useState(daysAgoLocalIso(13))
+  const [dateTo, setDateTo] = useState(todayLocalIso())
   const [employeeFilter, setEmployeeFilter] = useState('all')
   const [showDialog, setShowDialog] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<AttendanceRow | null>(null)
@@ -57,9 +48,15 @@ export function useAttendance() {
     const leave = rows.filter((r) => r.status === 'leave').length
     const absent = rows.filter((r) => r.status === 'absent').length
     const overtime = rows.filter((r) => r.status === 'overtime').length
+    // Summed straight from each record's clock-out vs the 5:00 PM shift end, not from raw
+    // hoursWorked minus 8 — a Half Day arrival (see isAfternoonOnlyArrival in hr.store.ts) who
+    // still works late has a `hoursWorked` that's already net of the lunch break and the capped
+    // regular portion, so subtracting 8 from it again would under- or over-count real overtime.
     const overtimeHours =
-      Math.round(rows.reduce((sum, r) => sum + Math.max(0, (r.hoursWorked ?? 0) - 8), 0) * 100) /
-      100
+      Math.round(
+        rows.reduce((sum, r) => sum + (r.clockOut ? overtimeHoursPastShiftEnd(r.clockOut) : 0), 0) *
+          100
+      ) / 100
     return { total: rows.length, present, late, leave, absent, overtime, overtimeHours }
   }, [rows])
 

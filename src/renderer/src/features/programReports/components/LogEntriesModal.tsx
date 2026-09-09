@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
 import { FieldInput } from '@/shared/components/ui/FormField'
-import { formatDate } from '@/shared/lib/utils'
+import { formatDate, todayLocalIso } from '@/shared/lib/utils'
 import { useProgramReportsStore } from '../store/programReports.store'
 import {
   DEFAULT_LOG_FIELDS,
@@ -44,7 +44,7 @@ export function LogEntriesModal({ lineItemId, onClose }: LogEntriesModalProps) {
   const item = lineItems.find((i) => i.id === lineItemId)
   const fields = item?.fields ?? DEFAULT_LOG_FIELDS
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(todayLocalIso())
   const [district, setDistrict] = useState('')
   const [values, setValues] = useState<Record<string, string | number>>({})
 

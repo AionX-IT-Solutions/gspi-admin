@@ -15,10 +15,9 @@ import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { avatarColumn, currencyColumn, actionsColumn } from '@/shared/lib/columnHelpers'
-import type { Customer } from '../types/accounting.types'
 import { CustomerDetailModal } from '../components/CustomerDetailModal'
 import { CreateCustomerModal } from '../components/CreateCustomerModal'
-import { useCustomers } from '../hooks/useCustomers'
+import { useCustomers, type CustomerRow } from '../hooks/useCustomers'
 import { useAccountingStore } from '../store/accounting.store'
 
 const pageVariants = {
@@ -47,8 +46,8 @@ export function Customers() {
   const canManage = hasPermission('manage:customers')
   const hydrate = useAccountingStore((s) => s.hydrate)
 
-  const columns: Column<Customer>[] = [
-    avatarColumn<Customer>({
+  const columns: Column<CustomerRow>[] = [
+    avatarColumn<CustomerRow>({
       key: 'name',
       header: t('customers.table.name'),
       colorKey: 'avatarColor'
@@ -56,7 +55,7 @@ export function Customers() {
     { key: 'company', header: t('customers.fields.company') },
     { key: 'email', header: t('customers.fields.email') },
     { key: 'phone', header: t('customers.fields.phone') },
-    currencyColumn<Customer>({ key: 'balance', header: t('customers.fields.openBalance') }),
+    currencyColumn<CustomerRow>({ key: 'balance', header: t('customers.fields.openBalance') }),
     {
       key: 'status',
       header: t('customers.fields.status'),
@@ -66,7 +65,7 @@ export function Customers() {
         </Badge>
       )
     },
-    actionsColumn<Customer>((r) => (
+    actionsColumn<CustomerRow>((r) => (
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
         <Button
           size="sm"

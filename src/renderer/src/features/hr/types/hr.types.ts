@@ -125,6 +125,10 @@ export interface LeaveCreditGrant {
   grantedAt: string
   expiresAt: string
   source: 'overtime'
+  /** The attendance record this credit was earned from — lets a re-save of that same day
+   *  (e.g. fixing a typo in its notes) tell it already granted a credit, without granting a
+   *  second one. Absent on grants made before this field existed. */
+  attendanceRecordId?: string
 }
 
 export type PayrollStatus = 'pending' | 'approved' | 'paid'

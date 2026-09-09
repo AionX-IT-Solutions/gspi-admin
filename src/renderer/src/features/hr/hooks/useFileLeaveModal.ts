@@ -2,17 +2,14 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getLeaveBalance, useHRStore, daysCountBetween } from '../store/hr.store'
 import { useToast } from '@/app/hooks/useToast'
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
+import { todayLocalIso } from '@/shared/lib/utils'
 
 function emptyForm() {
   return {
     employeeId: '',
     leaveTypeId: '',
-    startDate: todayIso(),
-    endDate: todayIso(),
+    startDate: todayLocalIso(),
+    endDate: todayLocalIso(),
     halfDay: false,
     reason: ''
   }

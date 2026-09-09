@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Tooltip } from '@/shared/components/ui/Tooltip'
 import { formatCurrency } from '@/shared/lib/utils'
 import { actualToDate, type BudgetGroupSummary } from '../lib/budgetCalculations'
+import type { AutoActualSourceKey } from '../lib/budgetAutoActuals'
 import type { BudgetCategory, BudgetSection } from '../types/budget.types'
 
 const GRID = '1fr 130px 130px 110px 30px'
@@ -54,8 +55,10 @@ interface BudgetSectionTableProps {
   canManage: boolean
   onEdit: (category: BudgetCategory) => void
   /** Category ids with a live figure computed from real POS/Rentals/Vouchers/Payroll
-   *  data — shown as a small indicator so it's clear which lines are wired up. */
-  autoActualCategoryIds?: Set<string>
+   *  data, mapped to which specific source rule matched — shown as a small indicator
+   *  (with a tooltip naming the source) so it's clear which lines are wired up and
+   *  where their figure actually comes from. */
+  autoActualSourceByCategory?: Map<string, AutoActualSourceKey>
 }
 
 export function BudgetSectionTable({
@@ -63,7 +66,7 @@ export function BudgetSectionTable({
   groups,
   canManage,
   onEdit,
-  autoActualCategoryIds
+  autoActualSourceByCategory
 }: BudgetSectionTableProps) {
   const { t } = useTranslation()
 
@@ -94,6 +97,7 @@ export function BudgetSectionTable({
               {sg.items.map((item) => {
                 const actual = actualToDate(item)
                 const variance = actual - item.budgetedAmount
+                const sourceKey = autoActualSourceByCategory?.get(item.id)
                 return (
                   <div
                     key={item.id}
@@ -117,8 +121,8 @@ export function BudgetSectionTable({
                       }}
                     >
                       {item.name}
-                      {autoActualCategoryIds?.has(item.id) && (
-                        <Tooltip content={t('budget.autoSourceHint')}>
+                      {sourceKey && (
+                        <Tooltip content={t(`budget.autoSource.${sourceKey}`)}>
                           <Zap size={10} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
                         </Tooltip>
                       )}

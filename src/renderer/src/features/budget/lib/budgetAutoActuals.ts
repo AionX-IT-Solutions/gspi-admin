@@ -3,25 +3,10 @@ import type { RentalBooking, RentalSpace } from '@/features/rentals/types/rental
 import type { Voucher } from '@/features/vouchers/types/vouchers.types'
 import type { PayrollEntry } from '@/features/hr/types/hr.types'
 import type { CashReceipt } from '@/features/scrd/types/cashReceipts.types'
+import type { MemberPaymentCategory, ScoutMember } from '@/features/troops/types/troop.types'
 import { getExpenseVouchers, voucherCategory } from '@/features/vouchers/lib/expenseVouchers'
+import { fiscalMonthIndex } from '@/shared/lib/fiscalYear'
 import type { BudgetCategory } from '../types/budget.types'
-
-// Fiscal-year month order the budget uses: Jul, Aug, ..., Jun — see BUDGET_MONTH_LABELS.
-// Values are JS `Date#getMonth()` indices (0 = January).
-const FISCAL_MONTH_ORDER = [6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5]
-
-/** Which of the 12 fiscal-year slots a date falls into, or null if it's outside this
- *  fiscal year entirely (fiscalYear "2026-2027" spans Jul 2026 through Jun 2027). */
-function fiscalMonthIndex(dateIso: string, fiscalYear: string): number | null {
-  const d = new Date(dateIso)
-  if (Number.isNaN(d.getTime())) return null
-  const startYear = parseInt(fiscalYear.split('-')[0], 10)
-  if (Number.isNaN(startYear)) return null
-  const month = d.getMonth()
-  const idx = FISCAL_MONTH_ORDER.indexOf(month)
-  const expectedYear = month >= 6 ? startYear : startYear + 1
-  return d.getFullYear() === expectedYear ? idx : null
-}
 
 function emptyMonths(): number[] {
   return Array(12).fill(0)
@@ -46,7 +31,8 @@ const PAYROLL_FIELD_BY_CATEGORY: Record<string, keyof PayrollEntry> = {
   'pag-ibig contributions': 'pagibig',
   '13th month pay': 'thirteenthMonthPay',
   'cash gift': 'cashGift',
-  'cost of living allowance': 'cola'
+  'cost of living allowance': 'cola',
+  'representation of executive': 'representation'
 }
 
 // Membership-dues income budget lines matched against the manually-recorded Cash
@@ -63,7 +49,16 @@ const CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE: Record<string, CashReceipt['catego
     'Career Woman',
     'Honorary Member'
   ],
-  'training fees': ['Training Fees']
+  'training fees': ['Training Fees'],
+  'camping fees': ['Camping Fees']
+}
+
+// The same three income lines are also funded directly by individual Troop member payments
+// (Roster > Record Payment), not just a lump Journal Voucher — both sources add together.
+const MEMBER_PAYMENT_CATEGORIES_BY_BUDGET_LINE: Record<string, MemberPaymentCategory[]> = {
+  'troop, bc/dc fees': ['membership'],
+  'training fees': ['training'],
+  'camping fees': ['camping']
 }
 
 interface AutoActualSources {
@@ -73,6 +68,27 @@ interface AutoActualSources {
   vouchers: Voucher[]
   payroll: PayrollEntry[]
   cashReceipts: CashReceipt[]
+  scoutMembers: ScoutMember[]
+}
+
+/** One of `budget.autoSource.*` in the locale files — identifies which rule matched a category,
+ *  so the UI can say specifically where a line's live figure comes from instead of a single
+ *  generic "this has a live figure" tooltip everywhere. */
+export type AutoActualSourceKey =
+  | 'equipmentService'
+  | 'rentalHall'
+  | 'rentalRoom'
+  | 'rentalSpace'
+  | 'councilSupportFund'
+  | 'troopBcDcFees'
+  | 'trainingFees'
+  | 'campingFees'
+  | 'payroll'
+  | 'voucherMatch'
+
+export interface AutoActualEntry {
+  months: number[]
+  sourceKey: AutoActualSourceKey
 }
 
 /** For each budget category with a recognized real-data source, sums that source into
@@ -85,8 +101,8 @@ export function computeBudgetAutoActuals(
   categories: BudgetCategory[],
   fiscalYear: string,
   sources: AutoActualSources
-): Map<string, number[]> {
-  const result = new Map<string, number[]>()
+): Map<string, AutoActualEntry> {
+  const result = new Map<string, AutoActualEntry>()
   if (!fiscalYear) return result
 
   const expenseVouchers = getExpenseVouchers(sources.vouchers)
@@ -95,45 +111,64 @@ export function computeBudgetAutoActuals(
     if (category.fiscalYear !== fiscalYear) continue
     const normalized = normalizeCategoryName(category.name)
     const months = emptyMonths()
-    let matched = false
+    let sourceKey: AutoActualSourceKey | null = null
 
     if (category.section === 'income') {
       if (normalized.includes('equipment service')) {
-        matched = true
+        sourceKey = 'equipmentService'
         for (const s of sources.sales) {
           if (s.voided) continue
           const idx = fiscalMonthIndex(s.createdAt, fiscalYear)
           if (idx !== null) months[idx] += s.totalAmount
         }
       } else if (normalized.includes('rental')) {
-        matched = true
         const wantsHall = normalized.includes('hall')
         const wantsRoom = normalized.includes('room')
+        sourceKey = wantsHall ? 'rentalHall' : wantsRoom ? 'rentalRoom' : 'rentalSpace'
         for (const b of sources.bookings) {
           if (b.status !== 'confirmed' && b.status !== 'completed') continue
-          const spaceName = (
-            sources.spaces.find((sp) => sp.id === b.rentalSpaceId)?.name ?? ''
-          ).toLowerCase()
-          const isHall = spaceName.includes('hall')
-          const isRoom = spaceName.includes('room')
+          const space = sources.spaces.find((sp) => sp.id === b.rentalSpaceId)
+          // Prefers the space's own `category` field (set on Add/Edit Room) — falls back to
+          // guessing from its free-text name for a space nobody's re-categorized yet.
+          const spaceName = (space?.name ?? '').toLowerCase()
+          const isHall = space?.category ? space.category === 'hall' : spaceName.includes('hall')
+          const isRoom = space?.category ? space.category === 'room' : spaceName.includes('room')
           const isThisCategory = wantsHall ? isHall : wantsRoom ? isRoom : !isHall && !isRoom
           if (!isThisCategory) continue
           const idx = fiscalMonthIndex(b.bookingDate, fiscalYear)
           if (idx !== null) months[idx] += b.amountPaid ?? b.totalAmount
         }
-      } else if (CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE[normalized]) {
-        matched = true
-        const wantedCategories = CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE[normalized]
+      } else if (
+        CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE[normalized] ||
+        MEMBER_PAYMENT_CATEGORIES_BY_BUDGET_LINE[normalized]
+      ) {
+        sourceKey =
+          normalized === 'council support fund'
+            ? 'councilSupportFund'
+            : normalized === 'training fees'
+              ? 'trainingFees'
+              : normalized === 'camping fees'
+                ? 'campingFees'
+                : 'troopBcDcFees'
+        const wantedCashReceiptCategories = CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE[normalized] ?? []
         for (const r of sources.cashReceipts) {
-          if (!wantedCategories.includes(r.category)) continue
+          if (!wantedCashReceiptCategories.includes(r.category)) continue
           const idx = fiscalMonthIndex(r.date, fiscalYear)
           if (idx !== null) months[idx] += r.amount
+        }
+        const wantedPaymentCategories = MEMBER_PAYMENT_CATEGORIES_BY_BUDGET_LINE[normalized] ?? []
+        for (const member of sources.scoutMembers) {
+          for (const payment of member.payments ?? []) {
+            if (!wantedPaymentCategories.includes(payment.category)) continue
+            const idx = fiscalMonthIndex(payment.date, fiscalYear)
+            if (idx !== null) months[idx] += payment.amount
+          }
         }
       }
     } else {
       const payrollField = PAYROLL_FIELD_BY_CATEGORY[normalized]
       if (payrollField) {
-        matched = true
+        sourceKey = 'payroll'
         for (const p of sources.payroll) {
           if (p.status !== 'paid') continue
           const value = p[payrollField]
@@ -144,14 +179,14 @@ export function computeBudgetAutoActuals(
       } else {
         for (const v of expenseVouchers) {
           if (normalizeCategoryName(voucherCategory(v)) !== normalized) continue
-          matched = true
+          sourceKey = 'voucherMatch'
           const idx = fiscalMonthIndex(v.date, fiscalYear)
           if (idx !== null) months[idx] += v.amount
         }
       }
     }
 
-    if (matched) result.set(category.id, months)
+    if (sourceKey) result.set(category.id, { months, sourceKey })
   }
 
   return result

@@ -41,8 +41,6 @@ export function useCreateCustomerModal(onOpenChange: (open: boolean) => void) {
       email: form.email.trim(),
       phone: form.phone.trim(),
       address: form.address.trim(),
-      balance: 0,
-      totalBilled: 0,
       status: 'active',
       avatarColor: avatarPalette[customerList.length % avatarPalette.length]
     }

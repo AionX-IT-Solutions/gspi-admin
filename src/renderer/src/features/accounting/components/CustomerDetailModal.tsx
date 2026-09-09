@@ -13,7 +13,7 @@ interface CustomerDetailModalProps {
 
 export function CustomerDetailModal({ customerId, onClose }: CustomerDetailModalProps) {
   const { t } = useTranslation()
-  const { customer, customerInvoices } = useCustomerDetailModal(customerId)
+  const { customer, customerInvoices, balance, totalBilled } = useCustomerDetailModal(customerId)
 
   return (
     <Modal
@@ -86,7 +86,7 @@ export function CustomerDetailModal({ customerId, onClose }: CustomerDetailModal
                 {t('customers.fields.openBalance')}
               </p>
               <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>
-                {formatCurrency(customer.balance)}
+                {formatCurrency(balance)}
               </p>
             </Card>
             <Card padding="14px">
@@ -101,7 +101,7 @@ export function CustomerDetailModal({ customerId, onClose }: CustomerDetailModal
                 {t('customers.detail.totalBilled')}
               </p>
               <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>
-                {formatCurrency(customer.totalBilled)}
+                {formatCurrency(totalBilled)}
               </p>
             </Card>
           </div>

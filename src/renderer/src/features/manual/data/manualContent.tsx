@@ -141,12 +141,14 @@ export const manualSections: ManualSection[] = [
             'Search or scan a product to add it to the current sale (a connected barcode scanner works automatically — see Devices).',
             'Adjust quantities, apply any discount, and pick a payment method.',
             'Complete the sale to print or reprint a receipt; every sale is saved to Sales History.',
+            'Rung up by mistake? Void it from Sales History with a reason — this restores the stock and excludes it from collections, without deleting the sale record.',
             'Accountants can view Point of Sale for the Daily Collections report, but only Cashiers and Admins can ring up a sale.'
           ],
           tl: [
             'Maghanap o i-scan ang produkto para idagdag sa kasalukuyang benta (automatic gumagana ang naka-connect na barcode scanner — tingnan ang Devices).',
             'I-adjust ang quantity, ilagay ang discount kung meron, at piliin ang paraan ng bayad.',
             'Kumpletuhin ang benta para mag-print o magprint-ulit ng resibo; naka-save ang bawat benta sa Sales History.',
+            'Nagkamali sa pagbenta? I-void ito mula sa Sales History kasama ang dahilan — ibabalik nito ang stock at hindi na ito isasama sa collections, pero hindi tatanggalin ang record ng benta.',
             'Makikita ng Accountant ang Point of Sale para sa Daily Collections report, pero Cashier at Admin lang ang pwedeng magbenta.'
           ]
         }
@@ -213,13 +215,21 @@ export const manualSections: ManualSection[] = [
             'Create a new invoice, pick the customer, and add line items with quantities and prices.',
             'Save it as a draft or issue it — its status moves from Unpaid to Paid (or Overdue) as payments come in.',
             'Open any invoice to view or export it for printing/emailing.',
-            'Mark as Paid applies instantly; Void an invoice to cancel it without deleting its record, or Delete it outright if it was created by mistake.'
+            'Mark as Paid applies instantly; Void an invoice to cancel it without deleting its record, or Delete it outright if it was created by mistake and never got paid.'
           ],
           tl: [
             'Gumawa ng bagong invoice, piliin ang customer, at magdagdag ng line items kasama ang quantity at presyo.',
             'I-save bilang draft o i-issue — ang status ay magbabago mula Unpaid papuntang Paid (o Overdue) habang may bayad na dumadating.',
             'Buksan ang kahit anong invoice para tingnan o i-export para sa pag-print/pag-email.',
-            'Agad na mailalapat ang Mark as Paid; i-Void ang invoice para kanselahin nang hindi tinatanggal ang record, o i-Delete kapag pagkakamali ang paggawa nito.'
+            'Agad na mailalapat ang Mark as Paid; i-Void ang invoice para kanselahin nang hindi tinatanggal ang record, o i-Delete kapag pagkakamali ang paggawa nito at hindi pa nabayaran.'
+          ]
+        },
+        tips: {
+          en: [
+            "A Paid invoice can't be deleted — its figures already feed the Income Statement and the customer's Total Billed, so removing it would quietly rewrite an already-reconciled month. Void it instead if it needs to be undone."
+          ],
+          tl: [
+            'Hindi na pwedeng i-delete ang Paid na invoice — kasama na ang numero nito sa Income Statement at Total Billed ng customer, kaya kapag tinanggal ito ay babaguhin ang report ng buwang na-reconcile na. I-Void na lang ito kung kailangang bawiin.'
           ]
         }
       },
@@ -301,25 +311,29 @@ export const manualSections: ManualSection[] = [
         key: 'vouchers',
         icon: <Ticket size={16} />,
         summary: {
-          en: 'Cash disbursement vouchers — the paper trail for money paid out by the council.',
-          tl: 'Cash disbursement voucher — ang paper trail para sa pera na binayaran ng konseho.'
+          en: 'Disbursement and Journal Vouchers — the paper trail for money the council pays out, and (via Journal Voucher) money it takes in.',
+          tl: 'Disbursement at Journal Voucher — ang paper trail para sa pera na binayaran ng konseho, at (sa pamamagitan ng Journal Voucher) ang pera na natanggap nito.'
         },
         steps: {
           en: [
-            "Create a voucher for each disbursement: who it's paid to, the amount, and what it covers.",
+            "Create a Disbursement Voucher for each payment out: who it's paid to, the amount, and what it covers.",
+            'To record incoming cash instead — a grant, membership fee, or other receipt not already covered by Point of Sale, Invoices, or a Troop payment — create a Journal Voucher and set Entry Type to "Receipt (Credit)".',
             'Attach or reference supporting documents so the entry is audit-ready.'
           ],
           tl: [
-            'Gumawa ng voucher para sa bawat disbursement: kanino binayaran, magkano, at para saan.',
+            'Gumawa ng Disbursement Voucher para sa bawat binayaran: kanino binayaran, magkano, at para saan.',
+            'Para magrekord ng papasok na pera — grant, membership fee, o ibang resibo na hindi pa saklaw ng Point of Sale, Invoices, o troop payment — gumawa ng Journal Voucher at itakda ang Entry Type sa "Receipt (Credit)".',
             'Mag-attach o mag-refer ng supporting documents para audit-ready ang entry.'
           ]
         },
         tips: {
           en: [
-            "Account Titles (Debit) is a dropdown of the current fiscal year's budget expense lines, not free text — this keeps every voucher matched to a real budget category so it can post automatically to the Council Budget's actuals."
+            "Account Titles (Debit) on a Disbursement Voucher is a dropdown of the current fiscal year's budget expense lines, not free text — this keeps every voucher matched to a real budget category so it can post automatically to the Council Budget's actuals.",
+            'Only a Posted voucher counts — an Approved-but-not-yet-Posted one is not yet treated as money that actually moved, on either the disbursement or receipt side.'
           ],
           tl: [
-            'Ang Account Titles (Debit) ay dropdown ng budget expense lines ng kasalukuyang fiscal year, hindi free text — para tama ang pagtugma ng bawat voucher sa tunay na budget category at automatic itong nakapag-post sa actuals ng Council Budget.'
+            'Ang Account Titles (Debit) sa Disbursement Voucher ay dropdown ng budget expense lines ng kasalukuyang fiscal year, hindi free text — para tama ang pagtugma ng bawat voucher sa tunay na budget category at automatic itong nakapag-post sa actuals ng Council Budget.',
+            'Posted na voucher lang ang binibilang — ang Approved pa lang pero hindi pa Posted ay hindi pa itinuturing na pera na aktwal na gumalaw, maging disbursement man o receipt.'
           ]
         }
       },
@@ -352,11 +366,11 @@ export const manualSections: ManualSection[] = [
         },
         steps: {
           en: [
-            'Record a receipt or disbursement against the right bank account.',
+            "Receipts and disbursements here aren't entered directly — they roll up automatically from Point of Sale, Invoices, Rentals, Troop payments, and posted Vouchers (see Vouchers for recording a receipt that isn't covered elsewhere).",
             "The account's current balance recalculates automatically — you never type that number in directly."
           ],
           tl: [
-            'Magrekord ng receipt o disbursement laban sa tamang bank account.',
+            'Hindi dito direktang inilalagay ang mga receipt at disbursement — awtomatiko itong buhat sa Point of Sale, Invoices, Rentals, troop payments, at Posted na Vouchers (tingnan ang Vouchers para magrekord ng receipt na wala pang saklaw dito).',
             'Automatic na nagre-recalculate ang current balance ng account — hindi mo ito direktang tina-type.'
           ]
         }
@@ -410,14 +424,24 @@ export const manualSections: ManualSection[] = [
           en: [
             'Open a troop to see its member roster, or add a new troop.',
             "Add or edit a scout member's record from within their troop's profile.",
-            'Record Membership or Training fee payments per member as they pay — each one feeds into Daily Collections.',
+            'Record a Membership, Training, or Camping fee payment per member as they pay — each one feeds live into Daily Collections, SCRD, and the matching Council Budget income line (Troop/BC-DC Fees, Training Fees, or Camping Fees).',
             'Open View on a member to see their full profile alongside their payment history.'
           ],
           tl: [
             'Buksan ang troop para makita ang roster ng miyembro, o magdagdag ng bagong troop.',
             'Magdagdag o mag-edit ng record ng scout member mula sa profile ng kanilang troop.',
-            'I-record ang Membership o Training fee ng bawat miyembro kapag nagbayad sila — bahagi ng Daily Collections ang bawat isa.',
+            'I-record ang Membership, Training, o Camping fee ng bawat miyembro kapag nagbayad sila — direktang bahagi ito ng Daily Collections, SCRD, at ng tumutugmang income line sa Council Budget (Troop/BC-DC Fees, Training Fees, o Camping Fees).',
             'Buksan ang View sa isang miyembro para makita ang buong profile kasama ang history ng bayad nila.'
+          ]
+        },
+        tips: {
+          en: [
+            "A troop or member with any payment history can't be deleted outright — Daily Collections, SCRD, and the Council Budget all pull those payments live, so removing one would quietly shrink an already-reported day. Deactivate them instead; that hides them from the active roster without touching their history.",
+            'A payment posts to its Council Budget line the same way any other auto-tracked figure does — open Edit on that line in Budget and apply the live suggestion; it never fills in on its own.'
+          ],
+          tl: [
+            'Hindi puwedeng burahin nang tuluyan ang troop o miyembrong may payment history — kinukuha ito nang live ng Daily Collections, SCRD, at ng Council Budget, kaya kapag tinanggal ay babawasan nito ang report ng araw na na-record na. I-deactivate na lang sila; itatago sila sa active roster nang hindi nawawala ang history.',
+            'Kapareho ng ibang auto-tracked figure, ang isang bayad ay nakikita sa Council Budget line nito — buksan ang Edit doon at i-apply ang live suggestion; hindi ito awtomatikong napupunan nang mag-isa.'
           ]
         }
       },
@@ -507,11 +531,23 @@ export const manualSections: ManualSection[] = [
         steps: {
           en: [
             "Review today's attendance — present, absent, and on-leave counts feed the Dashboard.",
-            "Enroll an employee's face at Attendance > Enrollment so the Hikvision terminal recognizes them (the terminal itself is set up under Settings > Devices)."
+            "Enroll an employee's face at Attendance > Enrollment so the Hikvision terminal recognizes them (the terminal itself is set up under Settings > Devices).",
+            'The official shift is 8:00 AM-5:00 PM with a 15-minute grace period (Late starts at 8:15). A 1-hour lunch (12:00 NN-1:00 PM) is deducted from hours worked whenever the employee was present for any part of it.',
+            'Clocking in at or after 12:00 NN always logs the day as Half Day — even if they end up working late that evening; overtime past 5:00 PM still earns Compensatory Time Off on top of that.'
           ],
           tl: [
             'Tingnan ang attendance ngayong araw — present, absent, at on-leave na bilang ay lumalabas din sa Dashboard.',
-            'I-enroll ang mukha ng empleyado sa Attendance > Enrollment para makilala sila ng Hikvision terminal (ang terminal mismo ay ise-setup sa Settings > Devices).'
+            'I-enroll ang mukha ng empleyado sa Attendance > Enrollment para makilala sila ng Hikvision terminal (ang terminal mismo ay ise-setup sa Settings > Devices).',
+            'Ang opisyal na shift ay 8:00 AM-5:00 PM na may 15-minutong grace period (Late na simula 8:15). Ibinabawas ang 1-oras na lunch (12:00 NN-1:00 PM) sa hours worked kung nandoon sila sa kahit anong bahagi nito.',
+            'Ang pag-time in ng 12:00 NN pataas ay palaging Half Day — kahit magtagal pa sila ng out; ang overtime na lampas 5:00 PM ay may Compensatory Time Off pa rin kahit Half Day ang status.'
+          ]
+        },
+        tips: {
+          en: [
+            "The Status field in Add/Edit Attendance is only used as typed for Absent or Leave — for any other status, the app recalculates it automatically from the clock-in/out times you enter, so it can't drift from what actually happened."
+          ],
+          tl: [
+            'Ang Status field sa Add/Edit Attendance ay ginagamit lang nang direkta kapag Absent o Leave — sa ibang status, awtomatiko itong kino-compute ng app mula sa time in/out na inilagay mo, kaya hindi ito lalayo sa totoong nangyari.'
           ]
         }
       },
@@ -524,12 +560,16 @@ export const manualSections: ManualSection[] = [
         },
         steps: {
           en: [
+            'File a leave request for an employee, with an optional Half Day checkbox.',
             'Review a pending request and approve or reject it — the Dashboard flags anything still waiting.',
-            'Grant leave credits (e.g. at the start of a cycle) from the credit grants screen.'
+            'Made a mistake? Revert an approved request to undo it and restore its credits, or delete any request outright.',
+            'Grant leave credits (e.g. at the start of a cycle) from the credit grants screen — Compensatory Time Off is the one exception, since it can only be earned from logged overtime, never set here.'
           ],
           tl: [
+            'Mag-file ng leave request para sa isang empleyado, may opsyonal na Half Day checkbox.',
             'Suriin ang nakabinbing request at aprubahan o tanggihan ito — ipapakita rin ito sa Dashboard kung may nakabinbin pa.',
-            'Magbigay ng leave credit (hal. sa simula ng cycle) mula sa credit grants screen.'
+            'Nagkamali? I-revert ang aprubadong request para bawiin ito at ibalik ang credits nito, o tanggalin nang tuluyan ang kahit anong request.',
+            'Magbigay ng leave credit (hal. sa simula ng cycle) mula sa credit grants screen — maliban ang Compensatory Time Off, dahil sa logged overtime lang ito nanggagaling, hindi ito naitatakda dito.'
           ]
         }
       },
@@ -548,6 +588,14 @@ export const manualSections: ManualSection[] = [
           tl: [
             'I-filter ayon sa pay period at bumuo/suriin ang payroll entry ng bawat empleyado.',
             'Automatic na kinakalkula ang 13th Month Pay batay sa aktwal na basic pay ng empleyado sa buong taon; ang default na Cash Gift amount ng buong konseho ay itinatakda minsan sa Settings, ng Admin.'
+          ]
+        },
+        tips: {
+          en: [
+            "A Paid entry can no longer be edited or deleted — it's already been disbursed, so the figures stay locked in as a permanent record of what the employee actually received."
+          ],
+          tl: [
+            'Hindi na puwedeng i-edit o i-delete ang Paid na entry — nabayaran na ito, kaya nananatiling naka-lock ang mga numero bilang permanenteng record ng aktwal na natanggap ng empleyado.'
           ]
         }
       },
@@ -582,12 +630,22 @@ export const manualSections: ManualSection[] = [
         },
         steps: {
           en: [
-            'Add a rental space once with its rate and capacity.',
+            'Add a rental space once with its rate, capacity, and Category (Room, Hall, or Space) — the category is what lets its income post to the right Council Budget line.',
+            'Optionally set Base Hours and an Excess Hourly Rate for a space that bills extra for overtime (e.g. "first 5 hours included, then ₱1,000/hour") — a booking with a start and end time then computes the excess automatically instead of it being worked out by hand.',
             'Create a booking for a client, then confirm it once payment is settled — confirmed/completed bookings feed Daily Collections.'
           ],
           tl: [
-            'Magdagdag ng rental space minsan lang kasama ang rate at capacity.',
+            'Magdagdag ng rental space minsan lang kasama ang rate, capacity, at Category (Room, Hall, o Space) — ang category ang nagpapahintulot sa income nitong mapunta sa tamang Council Budget line.',
+            'Opsyonal na itakda ang Base Hours at Excess Hourly Rate para sa space na may dagdag na singil kapag lumagpas sa oras (hal. "unang 5 oras kasama na, tapos ₱1,000/oras") — awtomatiko nang kinukwenta ang labis kapag may start at end time ang booking, hindi na kailangang manwal na kwentahin.',
             'Gumawa ng booking para sa client, pagkatapos kumpirmahin kapag nabayaran na — ang kumpirmado/tapos na booking ay bahagi ng Daily Collections.'
+          ]
+        },
+        tips: {
+          en: [
+            "SCRD's Rental Income always sums every category together, but the Council Budget breaks it out per category (Room vs. Hall vs. Space) — set a space's Category correctly so its income lands on the right budget line."
+          ],
+          tl: [
+            'Palaging pinagsasama ng SCRD ang Rental Income ng lahat ng category, pero hinahati ito ng Council Budget per category (Room, Hall, o Space) — itakda nang tama ang Category ng space para tamang budget line ang mapuntahan ng income nito.'
           ]
         }
       },

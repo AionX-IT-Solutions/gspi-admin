@@ -3,8 +3,8 @@ import { ImageOff, Upload } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
-import { FormField, FieldInput, FieldTextArea } from '@/shared/components/ui/FormField'
-import type { RentalSpace } from '../types/rentals.types'
+import { FormField, FieldInput, FieldSelect, FieldTextArea } from '@/shared/components/ui/FormField'
+import type { RentalSpace, RentalSpaceCategory } from '../types/rentals.types'
 
 export interface RentalSpaceFormState {
   name: string
@@ -12,10 +12,22 @@ export interface RentalSpaceFormState {
   ratePerDay: number
   capacity: number
   imageUrl: string
+  category: RentalSpaceCategory
+  baseHours: number
+  excessHourlyRate: number
 }
 
 export function emptyRentalSpaceForm(): RentalSpaceFormState {
-  return { name: '', description: '', ratePerDay: 0, capacity: 0, imageUrl: '' }
+  return {
+    name: '',
+    description: '',
+    ratePerDay: 0,
+    capacity: 0,
+    imageUrl: '',
+    category: 'room',
+    baseHours: 0,
+    excessHourlyRate: 0
+  }
 }
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -128,6 +140,19 @@ export function RentalSpaceFormModal({
             placeholder="e.g. 350–400 pax, day time"
           />
         </FormField>
+        <FormField label={t('rentals.form.category')} required>
+          <FieldSelect
+            value={form.category}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, category: e.target.value as RentalSpaceCategory }))
+            }
+            options={[
+              { value: 'room', label: t('rentals.form.categoryRoom') },
+              { value: 'hall', label: t('rentals.form.categoryHall') },
+              { value: 'space', label: t('rentals.form.categorySpace') }
+            ]}
+          />
+        </FormField>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
           <FormField label={t('rentals.form.ratePerDay')} required>
             <FieldInput
@@ -145,6 +170,31 @@ export function RentalSpaceFormModal({
               min={0}
               value={form.capacity}
               onChange={(e) => setForm((f) => ({ ...f, capacity: parseInt(e.target.value) || 0 }))}
+            />
+          </FormField>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+          <FormField label={t('rentals.form.baseHours')}>
+            <FieldInput
+              type="number"
+              min={0}
+              step={0.5}
+              value={form.baseHours}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, baseHours: parseFloat(e.target.value) || 0 }))
+              }
+              placeholder="e.g. 5"
+            />
+          </FormField>
+          <FormField label={t('rentals.form.excessHourlyRate')}>
+            <FieldInput
+              type="number"
+              min={0}
+              value={form.excessHourlyRate}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, excessHourlyRate: parseFloat(e.target.value) || 0 }))
+              }
+              placeholder="e.g. 1000"
             />
           </FormField>
         </div>

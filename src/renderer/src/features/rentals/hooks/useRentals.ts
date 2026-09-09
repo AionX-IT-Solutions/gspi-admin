@@ -94,7 +94,12 @@ export function useRentals() {
       return
     }
     const space = spaces.find((sp) => sp.id === bookingForm.rentalSpaceId)
-    const amounts = computeBookingAmounts(space?.ratePerDay ?? 0, bookingForm.discountType)
+    const amounts = computeBookingAmounts(
+      space ?? { ratePerDay: 0 },
+      bookingForm.discountType,
+      bookingForm.startTime,
+      bookingForm.endTime
+    )
     const payload = {
       rentalSpaceId: bookingForm.rentalSpaceId,
       bookingDate: bookingForm.bookingDate,
@@ -104,6 +109,8 @@ export function useRentals() {
       notes: bookingForm.notes || undefined,
       discountType: bookingForm.discountType,
       subtotal: amounts.subtotal,
+      excessHours: amounts.excessHours || undefined,
+      excessAmount: amounts.excessAmount || undefined,
       discountAmount: amounts.discountAmount,
       totalAmount: amounts.totalAmount,
       amountPaid: Math.max(0, bookingForm.amountPaid || 0)
@@ -159,7 +166,10 @@ export function useRentals() {
       description: space.description,
       ratePerDay: space.ratePerDay,
       capacity: space.capacity,
-      imageUrl: space.imageUrl ?? ''
+      imageUrl: space.imageUrl ?? '',
+      category: space.category ?? 'room',
+      baseHours: space.baseHours ?? 0,
+      excessHourlyRate: space.excessHourlyRate ?? 0
     })
     setShowSpaceForm(true)
   }

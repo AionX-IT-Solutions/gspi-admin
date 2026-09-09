@@ -86,6 +86,11 @@ export function useTroopProfile(troop: Troop | null) {
   const handleConfirmDelete = () => {
     if (!deleteTarget || !canManage) return
     const deleted = deleteTarget
+    if ((deleted.payments?.length ?? 0) > 0) {
+      toast.error(t('troops.roster.toast.cannotDeleteHasPayments', { name: deleted.fullName }))
+      setDeleteTarget(null)
+      return
+    }
     deleteScoutMember(deleted.id)
     toast.success(t('troops.roster.toast.deleted', { name: deleted.fullName }), {
       duration: 6000,

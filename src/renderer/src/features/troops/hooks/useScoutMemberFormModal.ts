@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useToast } from '@/app/hooks/useToast'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { useTroopsStore } from '../store/troops.store'
+import { todayLocalIso } from '@/shared/lib/utils'
 import type { ScoutMember } from '../types/troop.types'
 
 function emptyForm() {
@@ -68,7 +69,7 @@ export function useScoutMemberFormModal(
         troopId,
         ...payload,
         membershipYear: currentMembershipYear,
-        renewedAt: new Date().toISOString().slice(0, 10),
+        renewedAt: todayLocalIso(),
         payments: [],
         isActive: true
       })

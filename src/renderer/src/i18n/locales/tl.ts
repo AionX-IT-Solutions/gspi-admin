@@ -607,6 +607,8 @@ const tl = {
       created: 'Naidagdag ang Troop {{troopNumber}}',
       updated: 'Na-update ang Troop',
       deleted: 'Nabura ang Troop {{troopNumber}}',
+      cannotDeleteHasPayments:
+        'Hindi mabubura ang Troop {{troopNumber}} — may payment history ang isa o higit sa mga miyembro nito. I-deactivate ito sa halip.',
       deactivated: 'Na-deactivate ang Troop {{troopNumber}}',
       reactivated: 'Na-reactivate ang Troop {{troopNumber}}',
       noneToExport: 'Walang troop na ie-export',
@@ -649,6 +651,7 @@ const tl = {
         categoryLabel: 'Kategorya',
         categoryMembership: 'Membership',
         categoryTraining: 'Training',
+        categoryCamping: 'Camping',
         dateLabel: 'Petsa',
         submitButton: 'Itala ang Bayad',
         historyTitle: 'Kasaysayan ng Bayad',
@@ -675,6 +678,8 @@ const tl = {
         created: 'Naidagdag si {{name}} sa roster',
         updated: 'Na-update ang miyembro',
         deleted: 'Naalis si {{name}} sa roster',
+        cannotDeleteHasPayments:
+          'Hindi maaalis si {{name}} — may payment history sila. I-deactivate sila sa halip.',
         deactivated: 'Na-deactivate si {{name}}',
         reactivated: 'Na-reactivate si {{name}}',
         renewed: 'Na-renew si {{name}} para sa membership year {{year}}',
@@ -1051,6 +1056,7 @@ const tl = {
       date: 'Petsa',
       renter: 'Umuupa / Layunin',
       amount: 'Halaga',
+      excessIncluded: 'kasama ang {{hours}}h excess ({{amount}})',
       payment: 'Bayad',
       status: 'Katayuan',
       action: 'Aksyon'
@@ -1083,14 +1089,22 @@ const tl = {
       discountNone: 'Wala',
       discountPwdSenior: 'PWD / Senior Citizen (-20%)',
       discountAmountLabel: 'Diskwento',
+      excessHoursLabel: 'Sobrang oras ({{hours}}h)',
       requiredDownPayment: 'Kinakailangang down payment (50%)',
       amountPaid: 'Nabayarang Halaga',
       notes: 'Tala',
       image: 'Larawan',
       spaceName: 'Pangalan ng Room / Espasyo',
       description: 'Deskripsyon',
+      category: 'Kategorya',
+      categoryRoom: 'Room',
+      categoryHall: 'Hall',
+      categorySpace: 'Space',
       ratePerDay: 'Rate kada Araw',
-      capacityField: 'Kapasidad'
+      capacityField: 'Kapasidad',
+      baseHours: 'Base Hours (kasama na sa Rate kada Araw)',
+      excessHourlyRate: 'Excess Hourly Rate (kada oras lampas sa Base Hours)',
+      excessRateSummary: 'Unang {{hours}}h kasama na, tapos {{rate}}/oras'
     },
     toast: {
       validationRequired: 'Kailangan ang espasyo at pangalan ng umuupa',
@@ -1233,6 +1247,25 @@ const tl = {
     },
     autoSourceHint:
       'May live na halaga ang line na ito mula sa totoong data — buksan ang Edit para tignan/gamitin ito',
+    autoSource: {
+      equipmentService: 'Kinuha mula sa mga benta sa Point of Sale (NES).',
+      rentalHall:
+        'Kinuha mula sa kumpirmado/tapos nang bookings ng mga rental space na Hall ang kategorya (Rentals module).',
+      rentalRoom:
+        'Kinuha mula sa kumpirmado/tapos nang bookings ng mga rental space na Room ang kategorya (Rentals module).',
+      rentalSpace:
+        'Kinuha mula sa kumpirmado/tapos nang bookings ng mga rental space na Space ang kategorya (Rentals module).',
+      councilSupportFund:
+        'Kinuha mula sa posted Journal Voucher receipts na naka-record bilang Council Support Fund.',
+      troopBcDcFees:
+        'Kinuha mula sa Troop membership payments (Roster) kasama ang posted Journal Voucher receipts (Troop Fees, Barangay Committee, Associate, Career Woman, Honorary Member).',
+      trainingFees:
+        'Kinuha mula sa Troop training payments (Roster) kasama ang posted Journal Voucher receipts na naka-record bilang Training Fees.',
+      campingFees:
+        'Kinuha mula sa Troop camping payments (Roster) kasama ang posted Journal Voucher receipts na naka-record bilang Camping Fees.',
+      payroll: 'Kinuha mula sa mga bayad na (paid) Payroll entries.',
+      voucherMatch: 'Kinuha mula sa posted Disbursement Vouchers na may tugmang Account Title.'
+    },
     toast: {
       updated: 'Na-update ang budget line',
       fiscalYearRequired: 'Maglagay ng fiscal year',
@@ -1289,16 +1322,21 @@ const tl = {
     },
     form: {
       voucherType: 'Uri ng Voucher',
+      direction: 'Uri ng Entry',
+      directionDebit: 'Disbursement (Debit)',
+      directionCredit: 'Resibo (Credit)',
       modeOfPayment: 'Paraan ng Pagbabayad',
       modeCash: 'Cash',
       modeCheck: 'Check',
       checkNumber: 'Numero ng Check',
       payee: 'Payee',
       payeePlaceholder: 'Pangalan ng vendor o tatanggap',
+      payor: 'Payor',
       payeeAddress: 'Address ng Payee',
       bankAccount: 'Bank Account (para sa Credit)',
       bankAccountPlaceholder: 'hal. DBP #00-500128590-5',
       accountLinesLabel: 'Mga Account Title (Debit)',
+      accountLinesLabelCredit: 'Mga Account Title (Credit)',
       accountPlaceholder: 'Account title, hal. Office Supplies',
       addAccountLine: 'Magdagdag ng Account Line',
       totalAmount: 'Kabuuang Halaga',
@@ -1453,7 +1491,8 @@ const tl = {
       savedAsDraft: '{{number}} ay na-save bilang draft',
       markedPaid: '{{number}} ay minarkahan bilang nabayaran',
       voided: '{{number}} ay na-void',
-      deleted: '{{number}} ay na-delete'
+      deleted: '{{number}} ay na-delete',
+      cannotDeletePaid: 'Hindi pwedeng tanggalin ang bayad na invoice — i-void ito sa halip.'
     },
     confirmDelete: {
       title: 'Burahin ang Invoice',

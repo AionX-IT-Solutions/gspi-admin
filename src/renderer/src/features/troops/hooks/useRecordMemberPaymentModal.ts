@@ -3,17 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { useToast } from '@/app/hooks/useToast'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { useTroopsStore } from '../store/troops.store'
+import { todayLocalIso } from '@/shared/lib/utils'
 import type { MemberPaymentCategory, ScoutMember } from '../types/troop.types'
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10)
-}
 
 function emptyForm() {
   return {
     amount: 0,
     category: 'membership' as MemberPaymentCategory,
-    date: today()
+    date: todayLocalIso()
   }
 }
 

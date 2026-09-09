@@ -1,11 +1,8 @@
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { useHRStore } from '@/features/hr/store/hr.store'
+import { todayLocalIso } from '@/shared/lib/utils'
 import type { HikvisionAttendanceEvent } from '../../../../shared/hikvision-types'
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
-}
 
 /** Safety net for terminals that don't report explicit intent (see below): a scan can't count as a clock-out
  *  less than this long after clock-in — a same-day recognition that soon is almost always the person just
@@ -56,7 +53,7 @@ export function useHikvisionAttendanceBridge() {
           return
         }
 
-        const today = todayIso()
+        const today = todayLocalIso()
         const existing = attendance.find((a) => a.employeeId === employee.id && a.date === today)
         const statedDirection = directionFromAttendanceStatus(event.attendanceStatus)
         const guessedDirection = !existing?.clockIn ? 'in' : !existing?.clockOut ? 'out' : null

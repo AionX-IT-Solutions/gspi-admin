@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatCurrency } from '@/shared/lib/utils'
+import { daysAgoLocalIso, formatCurrency } from '@/shared/lib/utils'
 import { useOrgSettingsStore } from '@/app/store/orgSettings.store'
 import { getAttendanceSummary, useHRStore } from '../store/hr.store'
 import type { Employee, PayrollEntry } from '../types/hr.types'
 import { useToast } from '@/app/hooks/useToast'
-
-function daysAgoIso(days: number) {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString().slice(0, 10)
-}
 
 /** Monthly Salary ÷ 26 — the standard PH daily-rate divisor (average working
  *  days/month), used both for the Basic Salary default and the unpaid-leave
@@ -23,8 +17,8 @@ function emptyForm() {
   return {
     employeeId: '',
     // Payroll here runs monthly, so the default period is a trailing month.
-    periodStart: daysAgoIso(30),
-    periodEnd: daysAgoIso(1),
+    periodStart: daysAgoLocalIso(30),
+    periodEnd: daysAgoLocalIso(1),
     dailyRate: 0,
     daysWorked: 0,
     overtimePay: 0,
@@ -149,11 +143,11 @@ export function useNewPayrollEntryModal(
     const dailyRate = dailyRateOf(emp)
     const unpaidDeduction = Math.round(summary.unpaidLeaveDays * dailyRate * 100) / 100
     applyEmployeeDefaults(emp)
-    // Physical attendance only (present + half-days) — paid leave isn't
+    // Physical attendance only (present + late + overtime + half-days) — paid leave isn't
     // folded in here since attendance and leave-request records don't
     // reliably cross-reference which leave days are paid vs unpaid; the
     // user can adjust Days Worked manually if paid leave should count.
-    setForm((f) => ({ ...f, daysWorked: summary.presentDays + summary.halfDays * 0.5 }))
+    setForm((f) => ({ ...f, daysWorked: summary.daysWorked }))
     setUnpaidLeaveDays(summary.unpaidLeaveDays)
     toast.info(
       t('payroll.toast.attendanceSummary', {
@@ -169,9 +163,11 @@ export function useNewPayrollEntryModal(
   const isYearEndPeriod = isYearEndMonth(form.periodEnd) || isYearEndMonth(form.periodStart)
 
   const netPreview = useMemo(() => {
-    const emp = employees.find((e) => e.id === form.employeeId)
-    const dailyRate = emp ? dailyRateOf(emp) : 0
-    const unpaidDeduction = Math.round(unpaidLeaveDays * dailyRate * 100) / 100
+    // Both basic pay and the unpaid-leave deduction use the same form.dailyRate — the one
+    // actually shown and editable on this entry — rather than recomputing it fresh from the
+    // employee's master record, which would silently disagree with basic pay the moment
+    // dailyRate is overridden here (e.g. a raise not yet reflected on the employee profile).
+    const unpaidDeduction = Math.round(unpaidLeaveDays * form.dailyRate * 100) / 100
     const basicPay = Math.round(form.dailyRate * form.daysWorked * 100) / 100
     const deductions =
       form.sss + form.philhealth + form.pagibig + form.taxDeducted + unpaidDeduction
@@ -194,7 +190,7 @@ export function useNewPayrollEntryModal(
         cashGift -
         deductions
     }
-  }, [form, unpaidLeaveDays, employees, isYearEndPeriod])
+  }, [form, unpaidLeaveDays, isYearEndPeriod])
 
   /** Standard PH formula: this employee's total Basic Pay earned across every payroll entry
    *  within the period's calendar year (including this one), divided by 12 — dynamic, not a
@@ -206,11 +202,14 @@ export function useNewPayrollEntryModal(
       return
     }
     const year = form.periodEnd.slice(0, 4)
+    // Anchored on periodEnd for every entry, same as `year` above — anchoring prior entries on
+    // their periodStart instead would silently drop or double-count a period that spans a
+    // year boundary (e.g. Dec 20-Jan 19), depending on which side of Jan 1 it falls.
     const priorBasicTotal = payroll
       .filter(
         (p) =>
           p.employeeId === form.employeeId &&
-          p.periodStart.slice(0, 4) === year &&
+          p.periodEnd.slice(0, 4) === year &&
           p.id !== editTarget?.id
       )
       .reduce((sum, p) => sum + p.basicSalary, 0)

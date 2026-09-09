@@ -7,6 +7,7 @@ import {
 } from '@/shared/lib/firestoreSync'
 import { appendAuditLog } from '@/app/store/auditLog.store'
 import { useAppStore } from '@/app/store/app.store'
+import { todayLocalIso } from '@/shared/lib/utils'
 import type { MemberPayment, ScoutMember, Troop } from '../types/troop.types'
 
 function actorName() {
@@ -70,9 +71,14 @@ export const useTroopsStore = create<TroopsState>()((set, get) => ({
       summary: `Troop ${troop?.troopNumber ?? id} updated.`
     })
   },
+  // Blocked once any member has payment history — Daily Collections derives its per-day
+  // totals live from scoutMembers[].payments, so deleting one would retroactively shrink an
+  // already-reconciled prior day's report. Deactivate the troop/member instead (isActive),
+  // which keeps that history intact.
   deleteTroop: (id) => {
     const troop = get().troops.find((t) => t.id === id)
     const orphanedMembers = get().scoutMembers.filter((m) => m.troopId === id)
+    if (orphanedMembers.some((m) => (m.payments?.length ?? 0) > 0)) return
     set((s) => ({
       troops: s.troops.filter((t) => t.id !== id),
       scoutMembers: s.scoutMembers.filter((m) => m.troopId !== id)
@@ -111,8 +117,10 @@ export const useTroopsStore = create<TroopsState>()((set, get) => ({
       summary: `${member?.fullName ?? id} updated.`
     })
   },
+  // Same guard as deleteTroop above — a member with payment history can't be hard-deleted.
   deleteScoutMember: (id) => {
     const member = get().scoutMembers.find((m) => m.id === id)
+    if ((member?.payments?.length ?? 0) > 0) return
     set((s) => ({ scoutMembers: s.scoutMembers.filter((m) => m.id !== id) }))
     deleteDocById('scoutMembers', id)
     appendAuditLog({
@@ -123,7 +131,7 @@ export const useTroopsStore = create<TroopsState>()((set, get) => ({
     })
   },
   renewScoutMember: (id, membershipYear) => {
-    const renewedAt = new Date().toISOString().slice(0, 10)
+    const renewedAt = todayLocalIso()
     set((s) => ({
       scoutMembers: s.scoutMembers.map((m) =>
         m.id === id ? { ...m, membershipYear, renewedAt } : m

@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useHRStore } from '../store/hr.store'
+import {
+  combinedAttendanceStatus,
+  computeShiftHoursWorked,
+  isAfternoonOnlyArrival,
+  isLateClockIn,
+  useHRStore
+} from '../store/hr.store'
 import { useToast } from '@/app/hooks/useToast'
 import { usePermissions } from '@/app/hooks/usePermissions'
+import { todayLocalIso } from '@/shared/lib/utils'
 import type { AttendanceRecord, AttendanceStatus } from '../types/hr.types'
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
 
 /** Local HH:mm for a `<input type="time">` — `getHours`/`getMinutes` read back local wall-clock
  *  time regardless of whether the stored ISO string is a bare local timestamp (manual entries)
@@ -21,7 +24,7 @@ function toTimeInputValue(iso: string | null): string {
 function emptyForm() {
   return {
     employeeId: '',
-    date: todayIso(),
+    date: todayLocalIso(),
     clockIn: '',
     clockOut: '',
     status: 'present' as AttendanceStatus,
@@ -66,22 +69,31 @@ export function useManualAttendanceModal(
     }
     const clockIn = form.clockIn ? `${form.date}T${form.clockIn}:00` : null
     const clockOut = form.clockOut ? `${form.date}T${form.clockOut}:00` : null
-    const hoursWorked =
-      clockIn && clockOut
-        ? Math.max(
-            0,
-            Math.round(
-              ((new Date(clockOut).getTime() - new Date(clockIn).getTime()) / 3600000) * 100
-            ) / 100
-          )
-        : null
+    const hoursWorked = clockIn && clockOut ? computeShiftHoursWorked(clockIn, clockOut) : null
+    // Derive status from the times entered — same as the biometric flow — rather than trusting
+    // the dropdown on its own, which used to leave a record saying "Late" for an 08:10 clock-in
+    // that's well inside the 15-minute grace period, or "Present" for a day that was actually
+    // Overtime/Half-day. Skipped for an explicit Absent/Leave pick, since those describe a day
+    // with no real clock times rather than something derivable from them.
+    const isDerivableStatus = form.status !== 'absent' && form.status !== 'leave'
+    const status = !isDerivableStatus
+      ? form.status
+      : clockIn && clockOut && hoursWorked != null
+        ? combinedAttendanceStatus(clockIn, hoursWorked, clockOut)
+        : clockIn
+          ? isAfternoonOnlyArrival(clockIn)
+            ? 'half-day'
+            : isLateClockIn(clockIn)
+              ? 'late'
+              : 'present'
+          : form.status
     recordAttendanceManual({
       employeeId: form.employeeId,
       date: form.date,
       clockIn,
       clockOut,
       hoursWorked,
-      status: form.status,
+      status,
       notes: form.notes || undefined
     })
     toast.success(t(editingRecord ? 'attendance.toast.updated' : 'attendance.toast.recorded'))

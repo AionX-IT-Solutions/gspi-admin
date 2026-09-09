@@ -61,6 +61,7 @@ export function Invoices() {
   const { hasPermission } = usePermissions()
   const canManage = hasPermission('manage:invoices')
   const hydrate = useAccountingStore((s) => s.hydrate)
+  const invoices = useAccountingStore((s) => s.invoices)
   const deleteInvoice = useAccountingStore((s) => s.deleteInvoice)
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean
@@ -77,6 +78,12 @@ export function Invoices() {
   }
 
   const handleConfirmDelete = () => {
+    const invoice = invoices.find((i) => i.id === deleteConfirm.invoiceId)
+    if (invoice?.status === 'paid') {
+      toast.error(t('invoices.toast.cannotDeletePaid'))
+      setDeleteConfirm({ open: false, invoiceId: '', invoiceNumber: '' })
+      return
+    }
     deleteInvoice(deleteConfirm.invoiceId)
     toast.success(`Invoice ${deleteConfirm.invoiceNumber} deleted`)
     setDeleteConfirm({ open: false, invoiceId: '', invoiceNumber: '' })
@@ -130,7 +137,7 @@ export function Invoices() {
             <Pencil size={13} />
           </Button>
         )}
-        {canManage && (
+        {canManage && r.status !== 'paid' && (
           <Button
             size="sm"
             variant="ghost"

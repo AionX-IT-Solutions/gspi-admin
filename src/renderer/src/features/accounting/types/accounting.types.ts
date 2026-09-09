@@ -28,6 +28,9 @@ export interface Invoice {
   memo?: string
 }
 
+// Open balance and total billed are deliberately not stored here — they were, and drifted
+// permanently to 0 because nothing ever updated them as invoices were issued/paid. Both are
+// derived live from the customer's actual invoices instead (see useCustomerDetailModal.ts).
 export interface Customer {
   id: string
   name: string
@@ -35,8 +38,6 @@ export interface Customer {
   email: string
   phone: string
   address: string
-  balance: number
-  totalBilled: number
   status: 'active' | 'inactive'
   avatarColor: string
 }

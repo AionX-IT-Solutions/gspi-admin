@@ -599,6 +599,8 @@ const en = {
       created: 'Troop {{troopNumber}} added',
       updated: 'Troop updated',
       deleted: 'Troop {{troopNumber}} deleted',
+      cannotDeleteHasPayments:
+        "Troop {{troopNumber}} can't be deleted — one or more members have payment history. Deactivate it instead.",
       deactivated: 'Troop {{troopNumber}} deactivated',
       reactivated: 'Troop {{troopNumber}} reactivated',
       noneToExport: 'No troops to export',
@@ -641,6 +643,7 @@ const en = {
         categoryLabel: 'Category',
         categoryMembership: 'Membership',
         categoryTraining: 'Training',
+        categoryCamping: 'Camping',
         dateLabel: 'Date',
         submitButton: 'Record Payment',
         historyTitle: 'Payment History',
@@ -668,6 +671,8 @@ const en = {
         created: '{{name}} added to the roster',
         updated: 'Member updated',
         deleted: '{{name}} removed from the roster',
+        cannotDeleteHasPayments:
+          "{{name}} can't be removed — they have payment history. Deactivate them instead.",
         deactivated: '{{name}} deactivated',
         reactivated: '{{name}} reactivated',
         renewed: '{{name}} renewed for membership year {{year}}',
@@ -1040,6 +1045,7 @@ const en = {
       date: 'Date',
       renter: 'Renter / Purpose',
       amount: 'Amount',
+      excessIncluded: 'incl. {{hours}}h excess ({{amount}})',
       payment: 'Payment',
       status: 'Status',
       action: 'Action'
@@ -1072,14 +1078,22 @@ const en = {
       discountNone: 'None',
       discountPwdSenior: 'PWD / Senior Citizen (-20%)',
       discountAmountLabel: 'Discount',
+      excessHoursLabel: 'Excess hours ({{hours}}h)',
       requiredDownPayment: 'Required down payment (50%)',
       amountPaid: 'Amount Paid',
       notes: 'Notes',
       image: 'Photo',
       spaceName: 'Room / Space Name',
       description: 'Description',
+      category: 'Category',
+      categoryRoom: 'Room',
+      categoryHall: 'Hall',
+      categorySpace: 'Space',
       ratePerDay: 'Rate per Day',
-      capacityField: 'Capacity'
+      capacityField: 'Capacity',
+      baseHours: 'Base Hours (included in Rate per Day)',
+      excessHourlyRate: 'Excess Hourly Rate (per hour beyond Base Hours)',
+      excessRateSummary: 'First {{hours}}h included, then {{rate}}/hour'
     },
     toast: {
       validationRequired: 'Space and renter name are required',
@@ -1222,6 +1236,25 @@ const en = {
     },
     autoSourceHint:
       'This line has a live figure computed from real data — open Edit to review/apply it',
+    autoSource: {
+      equipmentService: 'Linked from Point of Sale (NES) sales.',
+      rentalHall:
+        'Linked from confirmed/completed bookings of Hall-category rental spaces (Rentals module).',
+      rentalRoom:
+        'Linked from confirmed/completed bookings of Room-category rental spaces (Rentals module).',
+      rentalSpace:
+        'Linked from confirmed/completed bookings of Space-category rental spaces (Rentals module).',
+      councilSupportFund:
+        'Linked from posted Journal Voucher receipts recorded as Council Support Fund.',
+      troopBcDcFees:
+        'Linked from Troop membership payments (Roster) plus posted Journal Voucher receipts (Troop Fees, Barangay Committee, Associate, Career Woman, Honorary Member).',
+      trainingFees:
+        'Linked from Troop training payments (Roster) plus posted Journal Voucher receipts recorded as Training Fees.',
+      campingFees:
+        'Linked from Troop camping payments (Roster) plus posted Journal Voucher receipts recorded as Camping Fees.',
+      payroll: 'Linked from paid Payroll entries.',
+      voucherMatch: 'Linked from posted Disbursement Vouchers with a matching Account Title.'
+    },
     toast: {
       updated: 'Budget line updated',
       fiscalYearRequired: 'Enter a fiscal year label',
@@ -1278,16 +1311,21 @@ const en = {
     },
     form: {
       voucherType: 'Voucher Type',
+      direction: 'Entry Type',
+      directionDebit: 'Disbursement (Debit)',
+      directionCredit: 'Receipt (Credit)',
       modeOfPayment: 'Mode of Payment',
       modeCash: 'Cash',
       modeCheck: 'Check',
       checkNumber: 'Check Number',
       payee: 'Payee',
       payeePlaceholder: 'Vendor or recipient name',
+      payor: 'Payor',
       payeeAddress: 'Payee Address',
       bankAccount: 'Bank Account (for Credit)',
       bankAccountPlaceholder: 'e.g. DBP #00-500128590-5',
       accountLinesLabel: 'Account Titles (Debit)',
+      accountLinesLabelCredit: 'Account Titles (Credit)',
       accountPlaceholder: 'Account title, e.g. Office Supplies',
       addAccountLine: 'Add Account Line',
       totalAmount: 'Total Amount',
@@ -1441,7 +1479,8 @@ const en = {
       savedAsDraft: '{{number}} saved as draft',
       markedPaid: '{{number}} marked as paid',
       voided: '{{number}} voided',
-      deleted: '{{number}} deleted'
+      deleted: '{{number}} deleted',
+      cannotDeletePaid: "A paid invoice can't be deleted — void it instead."
     },
     confirmDelete: {
       title: 'Delete Invoice',

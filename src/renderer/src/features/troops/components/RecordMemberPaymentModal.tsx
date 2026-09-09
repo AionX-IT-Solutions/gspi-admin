@@ -21,7 +21,8 @@ export function RecordMemberPaymentModal({
 
   const categoryOptions: { value: MemberPaymentCategory; label: string }[] = [
     { value: 'membership', label: t('troops.roster.payment.categoryMembership') },
-    { value: 'training', label: t('troops.roster.payment.categoryTraining') }
+    { value: 'training', label: t('troops.roster.payment.categoryTraining') },
+    { value: 'camping', label: t('troops.roster.payment.categoryCamping') }
   ]
 
   return (

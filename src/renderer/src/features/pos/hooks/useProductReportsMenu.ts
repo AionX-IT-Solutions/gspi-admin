@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { useToast } from '@/app/hooks/useToast'
 import { useDocumentPreview } from '@/shared/hooks/useDocumentPreview'
+import { todayLocalIso } from '@/shared/lib/utils'
 import type { Product, Purchase, Sale } from '../types/pos.types'
 import {
   exportMonthlySalesReport,
@@ -34,10 +35,9 @@ export function useProductReportsMenu({
   toast
 }: UseProductReportsMenuArgs) {
   const { t } = useTranslation()
-  const todayIso = () => new Date().toISOString().slice(0, 10)
   const [periodType, setPeriodType] = useState<ReportPeriodType>('monthly')
-  const [customStart, setCustomStart] = useState(todayIso)
-  const [customEnd, setCustomEnd] = useState(todayIso)
+  const [customStart, setCustomStart] = useState(todayLocalIso)
+  const [customEnd, setCustomEnd] = useState(todayLocalIso)
   const preview = useDocumentPreview()
   const [previewKind, setPreviewKind] = useState<'sales' | 'inventory' | 'incomeStatement' | null>(
     null

@@ -10,5 +10,19 @@ export function useCustomerDetailModal(customerId: string | null) {
     [customer, invoiceList]
   )
 
-  return { customer, customerInvoices }
+  // Live off the customer's actual invoices, not a stored field — nothing ever kept a stored
+  // balance/totalBilled in sync as invoices were issued, paid, or voided.
+  const balance = useMemo(
+    () => customerInvoices.reduce((sum, i) => sum + i.balanceDue, 0),
+    [customerInvoices]
+  )
+  const totalBilled = useMemo(
+    () =>
+      customerInvoices
+        .filter((i) => i.status !== 'draft' && i.status !== 'void')
+        .reduce((sum, i) => sum + i.total, 0),
+    [customerInvoices]
+  )
+
+  return { customer, customerInvoices, balance, totalBilled }
 }

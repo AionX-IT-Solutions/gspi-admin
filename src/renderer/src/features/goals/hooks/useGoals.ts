@@ -4,7 +4,7 @@ import { useGoalsStore } from '../store/goals.store'
 import { usePOSStore } from '@/features/pos/store/pos.store'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { useToast } from '@/app/hooks/useToast'
-import { nextFiscalYearLabel } from '@/shared/lib/fiscalYear'
+import { fiscalMonthIndex, nextFiscalYearLabel } from '@/shared/lib/fiscalYear'
 import type { Goal, GoalObjective } from '../types/goals.types'
 import type { GoalDialogState } from '../components/GoalFormModal'
 import type { ObjectiveDialogState } from '../components/ObjectiveFormModal'
@@ -60,9 +60,19 @@ export function useGoals() {
     objective: GoalObjective
   } | null>(null)
 
+  // Scoped to the selected program year (and only through the currently viewed month, same as
+  // a manual objective's monthlyAchieved slicing below) — an unscoped all-time sum would show
+  // the exact same cumulative figure for every program year, including ones that predate the
+  // sale, and would keep climbing well past 100% of a fresh year's target.
   const nesSalesTotal = useMemo(
-    () => sales.filter((s) => !s.voided).reduce((sum, s) => sum + s.totalAmount, 0),
-    [sales]
+    () =>
+      sales
+        .filter((s) => !s.voided)
+        .reduce((sum, s) => {
+          const idx = fiscalMonthIndex(s.createdAt, programYear)
+          return idx !== null && idx <= monthIndex ? sum + s.totalAmount : sum
+        }, 0),
+    [sales, programYear, monthIndex]
   )
 
   function achievedFor(objective: GoalObjective): number {

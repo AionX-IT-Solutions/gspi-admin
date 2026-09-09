@@ -12,7 +12,10 @@ export interface Troop {
   isActive: boolean
 }
 
-export type MemberPaymentCategory = 'membership' | 'training'
+// Matches the Council Budget's own income-line breakdown (see budgetAutoActuals.ts's
+// MEMBER_PAYMENT_CATEGORIES_BY_BUDGET_LINE) so a recorded payment posts to the right line —
+// 'membership' -> "Troop, BC/DC Fees", 'training' -> "Training Fees", 'camping' -> "Camping Fees".
+export type MemberPaymentCategory = 'membership' | 'training' | 'camping'
 
 export interface MemberPayment {
   id: string

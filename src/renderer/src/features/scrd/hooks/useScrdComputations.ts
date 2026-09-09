@@ -1,12 +1,23 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useCashReceiptsStore } from '../store/cashReceipts.store'
 import { useBanksStore } from '../store/banks.store'
 import { safeAmount, useBankBalances } from './useBankBalances'
 import { useVouchersStore } from '@/features/vouchers/store/vouchers.store'
+import { getExpenseVouchers } from '@/features/vouchers/lib/expenseVouchers'
+import { getReceiptRowsFromVouchers } from '@/features/vouchers/lib/receiptVouchers'
 import { usePOSStore } from '@/features/pos/store/pos.store'
 import { useRentalsStore } from '@/features/rentals/store/rentals.store'
+import { useTroopsStore } from '@/features/troops/store/troops.store'
+import type { MemberPaymentCategory } from '@/features/troops/types/troop.types'
 import type { JournalRow, BankAccountBalance } from '../lib/scrdExcelExport'
+
+// Mirrors MEMBER_PAYMENT_CATEGORIES_BY_BUDGET_LINE (budgetAutoActuals.ts) so a Troop payment's
+// category label here always names the same Council Budget line its amount actually posts to.
+const RECEIPT_CATEGORY_BY_MEMBER_PAYMENT: Record<MemberPaymentCategory, string> = {
+  membership: 'Troop Fees',
+  training: 'Training Fees',
+  camping: 'Camping Fees'
+}
 
 export interface JournalDisplayRow extends JournalRow {
   id: string
@@ -36,17 +47,18 @@ function bucketDisbursementCategory(category: string): 'capital' | 'other' | 'ge
 
 export function useScrdComputations() {
   const { t } = useTranslation()
-  const cashReceipts = useCashReceiptsStore((s) => s.receipts)
   const { banks, bankAccountBalances: baseBankAccountBalances } = useBankBalances()
   const addBank = useBanksStore((s) => s.addBank)
   const updateBank = useBanksStore((s) => s.updateBank)
   const deleteBank = useBanksStore((s) => s.deleteBank)
   const restoreBank = useBanksStore((s) => s.restoreBank)
   const vouchers = useVouchersStore((s) => s.vouchers)
+  const cashReceipts = useMemo(() => getReceiptRowsFromVouchers(vouchers), [vouchers])
   const sales = usePOSStore((s) => s.sales)
   const bookings = useRentalsStore((s) => s.bookings)
   const spaces = useRentalsStore((s) => s.spaces)
   const purchases = usePOSStore((s) => s.purchases)
+  const scoutMembers = useTroopsStore((s) => s.scoutMembers)
 
   const [manualInterestIncome, setManualInterestIncome] = useState(0)
   const [manualOtherIncome, setManualOtherIncome] = useState(0)
@@ -97,16 +109,25 @@ export function useScrdComputations() {
         // the contract price — see useBankBalances for the same fallback.
         amount: safeAmount(b.amountPaid ?? b.totalAmount)
       }))
-    return [...fromManual, ...fromSales, ...fromRentals].sort((a, b) => (a.date < b.date ? 1 : -1))
-  }, [cashReceipts, sales, bookings, spaces])
+    const fromTroopPayments: JournalDisplayRow[] = scoutMembers.flatMap((m) =>
+      (m.payments ?? []).map((payment) => ({
+        id: payment.id,
+        date: payment.date,
+        name: m.fullName,
+        particulars: `${RECEIPT_CATEGORY_BY_MEMBER_PAYMENT[payment.category]} (${m.fullName})`,
+        category: RECEIPT_CATEGORY_BY_MEMBER_PAYMENT[payment.category],
+        bankAccount: 'Cash on Hand',
+        amount: safeAmount(payment.amount)
+      }))
+    )
+    return [...fromManual, ...fromSales, ...fromRentals, ...fromTroopPayments].sort((a, b) =>
+      a.date < b.date ? 1 : -1
+    )
+  }, [cashReceipts, sales, bookings, spaces, scoutMembers])
 
   const disbursementRows: JournalDisplayRow[] = useMemo(
     () =>
-      vouchers
-        .filter(
-          (v) =>
-            v.voucherType === 'check_voucher' && (v.status === 'posted' || v.status === 'approved')
-        )
+      getExpenseVouchers(vouchers)
         .map((v) => ({
           id: v.id,
           date: v.date,
@@ -173,9 +194,7 @@ export function useScrdComputations() {
 
   const disbursementCategoryTotals = useMemo(() => {
     const map = new Map<string, number>()
-    for (const v of vouchers.filter(
-      (v) => v.voucherType === 'check_voucher' && (v.status === 'posted' || v.status === 'approved')
-    )) {
+    for (const v of getExpenseVouchers(vouchers)) {
       for (const line of v.accountLines) {
         if (line.debit) map.set(line.account, (map.get(line.account) ?? 0) + safeAmount(line.debit))
       }

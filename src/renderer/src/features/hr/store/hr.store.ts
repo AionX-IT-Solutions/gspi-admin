@@ -9,6 +9,7 @@ import {
   reportHydrateFailure,
   stripUndefined
 } from '@/shared/lib/firestoreSync'
+import { todayLocalIso } from '@/shared/lib/utils'
 import { appendAuditLog } from '@/app/store/auditLog.store'
 import { useAppStore } from '@/app/store/app.store'
 import { deleteFile } from '@/shared/lib/storageSync'
@@ -28,12 +29,16 @@ import type {
   PayrollStatus
 } from '../types/hr.types'
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
-
 function actorName() {
   return useAppStore.getState().currentUser?.fullName ?? 'System'
+}
+
+/** This user's manual attendance input/edits are excluded from the audit trail per admin request. */
+const ATTENDANCE_AUDIT_EXEMPT_EMAILS = new Set(['ronamy1995@gmail.com'])
+
+function isAttendanceAuditExempt() {
+  const email = useAppStore.getState().currentUser?.email
+  return !!email && ATTENDANCE_AUDIT_EXEMPT_EMAILS.has(email.toLowerCase())
 }
 
 function datesInRange(startDate: string, endDate: string): string[] {
@@ -49,11 +54,6 @@ function datesInRange(startDate: string, endDate: string): string[] {
 
 export function daysCountBetween(startDate: string, endDate: string) {
   return datesInRange(startDate, endDate).length
-}
-
-export function hoursBetween(clockIn: string, clockOut: string) {
-  const hours = (new Date(clockOut).getTime() - new Date(clockIn).getTime()) / (1000 * 60 * 60)
-  return Math.max(0, Math.round(hours * 100) / 100)
 }
 
 const OVERTIME_THRESHOLD_HOURS = 8
@@ -83,11 +83,27 @@ const STANDARD_LEAVE_TYPES: LeaveType[] = [
   }
 ]
 
-// GSPI official workday start, plus a 15-minute grace period — a clock-in past
-// 8:15 AM is Late; anything at or before that is on time.
+// GSPI official workday: 8:00 AM to 5:00 PM, plus a 15-minute grace period on the start —
+// a clock-in past 8:15 AM is Late; anything at or before that is on time. An early clock-in
+// (e.g. a device that lets staff badge in at 7:00 AM) never moves this start time earlier —
+// it just means they're on premises sooner, not that their shift or overtime accounting starts
+// sooner. Overtime is symmetric: it only ever starts counting from 5:00 PM, regardless of how
+// early they clocked in that day.
 const WORK_START_HOUR = 8
 const WORK_START_MINUTE = 0
+const WORK_END_HOUR = 17
+const WORK_END_MINUTE = 0
 const LATE_GRACE_PERIOD_MINUTES = 15
+
+// The workday's 1-hour unpaid lunch break (12:00-1:00 NN) is never separately clocked (this app
+// only records one time-in and one time-out per day), so it has to be inferred from whether the
+// employee was actually present at some point during that hour, then subtracted as a flat hour —
+// not prorated to exactly how many minutes of it they were present for.
+const LUNCH_BREAK_START_HOUR = 12
+const LUNCH_BREAK_START_MINUTE = 0
+const LUNCH_BREAK_END_HOUR = 13
+const LUNCH_BREAK_END_MINUTE = 0
+const LUNCH_BREAK_HOURS = 1
 
 export function isLateClockIn(clockInIso: string): boolean {
   const clockIn = new Date(clockInIso)
@@ -96,19 +112,89 @@ export function isLateClockIn(clockInIso: string): boolean {
   return clockIn.getTime() > graceDeadline.getTime()
 }
 
-export function statusForHoursWorked(hoursWorked: number): AttendanceStatus {
+/** Hours actually worked past the 5:00 PM shift end, floored at 0 — the only thing that counts
+ *  as overtime. A clock-out at or before 5:00 PM (no matter how early the clock-in was) is 0. */
+export function overtimeHoursPastShiftEnd(clockOutIso: string): number {
+  const clockOut = new Date(clockOutIso)
+  const shiftEnd = new Date(clockOut)
+  shiftEnd.setHours(WORK_END_HOUR, WORK_END_MINUTE, 0, 0)
+  const hours = (clockOut.getTime() - shiftEnd.getTime()) / (1000 * 60 * 60)
+  return Math.max(0, Math.round(hours * 100) / 100)
+}
+
+/** True once the workday's morning half (8:00 AM-12:00 NN) is entirely missed — clocking in at or
+ *  after 12:00 NN. That's a Half Day no matter how late they end up working that afternoon, since
+ *  they still only attended one of the day's two halves. */
+export function isAfternoonOnlyArrival(clockInIso: string): boolean {
+  const clockIn = new Date(clockInIso)
+  const afternoonCutoff = new Date(clockIn)
+  afternoonCutoff.setHours(LUNCH_BREAK_START_HOUR, LUNCH_BREAK_START_MINUTE, 0, 0)
+  return clockIn.getTime() >= afternoonCutoff.getTime()
+}
+
+/**
+ * The "Hours" figure GSPI actually pays/credits for, as opposed to raw clock-out minus clock-in:
+ * - The regular portion is capped to the 8:00 AM-5:00 PM window on both ends — clocking in at
+ *   7:00 AM doesn't earn extra regular hours, and neither does staying past 5:00 PM (that time is
+ *   added back separately, in full, as overtime below).
+ * - The 1-hour lunch break is subtracted from that regular portion, but only if the employee was
+ *   actually present at some point during 12:00-1:00 NN — someone who leaves before noon (a
+ *   morning-only half day) or arrives at/after 12:00 NN (an afternoon-only half day, see
+ *   isAfternoonOnlyArrival) never had a lunch break there to deduct.
+ * - Overtime (time actually worked past 5:00 PM) is added back in full, since lunch happens well
+ *   before it and was already accounted for above.
+ * A normal 8:00 AM-5:00 PM day nets to exactly 8 hours; arriving early or working late shifts
+ * nothing except genuine overtime past 5:00 PM.
+ */
+export function computeShiftHoursWorked(clockInIso: string, clockOutIso: string): number {
+  const clockIn = new Date(clockInIso)
+  const clockOut = new Date(clockOutIso)
+
+  const shiftStart = new Date(clockIn)
+  shiftStart.setHours(WORK_START_HOUR, WORK_START_MINUTE, 0, 0)
+  const shiftEnd = new Date(clockOut)
+  shiftEnd.setHours(WORK_END_HOUR, WORK_END_MINUTE, 0, 0)
+
+  const effectiveStart = Math.max(clockIn.getTime(), shiftStart.getTime())
+  const effectiveEnd = Math.min(clockOut.getTime(), shiftEnd.getTime())
+  const regularSpanHours = Math.max(0, (effectiveEnd - effectiveStart) / (1000 * 60 * 60))
+
+  const lunchStart = new Date(clockIn)
+  lunchStart.setHours(LUNCH_BREAK_START_HOUR, LUNCH_BREAK_START_MINUTE, 0, 0)
+  const lunchEnd = new Date(clockIn)
+  lunchEnd.setHours(LUNCH_BREAK_END_HOUR, LUNCH_BREAK_END_MINUTE, 0, 0)
+  const overlapsLunch = effectiveStart < lunchEnd.getTime() && effectiveEnd > lunchStart.getTime()
+  const regularHours = Math.max(0, regularSpanHours - (overlapsLunch ? LUNCH_BREAK_HOURS : 0))
+
+  const overtimeHours = overtimeHoursPastShiftEnd(clockOutIso)
+  return Math.round((regularHours + overtimeHours) * 100) / 100
+}
+
+/** `clockOut` is required to detect real overtime (time past 5:00 PM) — pass null only for a
+ *  record with no clock-out yet, which can't be Overtime regardless of `hoursWorked`. */
+export function statusForHoursWorked(
+  hoursWorked: number,
+  clockOut: string | null = null
+): AttendanceStatus {
   if (hoursWorked < 4) return 'half-day'
-  if (hoursWorked > OVERTIME_THRESHOLD_HOURS) return 'overtime'
+  if (clockOut && overtimeHoursPastShiftEnd(clockOut) > 0) return 'overtime'
   return 'present'
 }
 
 /**
- * Combines hours-based status with lateness. Half-day (worked <4h) always wins since it's the
- * more severe attendance issue; otherwise Late takes priority over Present/Overtime per GSPI policy.
+ * Combines hours-based status with lateness. Half-day always wins since it's the more severe
+ * attendance issue — either worked under 4h total, or missed the entire morning (see
+ * isAfternoonOnlyArrival, which can coexist with plenty of raw hours if they worked a long
+ * afternoon/evening — that's still only one of the day's two halves). Otherwise Late takes
+ * priority over Present/Overtime per GSPI policy.
  */
-export function combinedAttendanceStatus(clockIn: string, hoursWorked: number): AttendanceStatus {
-  const hoursStatus = statusForHoursWorked(hoursWorked)
-  if (hoursStatus === 'half-day') return 'half-day'
+export function combinedAttendanceStatus(
+  clockIn: string,
+  hoursWorked: number,
+  clockOut: string
+): AttendanceStatus {
+  if (hoursWorked < 4 || isAfternoonOnlyArrival(clockIn)) return 'half-day'
+  const hoursStatus = statusForHoursWorked(hoursWorked, clockOut)
   return isLateClockIn(clockIn) ? 'late' : hoursStatus
 }
 
@@ -167,7 +253,11 @@ interface HRState {
   deleteAttendanceRecord: (id: string) => void
 
   /** Grants a Compensatory Time Off credit (in days, converted 1hr OT = 1/8 day) that expires 3 months from now. */
-  grantOvertimeCredit: (employeeId: string, overtimeHours: number) => void
+  grantOvertimeCredit: (
+    employeeId: string,
+    overtimeHours: number,
+    attendanceRecordId?: string
+  ) => void
 
   fileLeaveRequest: (
     request: Omit<LeaveRequest, 'id' | 'status' | 'createdAt' | 'daysCount'>
@@ -381,7 +471,7 @@ export const useHRStore = create<HRState>()((set, get) => ({
     if (!enrollment)
       return { ok: false, message: `${employee.fullName} is not enrolled for biometric attendance` }
 
-    const today = todayIso()
+    const today = todayLocalIso()
     const existing = state.attendance.find((a) => a.employeeId === employeeId && a.date === today)
 
     if (existing?.status === 'leave') {
@@ -392,7 +482,11 @@ export const useHRStore = create<HRState>()((set, get) => ({
       if (existing?.clockIn)
         return { ok: false, message: `${employee.fullName} already clocked in today` }
       const clockIn = new Date().toISOString()
-      const clockInStatus: AttendanceStatus = isLateClockIn(clockIn) ? 'late' : 'present'
+      const clockInStatus: AttendanceStatus = isAfternoonOnlyArrival(clockIn)
+        ? 'half-day'
+        : isLateClockIn(clockIn)
+          ? 'late'
+          : 'present'
       const record: AttendanceRecord = existing
         ? { ...existing, clockIn, status: clockInStatus }
         : {
@@ -428,15 +522,18 @@ export const useHRStore = create<HRState>()((set, get) => ({
     if (existing.clockOut)
       return { ok: false, message: `${employee.fullName} already clocked out today` }
     const clockOut = new Date().toISOString()
-    const hoursWorked = hoursBetween(existing.clockIn, clockOut)
-    const status = combinedAttendanceStatus(existing.clockIn, hoursWorked)
+    const hoursWorked = computeShiftHoursWorked(existing.clockIn, clockOut)
+    const status = combinedAttendanceStatus(existing.clockIn, hoursWorked, clockOut)
     const record: AttendanceRecord = { ...existing, clockOut, hoursWorked, status }
     set((s) => ({
       attendance: s.attendance.map((a) => (a.id === existing.id ? record : a))
     }))
     persist('attendance', record.id, record)
-    if (statusForHoursWorked(hoursWorked) === 'overtime') {
-      get().grantOvertimeCredit(employeeId, hoursWorked - OVERTIME_THRESHOLD_HOURS)
+    // Checked directly against clock-out time, not the day's overall status label — a Half Day
+    // arrival (see isAfternoonOnlyArrival) who still works past 5:00 PM earns that overtime same
+    // as anyone else, even though their status for the day reads "Half Day" rather than "Overtime".
+    if (overtimeHoursPastShiftEnd(clockOut) > 0) {
+      get().grantOvertimeCredit(employeeId, overtimeHoursPastShiftEnd(clockOut), record.id)
     }
     appendAuditLog({
       action: 'attendance_clocked',
@@ -451,7 +548,13 @@ export const useHRStore = create<HRState>()((set, get) => ({
     }
   },
 
-  grantOvertimeCredit: (employeeId, overtimeHours) => {
+  grantOvertimeCredit: (employeeId, overtimeHours, attendanceRecordId) => {
+    if (
+      attendanceRecordId &&
+      get().leaveCreditGrants.some((g) => g.attendanceRecordId === attendanceRecordId)
+    ) {
+      return
+    }
     const days = overtimeHoursToCompDays(overtimeHours)
     if (days <= 0) return
     const grantedAt = new Date().toISOString()
@@ -462,7 +565,8 @@ export const useHRStore = create<HRState>()((set, get) => ({
       days,
       grantedAt,
       expiresAt: addMonthsIso(grantedAt, CREDIT_EXPIRY_MONTHS),
-      source: 'overtime'
+      source: 'overtime',
+      attendanceRecordId
     }
     set((s) => ({ leaveCreditGrants: [...s.leaveCreditGrants, grant] }))
     persist('leaveCreditGrants', grant.id, grant)
@@ -488,20 +592,29 @@ export const useHRStore = create<HRState>()((set, get) => ({
         : [...s.attendance, saved]
     }))
     persist('attendance', saved.id, saved)
-    if (
-      saved.status === 'overtime' &&
-      saved.hoursWorked &&
-      saved.hoursWorked > OVERTIME_THRESHOLD_HOURS
-    ) {
-      get().grantOvertimeCredit(saved.employeeId, saved.hoursWorked - OVERTIME_THRESHOLD_HOURS)
+    // Gate the credit on actual hours worked past the 5:00 PM shift end, not the free-standing
+    // Status dropdown or the day's overall status label — an admin backfilling a past day can
+    // enter real overtime clock-in/out times while the status field is still sitting on its
+    // 'present' default (which used to swallow the credit silently), and a Half Day arrival (see
+    // isAfternoonOnlyArrival) who still works late still earns overtime despite that label.
+    // grantOvertimeCredit itself no-ops if this record already has a grant, so re-saving an
+    // already-credited day (e.g. fixing a typo in notes) is safe to repeat.
+    if (saved.clockOut && overtimeHoursPastShiftEnd(saved.clockOut) > 0) {
+      get().grantOvertimeCredit(
+        saved.employeeId,
+        overtimeHoursPastShiftEnd(saved.clockOut),
+        saved.id
+      )
     }
-    const emp = get().employees.find((e) => e.id === saved.employeeId)
-    appendAuditLog({
-      action: 'attendance_recorded',
-      actorName: actorName(),
-      entityType: 'attendance',
-      summary: `Attendance for ${emp?.fullName ?? 'employee'} on ${saved.date} recorded manually.`
-    })
+    if (!isAttendanceAuditExempt()) {
+      const emp = get().employees.find((e) => e.id === saved.employeeId)
+      appendAuditLog({
+        action: 'attendance_recorded',
+        actorName: actorName(),
+        entityType: 'attendance',
+        summary: `Attendance for ${emp?.fullName ?? 'employee'} on ${saved.date} recorded manually.`
+      })
+    }
   },
 
   deleteAttendanceRecord: (id) => {
@@ -755,7 +868,10 @@ export const useHRStore = create<HRState>()((set, get) => ({
       summary: `Payroll entry ${entry.payrollNumber} created for ${emp?.fullName ?? 'employee'}.`
     })
   },
+  // A disbursed payslip can't be edited or deleted (below) — it's already been paid out, so
+  // altering the figures afterward would misrepresent what the employee actually received.
   updatePayrollEntry: (id, patch) => {
+    if (get().payroll.find((p) => p.id === id)?.status === 'paid') return
     set((s) => ({ payroll: s.payroll.map((p) => (p.id === id ? { ...p, ...patch } : p)) }))
     const entry = get().payroll.find((p) => p.id === id)
     if (entry) persist('payroll', id, entry)
@@ -768,6 +884,7 @@ export const useHRStore = create<HRState>()((set, get) => ({
   },
   deletePayrollEntry: (id) => {
     const entry = get().payroll.find((p) => p.id === id)
+    if (entry?.status === 'paid') return
     set((s) => ({ payroll: s.payroll.filter((p) => p.id !== id) }))
     deleteDocById('payroll', id)
     appendAuditLog({
@@ -805,19 +922,41 @@ export function getLeaveBalance(
 
   // Grant-based leave types (currently just Compensatory Time Off) don't draw from an annual
   // pool — each batch of credit carries its own 3-month expiration from when it was earned, so
-  // usage isn't scoped to a calendar year the way ordinary leave types are.
+  // usage isn't scoped to a calendar year the way ordinary leave types are. Usage is simulated
+  // FIFO against each grant in the order it was earned (oldest first): a grant that's fully used
+  // before it expires simply nets to zero, and once it expires it drops out of both the total and
+  // the remaining sum together — so a grant that's already been legitimately spent never lingers
+  // as phantom "used" days once it's gone, the way a flat total-minus-used subtraction would.
   if (grants.length > 0) {
     const now = new Date().toISOString()
-    const creditsTotal = grants
-      .filter((g) => g.expiresAt >= now)
-      .reduce((sum, g) => sum + g.days, 0)
-    const creditsUsed = state.leaveRequests
+    const sortedGrants = [...grants].sort((a, b) => a.grantedAt.localeCompare(b.grantedAt))
+    const approvedRequests = state.leaveRequests
       .filter(
         (r) =>
           r.employeeId === employeeId && r.leaveTypeId === leaveTypeId && r.status === 'approved'
       )
-      .reduce((sum, r) => sum + r.daysCount, 0)
-    return { creditsTotal, creditsUsed, creditsRemaining: creditsTotal - creditsUsed }
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+
+    const remainingByGrant = new Map(sortedGrants.map((g) => [g.id, g.days]))
+    for (const request of approvedRequests) {
+      let toConsume = request.daysCount
+      for (const grant of sortedGrants) {
+        if (toConsume <= 0) break
+        if (grant.expiresAt < request.createdAt) continue
+        const available = remainingByGrant.get(grant.id) ?? 0
+        const take = Math.min(available, toConsume)
+        remainingByGrant.set(grant.id, available - take)
+        toConsume -= take
+      }
+    }
+
+    const unexpiredGrants = sortedGrants.filter((g) => g.expiresAt >= now)
+    const creditsTotal = unexpiredGrants.reduce((sum, g) => sum + g.days, 0)
+    const creditsRemaining = unexpiredGrants.reduce(
+      (sum, g) => sum + (remainingByGrant.get(g.id) ?? 0),
+      0
+    )
+    return { creditsTotal, creditsUsed: creditsTotal - creditsRemaining, creditsRemaining }
   }
 
   const creditsUsed = state.leaveRequests
@@ -846,14 +985,24 @@ export function getAttendanceSummary(
     (a) => a.employeeId === employeeId && a.date >= periodStart && a.date <= periodEnd
   )
   const presentDays = records.filter((r) => r.status === 'present').length
+  const lateDays = records.filter((r) => r.status === 'late').length
   const absentDays = records.filter((r) => r.status === 'absent').length
   const leaveDays = records.filter((r) => r.status === 'leave').length
   const halfDays = records.filter((r) => r.status === 'half-day').length
   const overtimeDays = records.filter((r) => r.status === 'overtime').length
   const totalHours = records.reduce((sum, r) => sum + (r.hoursWorked ?? 0), 0)
-  const overtimeHours = records
-    .filter((r) => r.status === 'overtime')
-    .reduce((sum, r) => sum + Math.max(0, (r.hoursWorked ?? 0) - OVERTIME_THRESHOLD_HOURS), 0)
+  // Present, Late, and Overtime all represent a full day of attendance — only the arrival/exit
+  // time or the presence of extra hours differs, not how much of the day counts toward basic pay.
+  // Only Half Day counts for half; Absent/Leave count for nothing here (paid leave isn't folded
+  // in — see pullFromAttendance's comment in useNewPayrollEntryModal.ts).
+  const daysWorked = presentDays + lateDays + overtimeDays + halfDays * 0.5
+  // Summed across every record with real overtime, not just ones whose overall status reads
+  // "Overtime" — a Half Day arrival who still worked past 5:00 PM earns and shows overtime hours
+  // here too, same as it earns Compensatory Time Off (see isAfternoonOnlyArrival).
+  const overtimeHours = records.reduce(
+    (sum, r) => sum + (r.clockOut ? overtimeHoursPastShiftEnd(r.clockOut) : 0),
+    0
+  )
 
   const unpaidLeaveDays = state.leaveRequests
     .filter((r) => r.employeeId === employeeId && r.status === 'approved')
@@ -865,12 +1014,14 @@ export function getAttendanceSummary(
 
   return {
     presentDays,
+    lateDays,
     absentDays,
     leaveDays,
     halfDays,
     overtimeDays,
     overtimeHours,
     totalHours,
+    daysWorked,
     unpaidLeaveDays
   }
 }

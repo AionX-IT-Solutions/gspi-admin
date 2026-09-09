@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useHRStore } from '../store/hr.store'
 import { useToast } from '@/app/hooks/useToast'
 import { usePermissions } from '@/app/hooks/usePermissions'
+import { todayLocalIso } from '@/shared/lib/utils'
 import type { Employee } from '../types/hr.types'
 
 const avatarPalette = [
@@ -25,7 +26,7 @@ function emptyForm() {
     branch: '',
     email: '',
     phone: '',
-    hireDate: new Date().toISOString().slice(0, 10),
+    hireDate: todayLocalIso(),
     salary: 0,
     managerId: '',
     userId: '',

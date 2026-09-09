@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
 import { FormField, FieldInput, FieldSelect, FieldTextArea } from '@/shared/components/ui/FormField'
+import { todayLocalIso } from '@/shared/lib/utils'
 import type { Activity, ActivityCategory, ActivityStatus } from '../types/activities.types'
 
 export interface ActivityFormState {
@@ -25,7 +26,7 @@ export function emptyActivityForm(): ActivityFormState {
     description: '',
     location: '',
     organizer: '',
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: todayLocalIso(),
     endDate: '',
     startTime: '',
     endTime: '',

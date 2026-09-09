@@ -7,6 +7,7 @@ import { useHRStore } from '../store/hr.store'
 import { useUsersStore } from '@/features/users/store/users.store'
 import type { Employee } from '../types/hr.types'
 import { useEmployeeFormModal } from '../hooks/useEmployeeFormModal'
+import { buildOrgTree, collectDescendantIds } from '../lib/orgChart'
 
 interface EmployeeFormModalProps {
   open: boolean
@@ -32,15 +33,19 @@ export function EmployeeFormModal({ open, onOpenChange, editTarget }: EmployeeFo
     return () => unsubscribe()
   }, [open, subscribeUsers])
 
-  const managerOptions = useMemo(
-    () => [
+  // Excludes editTarget's own descendants too, not just editTarget itself — picking one of
+  // them as manager would create a reporting-line cycle (a lets b manage a, indirectly).
+  const managerOptions = useMemo(() => {
+    const excludedIds = editTarget
+      ? collectDescendantIds(buildOrgTree(employees), editTarget.id)
+      : new Set<string>()
+    return [
       { value: '', label: t('employees.form.noManager') },
       ...employees
-        .filter((e) => e.isActive && e.id !== editTarget?.id)
+        .filter((e) => e.isActive && !excludedIds.has(e.id))
         .map((e) => ({ value: e.id, label: `${e.fullName} — ${e.position}` }))
-    ],
-    [employees, editTarget, t]
-  )
+    ]
+  }, [employees, editTarget, t])
 
   // Each user account should link to at most one employee — exclude users
   // already linked elsewhere, but keep this employee's own current link

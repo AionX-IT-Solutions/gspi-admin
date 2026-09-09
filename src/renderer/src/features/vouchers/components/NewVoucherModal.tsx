@@ -9,7 +9,25 @@ import { useBanksStore, bankDisplayName } from '@/features/scrd/store/banks.stor
 import { useAccountingStore } from '@/features/accounting/store/accounting.store'
 import { useBudgetStore } from '@/features/budget/store/budget.store'
 import type { ModeOfPayment, Voucher, VoucherType } from '../types/vouchers.types'
-import { useNewVoucherModal } from '../hooks/useNewVoucherModal'
+import { useNewVoucherModal, type VoucherDirection } from '../hooks/useNewVoucherModal'
+
+// Suggested Account Title options for a receipt (credit-direction Journal Voucher) — mirrors
+// CashReceiptCategory (scrd/types/cashReceipts.types.ts), the categories
+// CASH_RECEIPT_CATEGORIES_BY_BUDGET_LINE (budgetAutoActuals.ts) recognizes for a Council Budget
+// income line. Free text is still allowed for anything outside this list.
+const INCOME_ACCOUNT_SUGGESTIONS = [
+  'Council Support Fund',
+  'Troop Fees',
+  'Barangay Committee',
+  'Associate',
+  'Career Woman',
+  'Honorary Member',
+  'Thinking Day Fund',
+  'Training Fees',
+  'Camping Fees',
+  'Interest Income',
+  'Other Operations'
+]
 
 interface NewVoucherModalProps {
   open: boolean
@@ -49,6 +67,8 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
         .map((c) => c.name),
     [budgetCategories, latestFiscalYear]
   )
+  const isReceipt = form.voucherType === 'journal_voucher' && form.direction === 'credit'
+  const accountSuggestions = isReceipt ? INCOME_ACCOUNT_SUGGESTIONS : expenseAccountSuggestions
 
   const allVendors = useAccountingStore((s) => s.vendors)
   const vendors = useMemo(() => allVendors.filter((v) => v.status === 'active'), [allVendors])
@@ -92,13 +112,36 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
         <FormField label={t('vouchers.form.voucherType')} required>
           <FieldSelect
             value={form.voucherType}
-            onChange={(e) => setForm((f) => ({ ...f, voucherType: e.target.value as VoucherType }))}
+            onChange={(e) => {
+              const voucherType = e.target.value as VoucherType
+              setForm((f) => ({
+                ...f,
+                voucherType,
+                // A Check Voucher is always a disbursement — drop back to 'debit' the moment
+                // it's selected, so a stray 'credit' from a Journal Voucher doesn't linger.
+                direction: voucherType === 'check_voucher' ? 'debit' : f.direction
+              }))
+            }}
             options={[
               { value: 'check_voucher', label: t('vouchers.type.checkVoucher') },
               { value: 'journal_voucher', label: t('vouchers.type.journalVoucher') }
             ]}
           />
         </FormField>
+        {form.voucherType === 'journal_voucher' && (
+          <FormField label={t('vouchers.form.direction')} required>
+            <FieldSelect
+              value={form.direction}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, direction: e.target.value as VoucherDirection }))
+              }
+              options={[
+                { value: 'debit', label: t('vouchers.form.directionDebit') },
+                { value: 'credit', label: t('vouchers.form.directionCredit') }
+              ]}
+            />
+          </FormField>
+        )}
         <FormField label={t('vouchers.form.modeOfPayment')} required>
           <FieldSelect
             value={form.modeOfPayment}
@@ -119,7 +162,7 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
             />
           </FormField>
         )}
-        <FormField label={t('vouchers.form.payee')} required>
+        <FormField label={isReceipt ? t('vouchers.form.payor') : t('vouchers.form.payee')} required>
           <div style={{ position: 'relative' }}>
             {selectedVendor ? (
               <div
@@ -236,14 +279,22 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
             options={banks.map((b) => ({ value: bankDisplayName(b), label: bankDisplayName(b) }))}
           />
         </FormField>
-        <FormField label={t('vouchers.form.accountLinesLabel')} required className="col-span-2">
+        <FormField
+          label={
+            isReceipt
+              ? t('vouchers.form.accountLinesLabelCredit')
+              : t('vouchers.form.accountLinesLabel')
+          }
+          required
+          className="col-span-2"
+        >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {form.accountLines.map((line, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <AccountTitleField
                   value={line.account}
                   onChange={(value) => updateAccountLine(i, { account: value })}
-                  suggestions={expenseAccountSuggestions}
+                  suggestions={accountSuggestions}
                   placeholder={t('vouchers.form.accountPlaceholder')}
                 />
                 <FieldInput

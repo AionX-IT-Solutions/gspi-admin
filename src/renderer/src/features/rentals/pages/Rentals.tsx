@@ -127,7 +127,19 @@ export function Rentals() {
       key: 'totalAmount',
       header: t('rentals.table.amount'),
       align: 'right',
-      render: (r) => formatCurrency(r.totalAmount)
+      render: (r) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-end' }}>
+          <span>{formatCurrency(r.totalAmount)}</span>
+          {!!r.excessHours && (
+            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+              {t('rentals.table.excessIncluded', {
+                hours: r.excessHours,
+                amount: formatCurrency(r.excessAmount ?? 0)
+              })}
+            </span>
+          )}
+        </div>
+      )
     },
     {
       key: 'amountPaid',
@@ -290,7 +302,16 @@ export function Rentals() {
                   marginBottom: 4
                 }}
               >
-                <p style={{ fontSize: 13, fontWeight: 600 }}>{space.name}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600 }}>{space.name}</p>
+                  {space.category && (
+                    <Badge variant="default">
+                      {t(
+                        `rentals.form.category${space.category[0].toUpperCase()}${space.category.slice(1)}`
+                      )}
+                    </Badge>
+                  )}
+                </div>
                 {canManage && (
                   <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
                     <Button
@@ -326,6 +347,14 @@ export function Rentals() {
                   {t('rentals.capacity')} {space.capacity}
                 </span>
               </div>
+              {!!space.baseHours && !!space.excessHourlyRate && (
+                <p style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {t('rentals.form.excessRateSummary', {
+                    hours: space.baseHours,
+                    rate: formatCurrency(space.excessHourlyRate)
+                  })}
+                </p>
+              )}
             </div>
           </Card>
         ))}

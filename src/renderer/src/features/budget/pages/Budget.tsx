@@ -53,8 +53,8 @@ export function Budget() {
     handleExportWord
   } = useBudget()
   const hydrate = useBudgetStore((s) => s.hydrate)
-  const autoActualCategoryIds = useMemo(
-    () => new Set(autoActualsByCategory.keys()),
+  const autoActualSourceByCategory = useMemo(
+    () => new Map(Array.from(autoActualsByCategory, ([id, entry]) => [id, entry.sourceKey])),
     [autoActualsByCategory]
   )
   const [newYearOpen, setNewYearOpen] = useState(false)
@@ -182,7 +182,7 @@ export function Budget() {
                 groups={incomeGroups}
                 canManage={canManage}
                 onEdit={setEditingCategory}
-                autoActualCategoryIds={autoActualCategoryIds}
+                autoActualSourceByCategory={autoActualSourceByCategory}
               />
             </Card>
           </div>
@@ -199,7 +199,7 @@ export function Budget() {
               groups={expenseGroups}
               canManage={canManage}
               onEdit={setEditingCategory}
-              autoActualCategoryIds={autoActualCategoryIds}
+              autoActualSourceByCategory={autoActualSourceByCategory}
             />
           </Card>
         </>
@@ -208,7 +208,7 @@ export function Budget() {
       <EditBudgetCategoryModal
         category={editingCategory}
         autoMonthlyActuals={
-          editingCategory ? autoActualsByCategory.get(editingCategory.id) : undefined
+          editingCategory ? autoActualsByCategory.get(editingCategory.id)?.months : undefined
         }
         onClose={() => setEditingCategory(null)}
         onSave={handleSaveCategory}
