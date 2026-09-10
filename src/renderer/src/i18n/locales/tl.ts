@@ -761,11 +761,19 @@ const tl = {
       searchPlaceholder: 'Maghanap ng empleyado…'
     },
     balancesModal: {
-      editButton: 'I-edit ang Balanse',
-      title: 'I-edit ang Balanse ng Leave',
+      editButton: 'I-edit ang Default na Balanse',
+      title: 'I-edit ang Default na Balanse ng Leave',
       description:
-        'Itakda ang taunang credit para sa bawat uri ng leave. Ang Compensatory Time Off ay galing sa overtime kaya hindi ito ma-eedit dito.',
+        'Itakda ang taunang credit para sa bawat uri ng leave, para sa lahat. Kung may sarili nang override ang isang empleyado (I-edit sa kanyang row), gagamitin iyon sa halip. Ang Compensatory Time Off ay galing sa overtime kaya hindi ito ma-eedit dito.',
       saved: 'Na-update ang balanse ng leave'
+    },
+    employeeBalanceModal: {
+      editButton: 'I-edit ang balanse ng empleyadong ito',
+      titleWithName: 'I-edit ang Balanse ng Leave — {{name}}',
+      description:
+        'I-override ang taunang credit ng empleyadong ito para sa isang uri ng leave. I-reset para bumalik sa default na pantay sa lahat.',
+      resetToDefault: 'I-reset sa default ({{default}})',
+      saved: 'Na-update ang balanse ng leave ni {{name}}'
     },
     confirmRevert: {
       title: 'Ibalik ang Pag-apruba',
@@ -1981,10 +1989,7 @@ const tl = {
     },
     editModal: {
       titleDefault: 'I-edit ang User',
-      titleWithName: 'I-edit si {{fullName}}',
-      generateButton: 'Bumuo ng Command',
-      roleChangeHint:
-        'Ang pagbabago ng role ay nangangailangan ng command na patatakbuhin mula sa developer machine — hindi nagdadala ang app ng admin credentials.'
+      titleWithName: 'I-edit si {{fullName}}'
     },
     permissionsModal: {
       titleDefault: 'Mga Permission ng Role',
@@ -2004,6 +2009,8 @@ const tl = {
       userCreateFailed: 'Hindi nagawa ang user account. Subukan muli.',
       roleUpdated: 'Na-update ang role ni "{{fullName}}"',
       roleUpdateFailed: 'Hindi na-update ang role. Subukan muli.',
+      roleUpdateUnavailable:
+        'Hindi naka-set up ang makinang ito para direktang magbago ng role — hilingin sa developer na idagdag ang service account key.',
       fullNameUpdated: 'Na-save ang "{{fullName}}"',
       fullNameUpdateFailed: 'Hindi na-save ang pangalan. Subukan muli.',
       commandCopied: 'Nakopya ang command sa clipboard',

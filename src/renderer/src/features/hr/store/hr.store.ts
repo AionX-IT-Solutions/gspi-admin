@@ -910,12 +910,13 @@ export const useHRStore = create<HRState>()((set, get) => ({
 // ─── Derived selectors (pure functions over store state) ─────────────────────
 
 export function getLeaveBalance(
-  state: Pick<HRState, 'leaveTypes' | 'leaveRequests' | 'leaveCreditGrants'>,
+  state: Pick<HRState, 'leaveTypes' | 'leaveRequests' | 'leaveCreditGrants' | 'employees'>,
   employeeId: string,
   leaveTypeId: string,
   year: number
 ) {
   const leaveType = state.leaveTypes.find((lt) => lt.id === leaveTypeId)
+  const employee = state.employees.find((e) => e.id === employeeId)
   const grants = state.leaveCreditGrants.filter(
     (g) => g.employeeId === employeeId && g.leaveTypeId === leaveTypeId
   )
@@ -968,10 +969,16 @@ export function getLeaveBalance(
         new Date(r.startDate).getFullYear() === year
     )
     .reduce((sum, r) => sum + r.daysCount, 0)
+  // An employee's own override (see Employee.leaveCreditOverrides) takes precedence over
+  // the leave type's org-wide default — set from the per-employee "Edit" action on the Leave
+  // Balances table, for the rare case one person's annual credit genuinely differs from
+  // everyone else's (e.g. a pro-rated first year, a CBA exception).
+  const creditsTotal =
+    employee?.leaveCreditOverrides?.[leaveTypeId] ?? leaveType?.defaultAnnualCredits ?? 0
   return {
-    creditsTotal: leaveType?.defaultAnnualCredits ?? 0,
+    creditsTotal,
     creditsUsed,
-    creditsRemaining: (leaveType?.defaultAnnualCredits ?? 0) - creditsUsed
+    creditsRemaining: creditsTotal - creditsUsed
   }
 }
 

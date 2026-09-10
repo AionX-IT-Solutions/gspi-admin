@@ -19,8 +19,14 @@ import type { LeaveRequestStatus } from '../types/hr.types'
 import { FileLeaveModal } from '../components/FileLeaveModal'
 import { LeaveDecisionModal } from '../components/LeaveDecisionModal'
 import { LeaveBalancesEditModal } from '../components/LeaveBalancesEditModal'
+import { EmployeeLeaveBalanceEditModal } from '../components/EmployeeLeaveBalanceEditModal'
 import { RevertLeaveModal } from '../components/RevertLeaveModal'
-import { useLeave, type RequestRow, type BalanceRow } from '../hooks/useLeave'
+import {
+  useLeave,
+  type RequestRow,
+  type BalanceRow,
+  type LeaveBalanceCell
+} from '../hooks/useLeave'
 import { useHRStore } from '../store/hr.store'
 
 const pageVariants = {
@@ -58,6 +64,8 @@ export function Leave() {
     canManage,
     showBalancesModal,
     setShowBalancesModal,
+    editBalanceEmployeeId,
+    setEditBalanceEmployeeId,
     revertTarget,
     setRevertTarget,
     deleteTarget,
@@ -73,8 +81,28 @@ export function Leave() {
       key: lt.id,
       header: lt.name,
       align: 'right' as const,
-      render: (row: BalanceRow) => `${row[lt.id]} / ${lt.defaultAnnualCredits}`
-    }))
+      render: (row: BalanceRow) => {
+        const cell = row[lt.id] as LeaveBalanceCell
+        return `${cell.remaining} / ${cell.total}`
+      }
+    })),
+    {
+      key: 'id',
+      header: t('leave.table.action'),
+      sortable: false,
+      align: 'right' as const,
+      render: (row: BalanceRow) =>
+        canManage ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setEditBalanceEmployeeId(row.id)}
+            title={t('leave.employeeBalanceModal.editButton')}
+          >
+            <Pencil size={13} />
+          </Button>
+        ) : null
+    }
   ]
 
   const columns: Column<RequestRow>[] = [
@@ -239,6 +267,10 @@ export function Leave() {
       <FileLeaveModal open={showFileDialog} onOpenChange={setShowFileDialog} />
       <LeaveDecisionModal decision={decision} onClose={() => setDecision(null)} />
       <LeaveBalancesEditModal open={showBalancesModal} onOpenChange={setShowBalancesModal} />
+      <EmployeeLeaveBalanceEditModal
+        employeeId={editBalanceEmployeeId}
+        onClose={() => setEditBalanceEmployeeId(null)}
+      />
 
       <RevertLeaveModal target={revertTarget} onClose={() => setRevertTarget(null)} />
 

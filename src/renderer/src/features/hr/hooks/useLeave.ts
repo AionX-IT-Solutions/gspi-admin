@@ -12,11 +12,16 @@ export interface RequestRow extends LeaveRequest {
   leaveTypeName: string
 }
 
+export interface LeaveBalanceCell {
+  remaining: number
+  total: number
+}
+
 export interface BalanceRow {
   id: string
   employeeNumber: string
   employeeName: string
-  [leaveTypeId: string]: string | number
+  [leaveTypeId: string]: string | LeaveBalanceCell
 }
 
 export function useLeave() {
@@ -35,6 +40,7 @@ export function useLeave() {
   const [showFileDialog, setShowFileDialog] = useState(false)
   const [decision, setDecision] = useState<LeaveDecisionTarget | null>(null)
   const [showBalancesModal, setShowBalancesModal] = useState(false)
+  const [editBalanceEmployeeId, setEditBalanceEmployeeId] = useState<string | null>(null)
   const [revertTarget, setRevertTarget] = useState<RequestRow | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<RequestRow | null>(null)
   const [search, setSearch] = useState('')
@@ -63,16 +69,17 @@ export function useLeave() {
         employeeName: emp.fullName
       }
       for (const lt of leaveTypes) {
-        row[lt.id] = getLeaveBalance(
-          { leaveTypes, leaveRequests, leaveCreditGrants },
+        const balance = getLeaveBalance(
+          { leaveTypes, leaveRequests, leaveCreditGrants, employees },
           emp.id,
           lt.id,
           year
-        ).creditsRemaining
+        )
+        row[lt.id] = { remaining: balance.creditsRemaining, total: balance.creditsTotal }
       }
       return row
     })
-  }, [activeEmployees, leaveTypes, leaveRequests, leaveCreditGrants])
+  }, [activeEmployees, employees, leaveTypes, leaveRequests, leaveCreditGrants])
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -113,6 +120,8 @@ export function useLeave() {
     canManage,
     showBalancesModal,
     setShowBalancesModal,
+    editBalanceEmployeeId,
+    setEditBalanceEmployeeId,
     revertTarget,
     setRevertTarget,
     deleteTarget,

@@ -46,7 +46,7 @@ export function useFileLeaveModal(onOpenChange: (open: boolean) => void) {
     const leaveType = leaveTypes.find((lt) => lt.id === form.leaveTypeId)
     const year = new Date(form.startDate).getFullYear()
     const balance = getLeaveBalance(
-      { leaveTypes, leaveRequests, leaveCreditGrants },
+      { leaveTypes, leaveRequests, leaveCreditGrants, employees },
       form.employeeId,
       form.leaveTypeId,
       year

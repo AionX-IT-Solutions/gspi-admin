@@ -51,24 +51,6 @@ export function buildCreateStaffUserCommand(input: CreateStaffUserInput): string
   return parts.join(' ')
 }
 
-interface UpdateStaffUserInput {
-  uid: string
-  fullName?: string
-  role?: UserRole
-  customRoleId?: string | null
-}
-
-/** Builds the exact `scripts/manageStaffUser.mjs update` command for a role/name change.
- *  `customRoleId: null` clears a previously-set custom role label (passed as `--customRoleId=`
- *  with no value, which the script treats as "remove the field"). */
-export function buildUpdateStaffUserCommand(input: UpdateStaffUserInput): string {
-  const parts = ['node --env-file=.env scripts/manageStaffUser.mjs update', `--uid=${input.uid}`]
-  if (input.fullName) parts.push(`--fullName="${input.fullName}"`)
-  if (input.role) parts.push(`--role=${input.role}`)
-  if (input.customRoleId !== undefined) parts.push(`--customRoleId=${input.customRoleId ?? ''}`)
-  return parts.join(' ')
-}
-
 /** The one staff-account change the app makes directly — Firestore rules narrowly allow
  *  admin/super_admin to toggle just this field, so Enable/Disable doesn't need the CLI. */
 export async function setStaffUserActive(uid: string, isActive: boolean): Promise<void> {

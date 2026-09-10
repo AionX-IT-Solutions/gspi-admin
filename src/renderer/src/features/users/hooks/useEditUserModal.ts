@@ -4,25 +4,14 @@ import { useToast } from '@/app/hooks/useToast'
 import { usePermissionsStore } from '@/app/store/permissions.store'
 import { resolveRoleAssignment, type RoleId } from '@/app/lib/permissions'
 import type { StaffUser } from '../store/users.store'
-import {
-  buildUpdateStaffUserCommand,
-  isStaffAdminAvailable,
-  setStaffUserFullName,
-  updateStaffUserDirect
-} from '../lib/staffUserFunctions'
+import { setStaffUserFullName, updateStaffUserDirect } from '../lib/staffUserFunctions'
 
 export function useEditUserModal(target: StaffUser | null, onClose: () => void) {
   const { t } = useTranslation()
   const toast = useToast()
   const customRoles = usePermissionsStore((s) => s.customRoles)
   const [form, setForm] = useState({ fullName: '', role: 'cashier' as RoleId })
-  const [generatedCommand, setGeneratedCommand] = useState('')
-  const [directAvailable, setDirectAvailable] = useState(false)
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    isStaffAdminAvailable().then(setDirectAvailable)
-  }, [])
 
   // The custom role's own id (if any), not its resolved base role — so the dropdown
   // shows "Developer" selected, not "Admin", and re-saving without touching the
@@ -32,7 +21,6 @@ export function useEditUserModal(target: StaffUser | null, onClose: () => void) 
   useEffect(() => {
     if (target) {
       setForm({ fullName: target.fullName, role: target.customRoleId ?? target.role })
-      setGeneratedCommand('')
     }
   }, [target])
 
@@ -46,19 +34,12 @@ export function useEditUserModal(target: StaffUser | null, onClose: () => void) 
       return
     }
 
-    const { role, customRoleId } = resolveRoleAssignment(form.role, customRoles)
-
-    if (roleChanged && !directAvailable) {
-      setGeneratedCommand(
-        buildUpdateStaffUserCommand({ uid: target.uid, fullName, role, customRoleId })
-      )
-      return
-    }
-
     if (!roleChanged && fullName === target.fullName) {
       onClose()
       return
     }
+
+    const { role, customRoleId } = resolveRoleAssignment(form.role, customRoles)
 
     setSaving(true)
     try {
@@ -70,7 +51,11 @@ export function useEditUserModal(target: StaffUser | null, onClose: () => void) 
           customRoleId
         })
         if (!result.ok) {
-          toast.error(result.error || t('users.toast.roleUpdateFailed'))
+          toast.error(
+            result.error === 'unavailable'
+              ? t('users.toast.roleUpdateUnavailable')
+              : result.error || t('users.toast.roleUpdateFailed')
+          )
           return
         }
         toast.success(t('users.toast.roleUpdated', { fullName }))
@@ -88,21 +73,11 @@ export function useEditUserModal(target: StaffUser | null, onClose: () => void) 
     }
   }
 
-  function handleCopy() {
-    navigator.clipboard
-      .writeText(generatedCommand)
-      .then(() => toast.success(t('users.toast.commandCopied')))
-      .catch(() => toast.error(t('users.toast.commandCopyFailed')))
-  }
-
   return {
     form,
     setForm,
-    generatedCommand,
-    directAvailable,
     roleChanged,
     saving,
-    handleSave,
-    handleCopy
+    handleSave
   }
 }

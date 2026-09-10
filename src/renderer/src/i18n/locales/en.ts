@@ -754,11 +754,19 @@ const en = {
       searchPlaceholder: 'Search employees…'
     },
     balancesModal: {
-      editButton: 'Edit Balances',
-      title: 'Edit Leave Balances',
+      editButton: 'Edit Default Balances',
+      title: 'Edit Default Leave Balances',
       description:
-        'Set the annual credit pool per leave type. Compensatory Time Off is earned from overtime and isn’t editable here.',
+        'Set the annual credit pool per leave type for everyone. An employee with their own override (Edit on their row) keeps that instead. Compensatory Time Off is earned from overtime and isn’t editable here.',
       saved: 'Leave balances updated'
+    },
+    employeeBalanceModal: {
+      editButton: 'Edit this employee’s balances',
+      titleWithName: 'Edit Leave Balances — {{name}}',
+      description:
+        'Override this employee’s annual credit for a leave type. Reset to fall back to the org-wide default.',
+      resetToDefault: 'Reset to default ({{default}})',
+      saved: 'Updated leave balances for {{name}}'
     },
     confirmRevert: {
       title: 'Revert Approval',
@@ -1967,10 +1975,7 @@ const en = {
     },
     editModal: {
       titleDefault: 'Edit User',
-      titleWithName: 'Edit {{fullName}}',
-      generateButton: 'Generate Command',
-      roleChangeHint:
-        'Changing the role needs a command run from a developer machine — the app never carries admin credentials.'
+      titleWithName: 'Edit {{fullName}}'
     },
     permissionsModal: {
       titleDefault: 'Role Permissions',
@@ -1990,6 +1995,8 @@ const en = {
       userCreateFailed: 'Failed to create user account. Please try again.',
       roleUpdated: '"{{fullName}}" role updated',
       roleUpdateFailed: 'Failed to update the role. Please try again.',
+      roleUpdateUnavailable:
+        "This device isn't set up to change roles directly — ask the developer to add the service account key.",
       fullNameUpdated: '"{{fullName}}" saved',
       fullNameUpdateFailed: 'Failed to save the name. Please try again.',
       commandCopied: 'Command copied to clipboard',

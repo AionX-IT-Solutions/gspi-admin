@@ -27,6 +27,11 @@ export interface Employee {
   photoUrl?: string
   /** Storage path of `photoUrl`, kept so the previous photo can be deleted when it's replaced. */
   photoStoragePath?: string
+  /** Per-leave-type annual credit override for this one employee, keyed by LeaveType id —
+   *  absent for a type means "use that type's own defaultAnnualCredits" (see getLeaveBalance
+   *  in hr.store.ts). Only meaningful for calendar-year leave types; grant-based ones (currently
+   *  just Compensatory Time Off) always derive their total from the employee's own grants. */
+  leaveCreditOverrides?: Record<string, number>
 }
 
 export type EmployeeDocumentType = 'resume' | 'transcript' | 'certification' | 'other'
