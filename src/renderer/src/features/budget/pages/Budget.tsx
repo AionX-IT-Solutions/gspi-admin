@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
 import { Modal } from '@/shared/components/ui/Modal'
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog'
 import { FormField, FieldInput, FieldSelect } from '@/shared/components/ui/FormField'
 import { PageHeader } from '@/shared/components/ui/PageHeader'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
@@ -47,6 +48,9 @@ export function Budget() {
     editingCategory,
     setEditingCategory,
     handleSaveCategory,
+    deleteTarget,
+    setDeleteTarget,
+    handleConfirmDeleteCategory,
     showAddLine,
     setShowAddLine,
     addLineContext,
@@ -200,6 +204,7 @@ export function Budget() {
                 groups={incomeGroups}
                 canManage={canManage}
                 onEdit={setEditingCategory}
+                onDelete={setDeleteTarget}
                 onAddLine={(group, subGroup) => openAddLine({ section: 'income', group, subGroup })}
                 autoActualSourceByCategory={autoActualSourceByCategory}
               />
@@ -218,6 +223,7 @@ export function Budget() {
               groups={expenseGroups}
               canManage={canManage}
               onEdit={setEditingCategory}
+              onDelete={setDeleteTarget}
               onAddLine={(group, subGroup) => openAddLine({ section: 'expense', group, subGroup })}
               autoActualSourceByCategory={autoActualSourceByCategory}
             />
@@ -232,6 +238,16 @@ export function Budget() {
         }
         onClose={() => setEditingCategory(null)}
         onSave={handleSaveCategory}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={t('budget.confirmDelete.title')}
+        message={t('budget.confirmDelete.message', { name: deleteTarget?.name ?? '' })}
+        confirmLabel={t('common.delete')}
+        danger
+        onConfirm={handleConfirmDeleteCategory}
+        onCancel={() => setDeleteTarget(null)}
       />
 
       <AddBudgetCategoryModal

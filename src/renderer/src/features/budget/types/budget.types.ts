@@ -37,6 +37,10 @@ export interface BudgetCategory {
   priorYearBudget: number
   priorYearActual: number
   priorYearMonthlyActuals: number[]
+  // True only for a line introduced via "Add Line" (or rolled forward from one) — the
+  // Council's official budget structure (seeded/starting categories) is never deletable,
+  // so BudgetSectionTable only offers Delete when this is set.
+  isCustom?: boolean
   createdAt: string
   updatedAt: string
 }

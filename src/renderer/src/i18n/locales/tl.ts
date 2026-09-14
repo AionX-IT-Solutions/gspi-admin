@@ -1308,19 +1308,20 @@ const tl = {
       rentalSpace:
         'Kinuha mula sa kumpirmado/tapos nang bookings ng mga rental space na Space ang kategorya (Rentals module).',
       councilSupportFund:
-        'Kinuha mula sa posted Journal Voucher receipts na naka-record bilang Council Support Fund.',
+        'Kinuha mula sa approved Journal Voucher receipts na naka-record bilang Council Support Fund.',
       troopBcDcFees:
-        'Kinuha mula sa Troop membership payments (Roster) kasama ang posted Journal Voucher receipts (Troop Fees, Barangay Committee, Associate, Career Woman, Honorary Member).',
+        'Kinuha mula sa Troop membership payments (Roster) kasama ang approved Journal Voucher receipts (Troop Fees, Barangay Committee, Associate, Career Woman, Honorary Member).',
       trainingFees:
-        'Kinuha mula sa Troop training payments (Roster) kasama ang posted Journal Voucher receipts na naka-record bilang Training Fees.',
+        'Kinuha mula sa Troop training payments (Roster) kasama ang approved Journal Voucher receipts na naka-record bilang Training Fees.',
       campingFees:
-        'Kinuha mula sa Troop camping payments (Roster) kasama ang posted Journal Voucher receipts na naka-record bilang Camping Fees.',
+        'Kinuha mula sa Troop camping payments (Roster) kasama ang approved Journal Voucher receipts na naka-record bilang Camping Fees.',
       payroll: 'Kinuha mula sa mga bayad na (paid) Payroll entries.',
-      voucherMatch: 'Kinuha mula sa posted Disbursement Vouchers na may tugmang Account Title.'
+      voucherMatch: 'Kinuha mula sa approved Disbursement Vouchers na may tugmang Account Title.'
     },
     toast: {
       updated: 'Na-update ang budget line',
       categoryAdded: 'Naidagdag ang budget line',
+      categoryDeleted: 'Natanggal ang "{{name}}"',
       addLineMissingFields: 'Kailangan ang group, pangalan, at halaga ng badyet na higit sa 0',
       fiscalYearRequired: 'Maglagay ng fiscal year',
       fiscalYearExists: 'Mayroon nang ganitong fiscal year',
@@ -1329,6 +1330,11 @@ const tl = {
       excel: 'Na-export ang budget sa Excel',
       pdf: 'Na-export ang budget sa PDF',
       word: 'Na-export ang budget sa Word'
+    },
+    confirmDelete: {
+      title: 'Tanggalin ang Budget Line',
+      message:
+        'Tanggalin ang "{{name}}"? Mawawala rin ang budgeted amount at monthly actuals nito — hindi na ito mababawi.'
     }
   },
   facilityCalendar: {

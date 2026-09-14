@@ -1297,19 +1297,20 @@ const en = {
       rentalSpace:
         'Linked from confirmed/completed bookings of Space-category rental spaces (Rentals module).',
       councilSupportFund:
-        'Linked from posted Journal Voucher receipts recorded as Council Support Fund.',
+        'Linked from approved Journal Voucher receipts recorded as Council Support Fund.',
       troopBcDcFees:
-        'Linked from Troop membership payments (Roster) plus posted Journal Voucher receipts (Troop Fees, Barangay Committee, Associate, Career Woman, Honorary Member).',
+        'Linked from Troop membership payments (Roster) plus approved Journal Voucher receipts (Troop Fees, Barangay Committee, Associate, Career Woman, Honorary Member).',
       trainingFees:
-        'Linked from Troop training payments (Roster) plus posted Journal Voucher receipts recorded as Training Fees.',
+        'Linked from Troop training payments (Roster) plus approved Journal Voucher receipts recorded as Training Fees.',
       campingFees:
-        'Linked from Troop camping payments (Roster) plus posted Journal Voucher receipts recorded as Camping Fees.',
+        'Linked from Troop camping payments (Roster) plus approved Journal Voucher receipts recorded as Camping Fees.',
       payroll: 'Linked from paid Payroll entries.',
-      voucherMatch: 'Linked from posted Disbursement Vouchers with a matching Account Title.'
+      voucherMatch: 'Linked from approved Disbursement Vouchers with a matching Account Title.'
     },
     toast: {
       updated: 'Budget line updated',
       categoryAdded: 'Budget line added',
+      categoryDeleted: '"{{name}}" deleted',
       addLineMissingFields: 'Group, name, and a budgeted amount greater than 0 are required',
       fiscalYearRequired: 'Enter a fiscal year label',
       fiscalYearExists: 'That fiscal year already exists',
@@ -1318,6 +1319,11 @@ const en = {
       excel: 'Budget exported to Excel',
       pdf: 'Budget exported to PDF',
       word: 'Budget exported to Word'
+    },
+    confirmDelete: {
+      title: 'Delete Budget Line',
+      message:
+        'Delete "{{name}}"? Its budgeted amount and monthly actuals go with it — this cannot be undone.'
     }
   },
   facilityCalendar: {

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { Pencil, Zap } from 'lucide-react'
+import { Pencil, Trash2, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Tooltip } from '@/shared/components/ui/Tooltip'
 import { formatCurrency } from '@/shared/lib/utils'
@@ -7,7 +7,7 @@ import { actualToDate, groupTotalLabel, type BudgetGroupSummary } from '../lib/b
 import type { AutoActualSourceKey } from '../lib/budgetAutoActuals'
 import type { BudgetCategory, BudgetSection } from '../types/budget.types'
 
-const GRID = '1fr 130px 130px 110px 30px'
+const GRID = '1fr 130px 130px 110px 56px'
 
 const headCellStyle: CSSProperties = {
   fontSize: 10.5,
@@ -54,6 +54,7 @@ interface BudgetSectionTableProps {
   groups: BudgetGroupSummary[]
   canManage: boolean
   onEdit: (category: BudgetCategory) => void
+  onDelete: (category: BudgetCategory) => void
   /** Opens the Add Line modal locked to this exact group/subGroup bucket. */
   onAddLine: (group: string, subGroup: string) => void
   /** Category ids with a live figure computed from real POS/Rentals/Vouchers/Payroll
@@ -68,6 +69,7 @@ export function BudgetSectionTable({
   groups,
   canManage,
   onEdit,
+  onDelete,
   onAddLine,
   autoActualSourceByCategory
 }: BudgetSectionTableProps) {
@@ -136,23 +138,44 @@ export function BudgetSectionTable({
                       {formatCurrency(variance)}
                     </span>
                     {canManage ? (
-                      <button
-                        onClick={() => onEdit(item)}
-                        title={t('common.edit')}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: 'var(--text-muted)',
-                          padding: 4,
-                          borderRadius: 6
-                        }}
-                      >
-                        <Pencil size={12} />
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <button
+                          onClick={() => onEdit(item)}
+                          title={t('common.edit')}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--text-muted)',
+                            padding: 4,
+                            borderRadius: 6
+                          }}
+                        >
+                          <Pencil size={12} />
+                        </button>
+                        {item.isCustom && (
+                          <button
+                            onClick={() => onDelete(item)}
+                            title={t('common.delete')}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: 'var(--text-muted)',
+                              padding: 4,
+                              borderRadius: 6
+                            }}
+                          >
+                            <Trash2 size={12} color="#f87171" />
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       <span />
                     )}

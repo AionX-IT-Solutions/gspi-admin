@@ -54,6 +54,9 @@ interface BudgetState {
    *  a line under a never-before-seen group/subGroup name is how a new section of the
    *  budget gets created — no separate "create group" step exists or is needed. */
   addCategory: (input: NewBudgetCategoryInput) => void
+  /** Removes a budget line outright — e.g. one added by mistake via Add Line. No
+   *  confirmation/undo at this layer; the page-level delete flow owns that. */
+  deleteCategory: (id: string) => void
   /** Rolls the latest fiscal year's category structure forward into a new one — same
    *  group/subGroup/name/order, budgetedAmount reset to 0 pending board approval, and
    *  this expiring year's budget/actual-to-date carried into the new year's prior-year
@@ -208,6 +211,7 @@ export const useBudgetStore = create<BudgetState>()((set, get) => ({
       priorYearBudget: 0,
       priorYearActual: 0,
       priorYearMonthlyActuals: Array(12).fill(0),
+      isCustom: true,
       createdAt: now,
       updatedAt: now
     }
@@ -218,6 +222,18 @@ export const useBudgetStore = create<BudgetState>()((set, get) => ({
       actorName: currentUser()?.fullName ?? 'System',
       entityType: 'budget',
       summary: `Budget line "${category.name}" (${category.fiscalYear}) added.`
+    })
+  },
+
+  deleteCategory: (id) => {
+    const category = get().categories.find((c) => c.id === id)
+    set((s) => ({ categories: s.categories.filter((c) => c.id !== id) }))
+    deleteDocById('budgetCategories', id)
+    appendAuditLog({
+      action: 'budget_category_deleted',
+      actorName: currentUser()?.fullName ?? 'System',
+      entityType: 'budget',
+      summary: `Budget line "${category?.name ?? id}" (${category?.fiscalYear ?? ''}) deleted.`
     })
   },
 
@@ -247,6 +263,9 @@ export const useBudgetStore = create<BudgetState>()((set, get) => ({
       priorYearBudget: c.budgetedAmount,
       priorYearActual: actualToDate(c),
       priorYearMonthlyActuals: c.monthlyActuals,
+      // A custom line stays deletable in the year it rolls forward into; the Council's
+      // official structure (no flag) never becomes deletable just by rolling forward.
+      isCustom: c.isCustom,
       createdAt: now,
       updatedAt: now
     }))

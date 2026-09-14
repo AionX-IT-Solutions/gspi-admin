@@ -33,6 +33,7 @@ export function useBudget() {
   const allCategories = useBudgetStore((s) => s.categories)
   const updateCategory = useBudgetStore((s) => s.updateCategory)
   const addCategoryAction = useBudgetStore((s) => s.addCategory)
+  const deleteCategoryAction = useBudgetStore((s) => s.deleteCategory)
   const createFiscalYearAction = useBudgetStore((s) => s.createFiscalYear)
 
   const sales = usePOSStore((s) => s.sales)
@@ -44,6 +45,7 @@ export function useBudget() {
   const scoutMembers = useTroopsStore((s) => s.scoutMembers)
 
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<BudgetCategory | null>(null)
   const [selectedFiscalYear, setSelectedFiscalYear] = useState('')
   // `null` context = the page-level "Add Line" button (everything editable); a set
   // context = the per-subgroup "+ Add Line" action (section/group/subGroup locked to
@@ -144,6 +146,13 @@ export function useBudget() {
     setShowAddLine(false)
   }
 
+  function handleConfirmDeleteCategory() {
+    if (!deleteTarget || !canManage) return
+    deleteCategoryAction(deleteTarget.id)
+    toast.success(t('budget.toast.categoryDeleted', { name: deleteTarget.name }))
+    setDeleteTarget(null)
+  }
+
   function handleCreateFiscalYear(newFiscalYear: string) {
     if (!canManage) return
     const trimmed = newFiscalYear.trim()
@@ -207,6 +216,9 @@ export function useBudget() {
     editingCategory,
     setEditingCategory,
     handleSaveCategory,
+    deleteTarget,
+    setDeleteTarget,
+    handleConfirmDeleteCategory,
     showAddLine,
     setShowAddLine,
     addLineContext,
