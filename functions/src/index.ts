@@ -9,6 +9,7 @@
 // the app itself no longer generates or needs it for normal Add/Edit User use.
 
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https'
+import { logger } from 'firebase-functions'
 import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
@@ -81,16 +82,29 @@ function toMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback
 }
 
-export const createStaffUser = onCall<CreateStaffUserRequest>(async (request) => {
-  assertCallerIsAdmin(request.auth)
-  const { email, password, fullName, role, customRoleId } = request.data
-  if (!email || !password || !fullName || !role) {
-    throw new HttpsError('invalid-argument', 'email, password, fullName, and role are all required.')
-  }
-  assertValidRole(role)
-  if (role === 'super_admin') await assertSuperAdminAvailable()
+/** Every code path below funnels through here: an HttpsError we threw deliberately is
+ *  passed through as-is, and anything unexpected gets logged (so it's visible in Cloud
+ *  Logging even though the client only ever sees a short message) and turned into an
+ *  HttpsError so it never reaches the client as a bare, message-less crash. */
+function toHttpsError(err: unknown, fallback: string): HttpsError {
+  if (err instanceof HttpsError) return err
+  logger.error(fallback, err)
+  return new HttpsError('internal', toMessage(err, fallback))
+}
 
+export const createStaffUser = onCall<CreateStaffUserRequest>(async (request) => {
   try {
+    assertCallerIsAdmin(request.auth)
+    const { email, password, fullName, role, customRoleId } = request.data
+    if (!email || !password || !fullName || !role) {
+      throw new HttpsError(
+        'invalid-argument',
+        'email, password, fullName, and role are all required.'
+      )
+    }
+    assertValidRole(role)
+    if (role === 'super_admin') await assertSuperAdminAvailable()
+
     const userRecord = await auth.createUser({ email, password, displayName: fullName })
     await auth.setCustomUserClaims(userRecord.uid, { role })
     await db
@@ -108,18 +122,18 @@ export const createStaffUser = onCall<CreateStaffUserRequest>(async (request) =>
       })
     return { ok: true, uid: userRecord.uid }
   } catch (err) {
-    throw new HttpsError('internal', toMessage(err, 'Failed to create user account.'))
+    throw toHttpsError(err, 'Failed to create user account.')
   }
 })
 
 export const updateStaffUser = onCall<UpdateStaffUserRequest>(async (request) => {
-  assertCallerIsAdmin(request.auth)
-  const { uid, fullName, role, customRoleId, isActive, newPassword } = request.data
-  if (!uid) throw new HttpsError('invalid-argument', 'uid is required.')
-  assertValidRole(role)
-  if (role === 'super_admin') await assertSuperAdminAvailable(uid)
-
   try {
+    assertCallerIsAdmin(request.auth)
+    const { uid, fullName, role, customRoleId, isActive, newPassword } = request.data
+    if (!uid) throw new HttpsError('invalid-argument', 'uid is required.')
+    assertValidRole(role)
+    if (role === 'super_admin') await assertSuperAdminAvailable(uid)
+
     const authUpdate: Record<string, unknown> = {}
     if (fullName) authUpdate.displayName = fullName
     if (isActive !== undefined) authUpdate.disabled = !isActive
@@ -142,6 +156,6 @@ export const updateStaffUser = onCall<UpdateStaffUserRequest>(async (request) =>
     await db.collection('users').doc(uid).update(firestoreUpdate)
     return { ok: true, uid }
   } catch (err) {
-    throw new HttpsError('internal', toMessage(err, 'Failed to update user account.'))
+    throw toHttpsError(err, 'Failed to update user account.')
   }
 })
