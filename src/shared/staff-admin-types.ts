@@ -1,6 +1,6 @@
-// Payloads for the main-process staff account admin bridge (src/main/services/staffAdmin).
-// Mirrors scripts/manageStaffUser.mjs — same Admin SDK operations, run in-process instead
-// of from a terminal, but only when a service account key is found on this machine.
+// Payloads for the createStaffUser/updateStaffUser Cloud Functions (functions/src/index.ts).
+// Mirrors scripts/manageStaffUser.mjs's rules — same Admin SDK operations, called directly
+// over HTTPS from the signed-in admin's app instead of from a terminal.
 
 // `role` here is always a real built-in role — the renderer resolves any custom role
 // selection to its base role (+ customRoleId) before calling this bridge. See

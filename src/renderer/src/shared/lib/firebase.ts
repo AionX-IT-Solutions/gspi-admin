@@ -2,6 +2,7 @@ import { initializeApp, type FirebaseOptions } from 'firebase/app'
 import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
+import { getFunctions } from 'firebase/functions'
 import { isSupported, getAnalytics, type Analytics } from 'firebase/analytics'
 
 const firebaseConfig: FirebaseOptions = {
@@ -18,6 +19,7 @@ export const firebaseApp = initializeApp(firebaseConfig)
 export const auth = getAuth(firebaseApp)
 export const db = getFirestore(firebaseApp)
 export const storage = getStorage(firebaseApp)
+export const functions = getFunctions(firebaseApp)
 
 // Session-only persistence: signed out whenever the app is fully closed and reopened,
 // matching the previous local-mock login's behavior (always land on the Login screen).

@@ -1,5 +1,6 @@
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore'
-import { db } from '@/shared/lib/firebase'
+import { httpsCallable, FunctionsError } from 'firebase/functions'
+import { db, functions } from '@/shared/lib/firebase'
 import type { UserRole } from '@/app/lib/permissions'
 import type { StaffAdminResult } from '../../../../../shared/staff-admin-types'
 
@@ -14,16 +15,6 @@ interface CreateStaffUserInput {
   customRoleId?: string | null
 }
 
-/** True when this machine has a service account key the main process can use — i.e. Add/Edit
- *  User can create or change roles directly. Everywhere else, falls back to the CLI command. */
-export function isStaffAdminAvailable(): Promise<boolean> {
-  return window.api?.staffAdmin.isAvailable() ?? Promise.resolve(false)
-}
-
-export function createStaffUserDirect(input: CreateStaffUserInput): Promise<StaffAdminResult> {
-  return window.api.staffAdmin.createUser(input)
-}
-
 interface UpdateStaffUserDirectInput {
   uid: string
   fullName?: string
@@ -31,24 +22,43 @@ interface UpdateStaffUserDirectInput {
   customRoleId?: string | null
 }
 
-export function updateStaffUserDirect(
-  input: UpdateStaffUserDirectInput
-): Promise<StaffAdminResult> {
-  return window.api.staffAdmin.updateUser(input)
+// Account creation and role changes need the Admin SDK (custom claims can only be set
+// server-side), so they run as Cloud Functions the signed-in admin calls directly —
+// no local service account key, no terminal command, works on every machine.
+const createStaffUserCallable = httpsCallable<CreateStaffUserInput, { ok: true; uid: string }>(
+  functions,
+  'createStaffUser'
+)
+const updateStaffUserCallable = httpsCallable<
+  UpdateStaffUserDirectInput,
+  { ok: true; uid: string }
+>(functions, 'updateStaffUser')
+
+function toResult(err: unknown, fallback: string): StaffAdminResult {
+  if (err instanceof FunctionsError) return { ok: false, error: err.message }
+  return { ok: false, error: err instanceof Error ? err.message : fallback }
 }
 
-/** Builds the exact `scripts/manageStaffUser.mjs create` command to run from a terminal.
- *  Fallback for machines without a local service account key — see isStaffAdminAvailable(). */
-export function buildCreateStaffUserCommand(input: CreateStaffUserInput): string {
-  const parts = [
-    'node --env-file=.env scripts/manageStaffUser.mjs create',
-    `--email="${input.email}"`,
-    `--password="${input.password}"`,
-    `--fullName="${input.fullName}"`,
-    `--role=${input.role}`
-  ]
-  if (input.customRoleId) parts.push(`--customRoleId=${input.customRoleId}`)
-  return parts.join(' ')
+export async function createStaffUserDirect(
+  input: CreateStaffUserInput
+): Promise<StaffAdminResult> {
+  try {
+    const { data } = await createStaffUserCallable(input)
+    return data
+  } catch (err) {
+    return toResult(err, 'Failed to create user account.')
+  }
+}
+
+export async function updateStaffUserDirect(
+  input: UpdateStaffUserDirectInput
+): Promise<StaffAdminResult> {
+  try {
+    const { data } = await updateStaffUserCallable(input)
+    return data
+  } catch (err) {
+    return toResult(err, 'Failed to update user account.')
+  }
 }
 
 /** The one staff-account change the app makes directly — Firestore rules narrowly allow
@@ -58,9 +68,7 @@ export async function setStaffUserActive(uid: string, isActive: boolean): Promis
 }
 
 /** Renaming a staff member never touches Firebase Auth or the `role` custom claim, so
- *  Firestore rules allow admin/super_admin to write it directly — no CLI round-trip.
- *  Role changes still need the CLI (see buildUpdateStaffUserCommand) — custom claims can
- *  only be set via the Admin SDK. */
+ *  Firestore rules allow admin/super_admin to write it directly — no round-trip needed. */
 export async function setStaffUserFullName(uid: string, fullName: string): Promise<void> {
   await updateDoc(doc(db, 'users', uid), { fullName, updatedAt: serverTimestamp() })
 }
@@ -72,7 +80,7 @@ export async function setStaffUserPhoto(uid: string, photoUrl: string): Promise<
 }
 
 /** Birthdate is non-sensitive (unlike role/password), so — like renaming — Firestore rules
- *  let admin/super_admin write it directly, no CLI/service-account round-trip needed. */
+ *  let admin/super_admin write it directly, no service-account round-trip needed. */
 export async function setStaffUserBirthDate(uid: string, birthDate: string): Promise<void> {
   await updateDoc(doc(db, 'users', uid), { birthDate, updatedAt: serverTimestamp() })
 }

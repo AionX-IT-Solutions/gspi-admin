@@ -61,11 +61,7 @@ export function useEditUserModal(target: StaffUser | null, onClose: () => void) 
           customRoleId
         })
         if (!result.ok) {
-          toast.error(
-            result.error === 'unavailable'
-              ? t('users.toast.roleUpdateUnavailable')
-              : result.error || t('users.toast.roleUpdateFailed')
-          )
+          toast.error(result.error || t('users.toast.roleUpdateFailed'))
           return
         }
         toast.success(t('users.toast.roleUpdated', { fullName }))

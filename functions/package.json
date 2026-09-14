@@ -1,0 +1,22 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for gspi-admin — privileged staff-account operations (create/update Firebase Auth users + role claims) callable directly from the desktop app.",
+  "private": true,
+  "engines": {
+    "node": "22"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "npm run build && firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.4.0",
+    "firebase-functions": "^7.3.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

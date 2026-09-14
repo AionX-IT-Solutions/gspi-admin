@@ -7,9 +7,10 @@ import prettierConfig from 'eslint-config-prettier'
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
-  // Global ignores
+  // Global ignores — functions/ is a separate deployable (own tsconfig, own package.json,
+  // linted/typechecked via its own toolchain), not part of this app's project references.
   {
-    ignores: ['out/**', 'dist/**', 'node_modules/**', '*.min.js']
+    ignores: ['out/**', 'dist/**', 'node_modules/**', '*.min.js', 'functions/**']
   },
 
   // Base JS recommended rules

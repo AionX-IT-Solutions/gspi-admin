@@ -134,6 +134,27 @@ function pruneStaleManualActuals(categories: BudgetCategory[]): BudgetCategory[]
   return next
 }
 
+// Content key (not id) — a rolled-forward fiscal year's categories all get random UUIDs
+// regardless of whether the line is official or custom, so id can't tell them apart.
+const STARTING_BUDGET_KEYS = new Set(
+  STARTING_BUDGET_CATEGORIES.map((c) => `${c.section}:${c.group}:${c.subGroup}:${c.name}`)
+)
+
+// One-off cleanup for a custom line ("Add Line") saved before `isCustom` existed — without
+// this backfill, it would look identical to an official line and silently lose its Delete
+// action. Only ever turns the flag on, never off, and never touches a line matching one of
+// the Council's actual starting-budget entries.
+function backfillCustomFlag(categories: BudgetCategory[]): BudgetCategory[] {
+  return categories.map((c) => {
+    if (c.isCustom !== undefined) return c
+    const key = `${c.section}:${c.group}:${c.subGroup}:${c.name}`
+    if (STARTING_BUDGET_KEYS.has(key)) return c
+    const updated: BudgetCategory = { ...c, isCustom: true }
+    if (canSeedBudget()) persistDoc('budgetCategories', c.id, updated)
+    return updated
+  })
+}
+
 function seedStartingBudget(): BudgetCategory[] {
   const now = new Date().toISOString()
   const seeded: BudgetCategory[] = STARTING_BUDGET_CATEGORIES.map((item, i) => ({
@@ -160,6 +181,7 @@ export const useBudgetStore = create<BudgetState>()((set, get) => ({
       } else {
         categories = pruneLegacyCategories(categories)
         categories = pruneStaleManualActuals(categories)
+        categories = backfillCustomFlag(categories)
       }
       set({ categories, hydrated: true })
     } catch (err) {

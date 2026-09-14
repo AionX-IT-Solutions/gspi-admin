@@ -2101,11 +2101,7 @@ const en = {
       emailLabel: 'Email',
       passwordLabel: 'Password',
       roleLabel: 'Role',
-      createButton: 'Create Account',
-      generateButton: 'Generate Command',
-      commandHelp:
-        "This app never carries admin credentials, so account changes run from a terminal. Copy this command and run it on a machine with the project's service account key.",
-      copyButton: 'Copy Command'
+      createButton: 'Create Account'
     },
     editModal: {
       titleDefault: 'Edit User',
@@ -2130,12 +2126,8 @@ const en = {
       userCreateFailed: 'Failed to create user account. Please try again.',
       roleUpdated: '"{{fullName}}" role updated',
       roleUpdateFailed: 'Failed to update the role. Please try again.',
-      roleUpdateUnavailable:
-        "This device isn't set up to change roles directly — ask the developer to add the service account key.",
       fullNameUpdated: '"{{fullName}}" saved',
-      fullNameUpdateFailed: 'Failed to save the name. Please try again.',
-      commandCopied: 'Command copied to clipboard',
-      commandCopyFailed: 'Failed to copy the command'
+      fullNameUpdateFailed: 'Failed to save the name. Please try again.'
     },
     confirmDisable: {
       title: 'Disable User Account',

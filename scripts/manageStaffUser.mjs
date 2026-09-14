@@ -1,7 +1,8 @@
 // Create or update a staff Firebase Auth account + Firestore profile, from the CLI.
-// The app itself never ships the service account key, so all account management
-// (creating accounts, changing roles, admin-set passwords) happens here, run manually
-// from a developer machine — never as a network-callable function.
+// The app's Add/Edit User modals now do this directly via the createStaffUser/
+// updateStaffUser Cloud Functions (see functions/src/index.ts) on every machine — this
+// script is only an emergency developer-machine backdoor for when that's unavailable
+// (e.g. functions not yet deployed, or no network to Cloud Functions).
 //
 // Usage:
 //   node --env-file=.env scripts/manageStaffUser.mjs create --email=x@y.com --password=secret123 --fullName="Full Name" --role=cashier [--customRoleId=developer]
@@ -9,7 +10,6 @@
 //
 // Prerequisites: same as scripts/bootstrapSuperAdmin.mjs — serviceAccountKey.json at the repo root
 // (Firebase Console → Project Settings → Service accounts → Generate new private key).
-// The "Add User" / "Edit User" modals in the app generate the exact command to paste here.
 //
 // `--role` must always be one of the 7 built-in roles — Firestore security rules and
 // gspi-app (mobile) only understand them. A custom role (Role Permissions screen) is

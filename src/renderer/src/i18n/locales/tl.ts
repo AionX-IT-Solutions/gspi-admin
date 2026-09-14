@@ -2114,11 +2114,7 @@ const tl = {
       emailLabel: 'Email',
       passwordLabel: 'Password',
       roleLabel: 'Role',
-      createButton: 'Gumawa ng Account',
-      generateButton: 'Bumuo ng Command',
-      commandHelp:
-        'Walang admin credentials ang app na ito, kaya sa terminal tumatakbo ang mga pagbabago sa account. Kopyahin ang command na ito at patakbuhin sa isang makina na may service account key ng project.',
-      copyButton: 'Kopyahin ang Command'
+      createButton: 'Gumawa ng Account'
     },
     editModal: {
       titleDefault: 'I-edit ang User',
@@ -2143,12 +2139,8 @@ const tl = {
       userCreateFailed: 'Hindi nagawa ang user account. Subukan muli.',
       roleUpdated: 'Na-update ang role ni "{{fullName}}"',
       roleUpdateFailed: 'Hindi na-update ang role. Subukan muli.',
-      roleUpdateUnavailable:
-        'Hindi naka-set up ang makinang ito para direktang magbago ng role — hilingin sa developer na idagdag ang service account key.',
       fullNameUpdated: 'Na-save ang "{{fullName}}"',
-      fullNameUpdateFailed: 'Hindi na-save ang pangalan. Subukan muli.',
-      commandCopied: 'Nakopya ang command sa clipboard',
-      commandCopyFailed: 'Hindi nakopya ang command'
+      fullNameUpdateFailed: 'Hindi na-save ang pangalan. Subukan muli.'
     },
     confirmDisable: {
       title: 'I-disable ang User Account',
