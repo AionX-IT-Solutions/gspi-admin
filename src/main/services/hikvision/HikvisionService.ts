@@ -2,7 +2,13 @@ import { EventEmitter } from 'node:events'
 import log from 'electron-log'
 import { HikvisionClient, type ResolvedHikvisionConfig } from './HikvisionClient'
 import { HikvisionEventStream } from './eventStream'
-import { getConfigSummary, getResolvedConfig, saveConfig } from './configStore'
+import {
+  getConfigSummary,
+  getLastEventSyncTime,
+  getResolvedConfig,
+  saveConfig,
+  setLastEventSyncTime
+} from './configStore'
 import type {
   HikvisionAttendanceEvent,
   HikvisionDeviceConfigInput,
@@ -60,6 +66,11 @@ function toNumber(value: number | string | undefined): number | undefined {
 function nowIso(): string {
   return new Date().toISOString()
 }
+
+// A closed app can't hear the live stream, so a reconnect always checks the device's own
+// event log for anything missed — but never further back than this, so a terminal that's
+// been offline for weeks doesn't dump an enormous, mostly-irrelevant backfill.
+const MAX_BACKFILL_MS = 7 * 24 * 60 * 60 * 1000
 
 /**
  * Orchestrates the Hikvision ISAPI integration end to end: connection lifecycle, the live
@@ -156,7 +167,12 @@ class HikvisionService extends EventEmitter {
 
       this.eventStream?.stop()
       const stream = new HikvisionEventStream(client)
-      stream.on('event', (event: HikvisionAttendanceEvent) => this.emit('attendance-event', event))
+      stream.on('event', (event: HikvisionAttendanceEvent) => {
+        this.emit('attendance-event', event)
+        // Checkpoints as events actually arrive, not just at connect time, so an ungraceful
+        // exit (crash, power loss) mid-session still leaves an up-to-date catch-up point.
+        setLastEventSyncTime(nowIso())
+      })
       stream.on('connected', () => log.info('[hikvision] Event stream connected'))
       stream.on('disconnected', (err?: Error) => {
         if (err) log.warn('[hikvision] Event stream dropped, reconnecting:', err.message)
@@ -171,6 +187,9 @@ class HikvisionService extends EventEmitter {
         firmwareVersion: deviceInfo?.firmwareVersion,
         error: undefined
       })
+      this.backfillMissedEvents().catch((err) =>
+        log.error('[hikvision] Backfill of missed events failed:', err)
+      )
       return { ok: true, message: 'Connected.' }
     } catch (err) {
       this.client = null
@@ -191,6 +210,44 @@ class HikvisionService extends EventEmitter {
     if (getResolvedConfig()) {
       const result = await this.connect()
       if (!result.ok) log.warn('[hikvision] Auto-connect on startup failed:', result.message)
+    }
+  }
+
+  /**
+   * Runs on every successful connect (app startup or a manual reconnect from Settings) to catch
+   * up on whatever the live stream couldn't have seen while nobody was connected — e.g. the app
+   * was closed overnight, an employee clocked in on the terminal, then the app reopened the next
+   * morning. Emits each recovered scan as an ordinary 'attendance-event', so it flows through the
+   * exact same clock-in/out handling as a live one (see useHikvisionAttendanceBridge).
+   */
+  private async backfillMissedEvents(): Promise<void> {
+    const lastSync = getLastEventSyncTime()
+    const now = new Date()
+
+    if (!lastSync) {
+      // First connection ever for this device — no prior checkpoint to catch up from, so just
+      // start the clock rather than pulling the terminal's entire history.
+      setLastEventSyncTime(now.toISOString())
+      return
+    }
+
+    const earliestAllowed = now.getTime() - MAX_BACKFILL_MS
+    const startTime = Math.max(new Date(lastSync).getTime(), earliestAllowed)
+    if (startTime >= now.getTime()) return
+
+    try {
+      const events = await this.searchAttendanceEvents({
+        startTime: new Date(startTime).toISOString(),
+        endTime: now.toISOString()
+      })
+      if (events.length > 0) {
+        log.info(`[hikvision] Backfilled ${events.length} attendance event(s) missed while offline`)
+      }
+      for (const event of events) {
+        this.emit('attendance-event', event)
+      }
+    } finally {
+      setLastEventSyncTime(now.toISOString())
     }
   }
 

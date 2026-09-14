@@ -88,7 +88,7 @@ export const useVouchersStore = create<VouchersState>()((set, get) => ({
           ? {
               ...v,
               status,
-              approvedBy: status === 'approved' || status === 'posted' ? actorName() : v.approvedBy
+              approvedBy: status === 'approved' ? actorName() : v.approvedBy
             }
           : v
       )

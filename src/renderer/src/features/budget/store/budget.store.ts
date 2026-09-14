@@ -7,7 +7,7 @@ import {
 } from '@/shared/lib/firestoreSync'
 import { appendAuditLog } from '@/app/store/auditLog.store'
 import { useAppStore } from '@/app/store/app.store'
-import type { BudgetCategory } from '../types/budget.types'
+import type { BudgetCategory, BudgetSection } from '../types/budget.types'
 import { STARTING_BUDGET_CATEGORIES, STARTING_BUDGET_FISCAL_YEAR } from '../lib/startingBudget'
 import {
   AUTO_ACTUAL_CATEGORY_NAMES,
@@ -35,11 +35,25 @@ export interface BudgetCategoryEdit {
 
 export type CreateFiscalYearResult = { ok: true } | { ok: false; error: string }
 
+export interface NewBudgetCategoryInput {
+  fiscalYear: string
+  section: BudgetSection
+  group: string
+  subGroup: string
+  name: string
+  budgetedAmount: number
+}
+
 interface BudgetState {
   categories: BudgetCategory[]
   hydrated: boolean
   hydrate: (force?: boolean) => Promise<void>
   updateCategory: (id: string, edit: BudgetCategoryEdit) => void
+  /** A brand-new budget line — unlike `updateCategory`, this can start a group/subGroup
+   *  that doesn't exist yet (groupCategories buckets purely by string match), so adding
+   *  a line under a never-before-seen group/subGroup name is how a new section of the
+   *  budget gets created — no separate "create group" step exists or is needed. */
+  addCategory: (input: NewBudgetCategoryInput) => void
   /** Rolls the latest fiscal year's category structure forward into a new one — same
    *  group/subGroup/name/order, budgetedAmount reset to 0 pending board approval, and
    *  this expiring year's budget/actual-to-date carried into the new year's prior-year
@@ -161,6 +175,49 @@ export const useBudgetStore = create<BudgetState>()((set, get) => ({
       actorName: currentUser()?.fullName ?? 'System',
       entityType: 'budget',
       summary: `Budget line "${updated.name}" (${updated.fiscalYear}) updated.`
+    })
+  },
+
+  addCategory: (input) => {
+    const categories = get().categories
+    // Lands right after whatever else already shares this exact group+subGroup, without
+    // renumbering any other document — order is a plain number, and bucketing (see
+    // groupCategories) never depends on it, only sort position within an already-matched
+    // bucket does.
+    const siblings = categories.filter(
+      (c) =>
+        c.fiscalYear === input.fiscalYear &&
+        c.group === input.group &&
+        c.subGroup === input.subGroup
+    )
+    const order =
+      siblings.length > 0
+        ? Math.max(...siblings.map((c) => c.order)) + 0.5
+        : Math.max(0, ...categories.map((c) => c.order)) + 1
+    const now = new Date().toISOString()
+    const category: BudgetCategory = {
+      id: crypto.randomUUID(),
+      fiscalYear: input.fiscalYear,
+      section: input.section,
+      group: input.group.trim(),
+      subGroup: input.subGroup.trim(),
+      name: input.name.trim(),
+      order,
+      budgetedAmount: input.budgetedAmount,
+      monthlyActuals: Array(12).fill(0),
+      priorYearBudget: 0,
+      priorYearActual: 0,
+      priorYearMonthlyActuals: Array(12).fill(0),
+      createdAt: now,
+      updatedAt: now
+    }
+    set((s) => ({ categories: [...s.categories, category] }))
+    persistDoc('budgetCategories', category.id, category)
+    appendAuditLog({
+      action: 'budget_category_added',
+      actorName: currentUser()?.fullName ?? 'System',
+      entityType: 'budget',
+      summary: `Budget line "${category.name}" (${category.fiscalYear}) added.`
     })
   },
 

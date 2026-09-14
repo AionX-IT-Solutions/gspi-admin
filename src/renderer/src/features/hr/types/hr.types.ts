@@ -8,6 +8,9 @@ export interface Employee {
   email: string
   phone: string
   hireDate: string
+  /** For the Dashboard's Upcoming Birthdays widget — unset for employees added before this
+   *  field existed, or left blank on the form. */
+  birthDate?: string
   salary: number
   /** Id of this employee's direct supervisor, for the Organizational Chart. Unset = top of the chart. */
   managerId?: string

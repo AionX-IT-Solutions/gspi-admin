@@ -94,6 +94,13 @@ export function EmployeeFormModal({ open, onOpenChange, editTarget }: EmployeeFo
             onChange={(e) => setForm((f) => ({ ...f, hireDate: e.target.value }))}
           />
         </FormField>
+        <FormField label={t('employees.form.birthDate')}>
+          <FieldInput
+            type="date"
+            value={form.birthDate}
+            onChange={(e) => setForm((f) => ({ ...f, birthDate: e.target.value }))}
+          />
+        </FormField>
         <FormField label={t('employees.form.fullName')} required className="col-span-2">
           <FieldInput
             value={form.fullName}

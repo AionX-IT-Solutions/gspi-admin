@@ -101,6 +101,8 @@ export const ALL_PERMISSIONS = [
   'manage:programReports',
   'view:trainingReports',
   'manage:trainingReports',
+  'view:trainingProfiles',
+  'manage:trainingProfiles',
   'view:attendance',
   'manage:attendance',
   'view:leave',
@@ -128,7 +130,9 @@ export const ALL_PERMISSIONS = [
   'view:budget',
   'manage:budget',
   'view:ptdg',
-  'manage:ptdg'
+  'manage:ptdg',
+  'view:councilDeposits',
+  'manage:councilDeposits'
 ] as const
 
 export type Permission = (typeof ALL_PERMISSIONS)[number]
@@ -151,6 +155,7 @@ export const MODULE_PERMISSIONS: Record<string, Permission | undefined> = {
   activities: 'view:activities',
   programReports: 'view:programReports',
   trainingReports: 'view:trainingReports',
+  trainingProfiles: 'view:trainingProfiles',
   attendance: 'view:attendance',
   leave: 'view:leave',
   payroll: 'view:payroll',
@@ -165,6 +170,7 @@ export const MODULE_PERMISSIONS: Record<string, Permission | undefined> = {
   goals: 'view:goals',
   devices: 'view:devices',
   ptdg: 'view:ptdg',
+  councilDeposits: 'view:councilDeposits',
   settings: undefined,
   about: undefined
 }
@@ -186,6 +192,7 @@ export const MODULE_LABELS: Record<string, string> = {
   activities: 'Activities',
   programReports: 'Program Reports',
   trainingReports: 'Training Reports',
+  trainingProfiles: 'Training Profiles',
   attendance: 'Attendance',
   leave: 'Leave Requests',
   payroll: 'Payroll',
@@ -199,7 +206,8 @@ export const MODULE_LABELS: Record<string, string> = {
   auditLog: 'Audit Log',
   goals: 'Goals & Objectives',
   devices: 'Devices',
-  ptdg: 'Program & Training Development Grant (PTDG)'
+  ptdg: 'Program & Training Development Grant (PTDG)',
+  councilDeposits: 'Council Deposits (RHQ)'
 }
 
 /** Every module that has a real permission requirement, in nav order (excludes Settings/About). */
@@ -225,6 +233,7 @@ export const MODULE_ROUTES: Record<string, string> = {
   activities: '/activities',
   programReports: '/program-reports',
   trainingReports: '/training-reports',
+  trainingProfiles: '/training-profiles',
   attendance: '/attendance',
   leave: '/leave',
   payroll: '/payroll',
@@ -239,6 +248,7 @@ export const MODULE_ROUTES: Record<string, string> = {
   goals: '/goals',
   devices: '/devices',
   ptdg: '/ptdg',
+  councilDeposits: '/council-deposits',
   settings: '/settings',
   about: '/about'
 }
@@ -293,7 +303,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'view:budget',
     'manage:budget',
     'view:ptdg',
-    'manage:ptdg'
+    'manage:ptdg',
+    'view:councilDeposits',
+    'manage:councilDeposits'
   ],
   hr: [
     'view:dashboard',
@@ -314,6 +326,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'manage:programReports',
     'view:trainingReports',
     'manage:trainingReports',
+    'view:trainingProfiles',
+    'manage:trainingProfiles',
     'view:visitors',
     'manage:visitors',
     'view:facilityCalendar',
@@ -334,6 +348,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'manage:programReports',
     'view:trainingReports',
     'manage:trainingReports',
+    'view:trainingProfiles',
+    'manage:trainingProfiles',
     'view:vouchers',
     'manage:vouchers',
     'view:rentals',

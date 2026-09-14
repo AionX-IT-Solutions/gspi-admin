@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { useHRStore } from '@/features/hr/store/hr.store'
-import { todayLocalIso } from '@/shared/lib/utils'
+import { localIsoFromDate } from '@/shared/lib/utils'
 import type { HikvisionAttendanceEvent } from '../../../../shared/hikvision-types'
 
 /** Safety net for terminals that don't report explicit intent (see below): a scan can't count as a clock-out
@@ -53,22 +53,30 @@ export function useHikvisionAttendanceBridge() {
           return
         }
 
-        const today = todayLocalIso()
-        const existing = attendance.find((a) => a.employeeId === employee.id && a.date === today)
+        // Use the scan's own time, not "now" — a backfilled event (see HikvisionService's
+        // catch-up on reconnect) can be hours or days old, and must be filed under the day it
+        // actually happened on rather than whatever day the app happens to process it.
+        const parsedEventTime = new Date(event.time)
+        const eventDate = Number.isNaN(parsedEventTime.getTime()) ? new Date() : parsedEventTime
+        const dateKey = localIsoFromDate(eventDate)
+        const existing = attendance.find((a) => a.employeeId === employee.id && a.date === dateKey)
         const statedDirection = directionFromAttendanceStatus(event.attendanceStatus)
         const guessedDirection = !existing?.clockIn ? 'in' : !existing?.clockOut ? 'out' : null
         const direction = statedDirection ?? guessedDirection
 
         if (!direction) {
           toast.info(
-            `${employee.fullName} already has both a time in and time out recorded for today.`
+            `${employee.fullName} already has both a time in and time out recorded for ${dateKey}.`
           )
           return
         }
 
-        // Only the blind guess needs the cooldown — an explicit "checkOut" from the terminal is trusted as-is.
+        // Only the blind guess needs the cooldown — an explicit "checkOut" from the terminal is
+        // trusted as-is. Measured against the scan's own time so a backfilled pair of events
+        // (both from while the app was offline) still gets the same protection a live pair would.
         if (!statedDirection && direction === 'out' && existing?.clockIn) {
-          const minutesSinceClockIn = (Date.now() - new Date(existing.clockIn).getTime()) / 60000
+          const minutesSinceClockIn =
+            (eventDate.getTime() - new Date(existing.clockIn).getTime()) / 60000
           if (minutesSinceClockIn < MIN_MINUTES_BEFORE_AUTO_CLOCK_OUT) {
             toast.info(
               `${employee.fullName} was just recognized again ${minutesSinceClockIn < 1 ? 'moments' : `${Math.round(minutesSinceClockIn)} min`} after clocking in — treated as an incidental scan, not a time out.`
@@ -77,7 +85,7 @@ export function useHikvisionAttendanceBridge() {
           }
         }
 
-        const result = clockBiometric(employee.id, 'face', direction)
+        const result = clockBiometric(employee.id, 'face', direction, event.time)
         if (result.ok) {
           toast.success(result.message)
         } else {

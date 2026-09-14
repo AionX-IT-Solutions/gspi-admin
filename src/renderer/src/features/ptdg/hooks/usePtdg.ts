@@ -74,6 +74,7 @@ export function usePtdg() {
     status: 'approved' | 'disapproved'
     regionalApprovedAmount?: number
     regionalRemarks?: string
+    regionalExecutiveDirector?: string
   }) {
     if (!decisionTarget || !canManage) return
     decideApplication(decisionTarget.id, decision)

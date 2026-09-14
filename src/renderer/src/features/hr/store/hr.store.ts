@@ -9,7 +9,7 @@ import {
   reportHydrateFailure,
   stripUndefined
 } from '@/shared/lib/firestoreSync'
-import { todayLocalIso } from '@/shared/lib/utils'
+import { localIsoFromDate } from '@/shared/lib/utils'
 import { appendAuditLog } from '@/app/store/auditLog.store'
 import { useAppStore } from '@/app/store/app.store'
 import { deleteFile } from '@/shared/lib/storageSync'
@@ -171,13 +171,18 @@ export function computeShiftHoursWorked(clockInIso: string, clockOutIso: string)
 }
 
 /** `clockOut` is required to detect real overtime (time past 5:00 PM) — pass null only for a
- *  record with no clock-out yet, which can't be Overtime regardless of `hoursWorked`. */
+ *  record with no clock-out yet, which can't be Overtime regardless of `hoursWorked`. Overtime
+ *  only shows once it actually clears COMP_TIME_MIN_OVERTIME_HOURS — the same bar that has to be
+ *  met for it to earn any Compensatory Time Off (see overtimeHoursToCompDays). A minute or two
+ *  past 5:00 PM (walking to the scanner, a quick wrap-up) is incidental, not overtime, and never
+ *  earns credit either — the status shouldn't claim otherwise. */
 export function statusForHoursWorked(
   hoursWorked: number,
   clockOut: string | null = null
 ): AttendanceStatus {
   if (hoursWorked < 4) return 'half-day'
-  if (clockOut && overtimeHoursPastShiftEnd(clockOut) > 0) return 'overtime'
+  if (clockOut && overtimeHoursPastShiftEnd(clockOut) >= COMP_TIME_MIN_OVERTIME_HOURS)
+    return 'overtime'
   return 'present'
 }
 
@@ -247,7 +252,11 @@ interface HRState {
   clockBiometric: (
     employeeId: string,
     method: BiometricMethod,
-    direction: 'in' | 'out'
+    direction: 'in' | 'out',
+    /** The scan's actual time (ISO) — pass this for a backfilled/historical event so it's dated
+     *  to when it really happened rather than to whenever the backfill happens to run. Omit for
+     *  a live scan, where "now" is correct. */
+    timestamp?: string
   ) => ClockResult
   recordAttendanceManual: (record: Omit<AttendanceRecord, 'id'>) => void
   deleteAttendanceRecord: (id: string) => void
@@ -462,7 +471,7 @@ export const useHRStore = create<HRState>()((set, get) => ({
     if (enrollment) persist('biometricEnrollments', enrollment.id, enrollment)
   },
 
-  clockBiometric: (employeeId, method, direction) => {
+  clockBiometric: (employeeId, method, direction, timestamp) => {
     const state = get()
     const employee = state.employees.find((e) => e.id === employeeId)
     if (!employee) return { ok: false, message: 'Employee not found' }
@@ -471,7 +480,12 @@ export const useHRStore = create<HRState>()((set, get) => ({
     if (!enrollment)
       return { ok: false, message: `${employee.fullName} is not enrolled for biometric attendance` }
 
-    const today = todayLocalIso()
+    // A backfilled scan (see the Hikvision bridge) carries its own real time — dating it to
+    // whenever the backfill happens to run instead would misfile it under the wrong day.
+    const parsedTimestamp = timestamp ? new Date(timestamp) : null
+    const eventDate =
+      parsedTimestamp && !Number.isNaN(parsedTimestamp.getTime()) ? parsedTimestamp : new Date()
+    const today = localIsoFromDate(eventDate)
     const existing = state.attendance.find((a) => a.employeeId === employeeId && a.date === today)
 
     if (existing?.status === 'leave') {
@@ -481,7 +495,7 @@ export const useHRStore = create<HRState>()((set, get) => ({
     if (direction === 'in') {
       if (existing?.clockIn)
         return { ok: false, message: `${employee.fullName} already clocked in today` }
-      const clockIn = new Date().toISOString()
+      const clockIn = eventDate.toISOString()
       const clockInStatus: AttendanceStatus = isAfternoonOnlyArrival(clockIn)
         ? 'half-day'
         : isLateClockIn(clockIn)
@@ -521,7 +535,7 @@ export const useHRStore = create<HRState>()((set, get) => ({
       return { ok: false, message: `${employee.fullName} has not clocked in yet today` }
     if (existing.clockOut)
       return { ok: false, message: `${employee.fullName} already clocked out today` }
-    const clockOut = new Date().toISOString()
+    const clockOut = eventDate.toISOString()
     const hoursWorked = computeShiftHoursWorked(existing.clockIn, clockOut)
     const status = combinedAttendanceStatus(existing.clockIn, hoursWorked, clockOut)
     const record: AttendanceRecord = { ...existing, clockOut, hoursWorked, status }

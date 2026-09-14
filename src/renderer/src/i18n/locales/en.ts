@@ -107,7 +107,9 @@ const en = {
       goals: 'Goals & Objectives',
       programReports: 'Program Reports',
       trainingReports: 'Training Reports',
-      ptdg: 'PTDG'
+      trainingProfiles: 'Training Profiles',
+      ptdg: 'PTDG',
+      councilDeposits: 'Council Deposits (RHQ)'
     }
   },
   titleBar: {
@@ -198,6 +200,17 @@ const en = {
     pendingLeaveAllCaughtUp: 'All caught up',
     recentActivityTitle: 'Recent Activity',
     viewAll: 'View all',
+    birthdaysTitle: 'Upcoming Birthdays',
+    birthdaysToday: 'Today!',
+    birthdaysTomorrow: 'Tomorrow',
+    birthdaysInDays: 'in {{count}} days',
+    birthdaysTurning: 'turning {{age}}',
+    birthdayCategory: {
+      troopMember: 'Troop Member',
+      trainingProfile: 'Training Profile',
+      employee: 'Employee',
+      userAccount: 'User Account'
+    },
     announcementsTitle: 'Announcements',
     budgetTitle: 'Council Budget {{year}}'
   },
@@ -466,6 +479,7 @@ const en = {
     form: {
       employeeNumber: 'Employee #',
       hireDate: 'Hire Date',
+      birthDate: 'Birth Date',
       fullName: 'Full Name',
       position: 'Position',
       department: 'Department',
@@ -575,6 +589,8 @@ const en = {
       levelPlaceholder: 'e.g. Star Scout, Junior, Cadette, Senior, Ambassador',
       troopName: 'Troop Name',
       leaderName: 'Troop Leader',
+      leaderNamePlaceholder: 'Type a name, or pick from Training Profiles',
+      trainingsCompletedCount: '{{count}} training(s) completed',
       assistantLeaderName: 'Assistant Troop Leader',
       school: 'School / Community',
       barangay: 'Barangay',
@@ -594,19 +610,25 @@ const en = {
       message:
         'Delete Troop {{troopNumber}}? This also permanently removes every member on its roster. This cannot be undone.'
     },
+    confirmForceDelete: {
+      title: 'Delete Troop Anyway?',
+      message:
+        'Troop {{troopNumber}} has members with recorded payment history. Deleting it will remove that payment history too, which may change previously-reconciled Daily Collections totals for those dates. Delete anyway? This cannot be undone.'
+    },
     toast: {
       validationRequired: 'Troop #, level, and troop leader are required',
       created: 'Troop {{troopNumber}} added',
       updated: 'Troop updated',
       deleted: 'Troop {{troopNumber}} deleted',
-      cannotDeleteHasPayments:
-        "Troop {{troopNumber}} can't be deleted — one or more members have payment history. Deactivate it instead.",
       deactivated: 'Troop {{troopNumber}} deactivated',
       reactivated: 'Troop {{troopNumber}} reactivated',
       noneToExport: 'No troops to export',
       exportedExcel: 'Troops & Membership exported to Excel',
       exportedPdf: 'Troops & Membership exported as PDF',
       exportedWord: 'Troops & Membership exported as Word document'
+    },
+    profile: {
+      notLinkedToProfile: 'Not linked to a Training Profile'
     },
     roster: {
       heading: 'Member Roster',
@@ -666,13 +688,16 @@ const en = {
         title: 'Delete Member',
         message: 'Delete {{name}} from this troop? This cannot be undone.'
       },
+      confirmForceDelete: {
+        title: 'Delete Member Anyway?',
+        message:
+          '{{name}} has recorded payment history. Deleting them will remove that payment history too, which may change previously-reconciled Daily Collections totals for those dates. Delete anyway? This cannot be undone.'
+      },
       toast: {
         validationRequired: 'Full name and birthdate are required',
         created: '{{name}} added to the roster',
         updated: 'Member updated',
         deleted: '{{name}} removed from the roster',
-        cannotDeleteHasPayments:
-          "{{name}} can't be removed — they have payment history. Deactivate them instead.",
         deactivated: '{{name}} deactivated',
         reactivated: '{{name}} reactivated',
         renewed: '{{name}} renewed for membership year {{year}}',
@@ -1211,6 +1236,7 @@ const en = {
   budget: {
     title: 'Council Budget',
     fiscalYear: 'Fiscal Year {{year}}',
+    addLineButton: 'Add Line',
     newFiscalYearButton: 'New Fiscal Year',
     newFiscalYearModal: {
       title: 'Start a New Fiscal Year',
@@ -1231,7 +1257,25 @@ const en = {
       actual: 'Actual to Date',
       variance: 'Variance',
       subtotal: 'Sub-total',
-      groupTotal: '{{group}} Total'
+      groupTotal: '{{group}} Total',
+      addLine: 'Add Line'
+    },
+    addLineModal: {
+      title: 'Add Budget Line',
+      lockedSubtitle: 'New line under {{group}} — {{subGroup}}.',
+      unlockedSubtitle:
+        'Add a new budget line — pick an existing group/subgroup, or type a new one to start it.',
+      noSubGroup: '(none)',
+      section: 'Section',
+      group: 'Group',
+      groupPlaceholder: 'e.g. I. OPERATIONS',
+      subGroup: 'Subgroup',
+      subGroupPlaceholder: 'e.g. A. Fees',
+      subGroupHint: 'Leave blank if this group has no further subdivision.',
+      name: 'Line Item Name',
+      namePlaceholder: 'e.g. 5. New Fee Type',
+      budgetedAmount: 'Budgeted Amount',
+      createButton: 'Add Line'
     },
     editModal: {
       subtitle: 'Update this line item’s budgeted amount and monthly actuals.',
@@ -1265,6 +1309,8 @@ const en = {
     },
     toast: {
       updated: 'Budget line updated',
+      categoryAdded: 'Budget line added',
+      addLineMissingFields: 'Group, name, and a budgeted amount greater than 0 are required',
       fiscalYearRequired: 'Enter a fiscal year label',
       fiscalYearExists: 'That fiscal year already exists',
       noSourceYear: 'No existing fiscal year to copy from',
@@ -1299,12 +1345,8 @@ const en = {
       checkVoucher: 'Disbursement / Check Voucher',
       journalVoucher: 'Journal Voucher'
     },
-    status: {
-      posted: 'Posted'
-    },
     actions: {
-      approve: 'Approve',
-      post: 'Post'
+      approve: 'Approve'
     },
     table: {
       number: 'Voucher #',
@@ -1315,30 +1357,44 @@ const en = {
       date: 'Date',
       status: 'Status',
       empty: 'No vouchers found',
-      exportTooltip: 'Export voucher'
+      exportTooltip: 'Export voucher',
+      expenseSummaryTooltip: 'Manage Expense Summary'
     },
     form: {
       voucherType: 'Voucher Type',
-      direction: 'Entry Type',
-      directionDebit: 'Disbursement (Debit)',
-      directionCredit: 'Receipt (Credit)',
+      voucherNumber: 'Voucher No.',
       modeOfPayment: 'Mode of Payment',
       modeCash: 'Cash',
       modeCheck: 'Check',
       checkNumber: 'Check Number',
       payee: 'Payee',
       payeePlaceholder: 'Vendor or recipient name',
-      payor: 'Payor',
       payeeAddress: 'Payee Address',
-      bankAccount: 'Bank Account (for Credit)',
+      bankAccount: 'Bank Account',
       bankAccountPlaceholder: 'e.g. DBP #00-500128590-5',
       accountLinesLabel: 'Account Titles (Debit)',
       accountLinesLabelCredit: 'Account Titles (Credit)',
       accountPlaceholder: 'Account title, e.g. Office Supplies',
+      descriptionPlaceholder: 'Description, e.g. March 16-31, 2026',
       addAccountLine: 'Add Account Line',
       totalAmount: 'Total Amount',
+      totalCredit: 'Total Credit',
       particulars: 'Particulars',
-      createButton: 'Create Voucher'
+      createButton: 'Create Voucher',
+      cashAdvanceSection: 'Cash Advance Liquidation (leave blank if not applicable)',
+      cashAdvanceSource: 'Liquidates Cash Advance From',
+      cashAdvanceSourcePlaceholder: 'Select the Check Voucher that released the cash advance',
+      cashAdvanceSourceEmptyHint:
+        'No matching Check Voucher found — first create one with a debit line whose Account Title is exactly "Cash Advance".',
+      cashAdvanceAmount: 'Amount of Cash Advance',
+      cashAdvanceDate: 'Cash Advance Dated',
+      totalAmountSpent: 'Total Amount Spent',
+      amountRefunded: 'Amount Refunded',
+      refundOrNumber: 'Refund O.R. No.',
+      refundDate: 'Refund Dated',
+      cashAdvanceAutoLinesNote:
+        'Account lines are generated automatically from the Summary of Expenses once expenses are logged — use the receipt icon on the Vouchers list after saving this voucher.',
+      autoCalculatedField: 'Auto-calculated from Summary of Expenses.'
     },
     toast: {
       missingFields: 'Payee and at least one account line with an amount are required',
@@ -1354,13 +1410,32 @@ const en = {
       title: 'Approve Voucher',
       message: 'Approve voucher {{number}}?'
     },
-    confirmPost: {
-      title: 'Post Voucher',
-      message: 'Post voucher {{number}} to the cash disbursement journal? This cannot be undone.'
-    },
     confirmDelete: {
       title: 'Delete Voucher',
       message: 'Delete voucher {{number}}? This cannot be undone.'
+    }
+  },
+  expenseSummary: {
+    title: 'Expense Summary',
+    subtitle: 'Itemized receipt backup for voucher {{number}}',
+    field: {
+      date: 'Date',
+      particulars: 'Particulars',
+      particularsPlaceholder: 'e.g. Cupcakes and Juice',
+      orNumber: 'OR No.',
+      category: 'Category',
+      categoryPlaceholder: 'e.g. Meals and Snacks',
+      amount: 'Amount'
+    },
+    addItem: 'Add Item',
+    total: 'Total',
+    exportButton: 'Export',
+    exportTooltip: 'Export expense summary',
+    toast: {
+      saved: 'Expense summary saved',
+      excelGenerated: 'Excel file generated in the Council’s official format',
+      pdfGenerated: 'PDF file generated',
+      wordGenerated: 'Word document generated'
     }
   },
   ptdg: {
@@ -1395,6 +1470,8 @@ const en = {
       purposePlaceholder: 'e.g. Regional Committee Meeting',
       eventDate: 'Date of Event/Activity',
       eventDatePlaceholder: 'e.g. September 5, 2026',
+      executiveDirector: 'Regional Executive Director',
+      executiveDirectorPlaceholder: 'e.g. Juan Dela Cruz',
       projectedSources: 'Projected Sources',
       projectedExpenses: 'Projected Expenses',
       particularsPlaceholder: 'Particulars',
@@ -1410,6 +1487,8 @@ const en = {
       decision: 'Decision',
       approvedAmount: 'Approved Amount',
       remarks: 'Remarks',
+      executiveDirector: 'Regional Executive Director',
+      executiveDirectorPlaceholder: 'e.g. Juan Dela Cruz',
       saveButton: 'Save Decision'
     },
     toast: {
@@ -1426,6 +1505,55 @@ const en = {
     confirmDelete: {
       title: 'Delete Application',
       message: 'Delete PTDG application {{number}}? This cannot be undone.'
+    }
+  },
+  councilDeposits: {
+    title: 'Council Deposits (RHQ)',
+    subtitle:
+      'PTDG, MMAF & Josefa Llanes Escoda Memento Fund — Council deposits retained at the Regional Office.',
+    notRecordedYet:
+      'Not yet recorded — add a snapshot once an accountant encodes the RHQ statement.',
+    editButton: 'Edit Figures',
+    newButton: 'New Snapshot',
+    selectDate: 'As of Date',
+    undatedOption: 'Undated',
+    noSnapshots: 'No snapshots yet',
+    exportTooltip: 'Export report',
+    table: {
+      fund: 'Council Deposits',
+      nationalEvent: 'National Event',
+      regionalEvent: 'Regional Event',
+      councilEvent: 'Council Event',
+      internationalEvent: 'International Event',
+      total: 'Total',
+      grandTotal: 'TOTAL',
+      noBreakdown: '—',
+      noFunds: 'No fund lines yet — click Edit Figures to add one.'
+    },
+    editModal: {
+      title: 'Edit Council Deposits',
+      newTitle: 'New Council Deposits Snapshot',
+      subtitle: 'Re-enter the figures from RHQ’s latest deposits statement.',
+      asOfDate: 'As of Date',
+      fundNamePlaceholder: 'e.g. PTDG - Girl',
+      byEventType: 'By Event Type',
+      lumpSum: 'Lump Sum',
+      addFund: 'Add Fund Line',
+      preparedBy: 'Prepared by',
+      notedBy: 'Noted by',
+      namePlaceholder: 'Full name',
+      titlePlaceholder: 'Position/Title'
+    },
+    confirmDelete: {
+      title: 'Delete Snapshot',
+      message: 'This will permanently delete this Council Deposits snapshot. Continue?'
+    },
+    toast: {
+      saved: 'Council Deposits updated',
+      deleted: 'Snapshot deleted',
+      excelGenerated: 'Excel file generated',
+      pdfGenerated: 'PDF file generated',
+      wordGenerated: 'Word document generated'
     }
   },
   invoices: {
@@ -1975,7 +2103,8 @@ const en = {
     },
     editModal: {
       titleDefault: 'Edit User',
-      titleWithName: 'Edit {{fullName}}'
+      titleWithName: 'Edit {{fullName}}',
+      birthDateLabel: 'Birth Date'
     },
     permissionsModal: {
       titleDefault: 'Role Permissions',
@@ -2176,6 +2305,98 @@ const en = {
     confirmDelete: {
       title: 'Delete Training Report',
       message: 'Delete "{{title}}"? This cannot be undone.'
+    }
+  },
+  trainingProfiles: {
+    title: 'Training Profiles',
+    subtitle: 'Council Profile and Training Information for Troop Leaders and Field Advisers',
+    newButton: 'New Profile',
+    editTitle: 'Edit Profile',
+    exportLabel: 'Export Training Profile',
+    exportButton: 'Export',
+    searchPlaceholder: 'Search by name, school, or district…',
+    table: {
+      name: 'Name',
+      school: 'School',
+      district: 'District',
+      level: 'Level',
+      roles: 'Position/Role',
+      contactNumber: 'Contact Number',
+      email: 'Email Address',
+      homeAddress: 'Home Address',
+      completedTrainings: 'Completed Training',
+      ageLevelSpecialization: 'Age-Level Specialization',
+      completedCertificates: 'Certificate Completed',
+      birthday: 'Birthday',
+      firstRegistrationDate: 'First Registration Date',
+      totalYearsInScouting: 'Total Years in Scouting',
+      empty: 'No training profiles found'
+    },
+    level: {
+      elementary: 'Elementary',
+      highSchool: 'High School'
+    },
+    role: {
+      troop_leader: 'Troop Leader',
+      district_field_adviser: 'District Field Adviser',
+      field_adviser: 'Field Adviser',
+      assisting_trainer: 'Assisting Trainer',
+      credentialed_trainer: 'Credentialed Trainer',
+      diplomad: 'Diplomad'
+    },
+    training: {
+      basic_leadership_course: 'Basic Leadership Course',
+      age_level_specialization_course: 'Age-Level Specialization Course',
+      outdoor_leadership_course: 'Outdoor Leadership Course',
+      campers_permit_course: "Camper's Permit Course",
+      quarter_master_course: 'Quarter Master Course',
+      training_for_trainers: 'Training for Trainers'
+    },
+    ageLevel: {
+      star: 'Star',
+      twinkler: 'Twinkler',
+      junior: 'Junior',
+      senior: 'Senior'
+    },
+    certificate: {
+      camp_craft_certificate: 'Camp Craft Certificate',
+      campers_permit_certificate: "Camper's Permit Certificate"
+    },
+    form: {
+      name: 'Name (First Name, Middle Initial, Last Name)',
+      birthday: 'Birthday',
+      school: 'School',
+      district: 'District',
+      level: 'Level',
+      contactNumber: 'Contact Number',
+      email: 'Email Address',
+      homeAddress: 'Home Address',
+      roles: 'Position/Role in the GSP Ilocos Sur Council',
+      completedTrainings: 'Completed Training',
+      otherCompletedTraining: 'Others (please specify)',
+      ageLevelSpecialization: 'For Age-Level Specialization Course Completers Only',
+      ageLevelSpecializationPlaceholder: 'Select age level',
+      completedCertificates: 'Certificate Completed',
+      firstRegistrationDate: 'First Registration Date',
+      totalYearsInScouting: 'Total Years in Scouting',
+      createButton: 'Create Profile'
+    },
+    toast: {
+      missingFields: 'Name, School, and District are required',
+      created: 'Training profile created',
+      updated: 'Training profile updated',
+      deleted: 'Training profile deleted',
+      exportedExcel: 'Training profile exported to Excel',
+      exportedPdf: 'Training profile exported as PDF',
+      exportedWord: 'Training profile exported as Word document',
+      noneToExport: 'No training profiles to export',
+      listExportedExcel: 'Training profiles exported to Excel',
+      listExportedPdf: 'Training profiles exported as PDF',
+      listExportedWord: 'Training profiles exported as Word document'
+    },
+    confirmDelete: {
+      title: 'Delete Training Profile',
+      message: 'Delete the training profile for {{name}}? This cannot be undone.'
     }
   },
   programReports: {

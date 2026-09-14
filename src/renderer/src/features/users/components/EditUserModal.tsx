@@ -51,6 +51,13 @@ export function EditUserModal({ target, onClose }: EditUserModalProps) {
             options={roleOptions}
           />
         </FormField>
+        <FormField label={t('users.editModal.birthDateLabel')}>
+          <FieldInput
+            type="date"
+            value={form.birthDate}
+            onChange={(e) => setForm((f) => ({ ...f, birthDate: e.target.value }))}
+          />
+        </FormField>
       </div>
     </Modal>
   )

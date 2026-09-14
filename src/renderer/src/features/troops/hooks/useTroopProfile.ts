@@ -23,6 +23,7 @@ export function useTroopProfile(troop: Troop | null) {
   const [editTarget, setEditTarget] = useState<ScoutMember | null>(null)
   const [toggleTarget, setToggleTarget] = useState<ScoutMember | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ScoutMember | null>(null)
+  const [forceDeleteTarget, setForceDeleteTarget] = useState<ScoutMember | null>(null)
   const [paymentTarget, setPaymentTarget] = useState<ScoutMember | null>(null)
   const [viewMemberId, setViewMemberId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -83,20 +84,31 @@ export function useTroopProfile(troop: Troop | null) {
     setToggleTarget(null)
   }
 
+  function commitDeleteMember(target: ScoutMember, force: boolean) {
+    deleteScoutMember(target.id, force)
+    toast.success(t('troops.roster.toast.deleted', { name: target.fullName }), {
+      duration: 6000,
+      action: { label: t('common.undo'), onClick: () => addScoutMember(target) }
+    })
+  }
+
   const handleConfirmDelete = () => {
     if (!deleteTarget || !canManage) return
-    const deleted = deleteTarget
-    if ((deleted.payments?.length ?? 0) > 0) {
-      toast.error(t('troops.roster.toast.cannotDeleteHasPayments', { name: deleted.fullName }))
-      setDeleteTarget(null)
+    const target = deleteTarget
+    setDeleteTarget(null)
+    if ((target.payments?.length ?? 0) > 0) {
+      // Payment history is on the line — a second, explicit confirmation instead of
+      // silently blocking, so a real cleanup need isn't a dead end.
+      setForceDeleteTarget(target)
       return
     }
-    deleteScoutMember(deleted.id)
-    toast.success(t('troops.roster.toast.deleted', { name: deleted.fullName }), {
-      duration: 6000,
-      action: { label: t('common.undo'), onClick: () => addScoutMember(deleted) }
-    })
-    setDeleteTarget(null)
+    commitDeleteMember(target, false)
+  }
+
+  const handleConfirmForceDelete = () => {
+    if (!forceDeleteTarget || !canManage) return
+    commitDeleteMember(forceDeleteTarget, true)
+    setForceDeleteTarget(null)
   }
 
   return {
@@ -118,6 +130,9 @@ export function useTroopProfile(troop: Troop | null) {
     deleteTarget,
     setDeleteTarget,
     handleConfirmDelete,
+    forceDeleteTarget,
+    setForceDeleteTarget,
+    handleConfirmForceDelete,
     handleRenew,
     paymentTarget,
     setPaymentTarget,

@@ -107,7 +107,9 @@ const tl = {
       goals: 'Mga Layunin at Tunguhin',
       programReports: 'Mga Ulat ng Programa',
       trainingReports: 'Mga Ulat ng Pagsasanay',
-      ptdg: 'PTDG'
+      trainingProfiles: 'Mga Profile ng Pagsasanay',
+      ptdg: 'PTDG',
+      councilDeposits: 'Council Deposits (RHQ)'
     }
   },
   titleBar: {
@@ -198,6 +200,17 @@ const tl = {
     pendingLeaveAllCaughtUp: 'Wala nang naghihintay',
     recentActivityTitle: 'Kamakailang Aktibidad',
     viewAll: 'Tingnan lahat',
+    birthdaysTitle: 'Mga Paparating na Kaarawan',
+    birthdaysToday: 'Ngayon!',
+    birthdaysTomorrow: 'Bukas',
+    birthdaysInDays: 'sa loob ng {{count}} araw',
+    birthdaysTurning: 'magiging {{age}}',
+    birthdayCategory: {
+      troopMember: 'Troop Member',
+      trainingProfile: 'Training Profile',
+      employee: 'Empleyado',
+      userAccount: 'User Account'
+    },
     announcementsTitle: 'Mga Anunsyo',
     budgetTitle: 'Badyet ng Konseho {{year}}'
   },
@@ -473,6 +486,7 @@ const tl = {
     form: {
       employeeNumber: 'Employee #',
       hireDate: 'Petsa ng Pagkuha',
+      birthDate: 'Petsa ng Kaarawan',
       fullName: 'Buong Pangalan',
       position: 'Posisyon',
       department: 'Departamento',
@@ -583,6 +597,8 @@ const tl = {
       levelPlaceholder: 'hal. Star Scout, Junior, Cadette, Senior, Ambassador',
       troopName: 'Pangalan ng Troop',
       leaderName: 'Troop Leader',
+      leaderNamePlaceholder: 'Mag-type ng pangalan, o pumili mula sa Training Profiles',
+      trainingsCompletedCount: '{{count}} training ang natapos',
       assistantLeaderName: 'Assistant Troop Leader',
       school: 'Paaralan / Komunidad',
       barangay: 'Barangay',
@@ -602,19 +618,25 @@ const tl = {
       message:
         'Burahin ang Troop {{troopNumber}}? Permanenteng mabubura rin ang lahat ng miyembro sa roster nito. Hindi na ito maibabalik.'
     },
+    confirmForceDelete: {
+      title: 'Buburahin pa rin ang Troop?',
+      message:
+        'May mga miyembrong may recorded payment history ang Troop {{troopNumber}}. Kapag binura ito, mabubura rin ang payment history nila, na maaaring magbago sa mga na-reconcile na nang Daily Collections total para sa mga petsang iyon. Buburahin pa rin ba? Hindi na ito maibabalik.'
+    },
     toast: {
       validationRequired: 'Kailangan ang Troop #, level, at troop leader',
       created: 'Naidagdag ang Troop {{troopNumber}}',
       updated: 'Na-update ang Troop',
       deleted: 'Nabura ang Troop {{troopNumber}}',
-      cannotDeleteHasPayments:
-        'Hindi mabubura ang Troop {{troopNumber}} — may payment history ang isa o higit sa mga miyembro nito. I-deactivate ito sa halip.',
       deactivated: 'Na-deactivate ang Troop {{troopNumber}}',
       reactivated: 'Na-reactivate ang Troop {{troopNumber}}',
       noneToExport: 'Walang troop na ie-export',
       exportedExcel: 'Na-export ang Troops & Membership sa Excel',
       exportedPdf: 'Na-export ang Troops & Membership bilang PDF',
       exportedWord: 'Na-export ang Troops & Membership bilang Word document'
+    },
+    profile: {
+      notLinkedToProfile: 'Hindi naka-link sa isang Training Profile'
     },
     roster: {
       heading: 'Member Roster',
@@ -673,13 +695,16 @@ const tl = {
         title: 'Burahin ang Miyembro',
         message: 'Burahin si {{name}} mula sa troop na ito? Hindi na ito maibabalik.'
       },
+      confirmForceDelete: {
+        title: 'Buburahin pa rin?',
+        message:
+          'May recorded payment history si {{name}}. Kapag binura sila, mabubura rin ang payment history nila, na maaaring magbago sa mga na-reconcile na nang Daily Collections total para sa mga petsang iyon. Buburahin pa rin ba? Hindi na ito maibabalik.'
+      },
       toast: {
         validationRequired: 'Kailangan ang buong pangalan at petsa ng kapanganakan',
         created: 'Naidagdag si {{name}} sa roster',
         updated: 'Na-update ang miyembro',
         deleted: 'Naalis si {{name}} sa roster',
-        cannotDeleteHasPayments:
-          'Hindi maaalis si {{name}} — may payment history sila. I-deactivate sila sa halip.',
         deactivated: 'Na-deactivate si {{name}}',
         reactivated: 'Na-reactivate si {{name}}',
         renewed: 'Na-renew si {{name}} para sa membership year {{year}}',
@@ -1222,6 +1247,7 @@ const tl = {
   budget: {
     title: 'Badyet ng Konseho',
     fiscalYear: 'Fiscal Year {{year}}',
+    addLineButton: 'Magdagdag ng Linya',
     newFiscalYearButton: 'Bagong Fiscal Year',
     newFiscalYearModal: {
       title: 'Magsimula ng Bagong Fiscal Year',
@@ -1242,7 +1268,25 @@ const tl = {
       actual: 'Aktwal Hanggang Ngayon',
       variance: 'Variance',
       subtotal: 'Sub-total',
-      groupTotal: 'Kabuuan ng {{group}}'
+      groupTotal: 'Kabuuan ng {{group}}',
+      addLine: 'Magdagdag ng Linya'
+    },
+    addLineModal: {
+      title: 'Magdagdag ng Budget Line',
+      lockedSubtitle: 'Bagong linya sa ilalim ng {{group}} — {{subGroup}}.',
+      unlockedSubtitle:
+        'Magdagdag ng bagong budget line — pumili ng existing na group/subgroup, o mag-type ng bago para simulan ito.',
+      noSubGroup: '(wala)',
+      section: 'Seksyon',
+      group: 'Group',
+      groupPlaceholder: 'hal. I. OPERATIONS',
+      subGroup: 'Subgroup',
+      subGroupPlaceholder: 'hal. A. Fees',
+      subGroupHint: 'Iwanang blangko kung walang karagdagang subdivision ang group na ito.',
+      name: 'Pangalan ng Line Item',
+      namePlaceholder: 'hal. 5. Bagong Uri ng Fee',
+      budgetedAmount: 'Halaga ng Badyet',
+      createButton: 'Idagdag ang Linya'
     },
     editModal: {
       subtitle: 'I-update ang badyet at buwanang aktwal na halaga ng line item na ito.',
@@ -1276,6 +1320,8 @@ const tl = {
     },
     toast: {
       updated: 'Na-update ang budget line',
+      categoryAdded: 'Naidagdag ang budget line',
+      addLineMissingFields: 'Kailangan ang group, pangalan, at halaga ng badyet na higit sa 0',
       fiscalYearRequired: 'Maglagay ng fiscal year',
       fiscalYearExists: 'Mayroon nang ganitong fiscal year',
       noSourceYear: 'Walang existing fiscal year na kokopyahin',
@@ -1310,12 +1356,8 @@ const tl = {
       checkVoucher: 'Disbursement / Check Voucher',
       journalVoucher: 'Journal Voucher'
     },
-    status: {
-      posted: 'Naipasa Na'
-    },
     actions: {
-      approve: 'Aprubahan',
-      post: 'I-post'
+      approve: 'Aprubahan'
     },
     table: {
       number: 'Voucher #',
@@ -1326,30 +1368,44 @@ const tl = {
       date: 'Petsa',
       status: 'Katayuan',
       empty: 'Walang nakitang voucher',
-      exportTooltip: 'I-export ang voucher'
+      exportTooltip: 'I-export ang voucher',
+      expenseSummaryTooltip: 'Pamahalaan ang Expense Summary'
     },
     form: {
       voucherType: 'Uri ng Voucher',
-      direction: 'Uri ng Entry',
-      directionDebit: 'Disbursement (Debit)',
-      directionCredit: 'Resibo (Credit)',
+      voucherNumber: 'Voucher No.',
       modeOfPayment: 'Paraan ng Pagbabayad',
       modeCash: 'Cash',
       modeCheck: 'Check',
       checkNumber: 'Numero ng Check',
       payee: 'Payee',
       payeePlaceholder: 'Pangalan ng vendor o tatanggap',
-      payor: 'Payor',
       payeeAddress: 'Address ng Payee',
-      bankAccount: 'Bank Account (para sa Credit)',
+      bankAccount: 'Bank Account',
       bankAccountPlaceholder: 'hal. DBP #00-500128590-5',
       accountLinesLabel: 'Mga Account Title (Debit)',
       accountLinesLabelCredit: 'Mga Account Title (Credit)',
       accountPlaceholder: 'Account title, hal. Office Supplies',
+      descriptionPlaceholder: 'Paglalarawan, hal. March 16-31, 2026',
       addAccountLine: 'Magdagdag ng Account Line',
       totalAmount: 'Kabuuang Halaga',
+      totalCredit: 'Kabuuang Credit',
       particulars: 'Mga Detalye',
-      createButton: 'Gumawa ng Voucher'
+      createButton: 'Gumawa ng Voucher',
+      cashAdvanceSection: 'Liquidation ng Cash Advance (iwanang blangko kung hindi aplikable)',
+      cashAdvanceSource: 'Liniliquidate na Cash Advance Mula sa',
+      cashAdvanceSourcePlaceholder: 'Piliin ang Check Voucher na naglabas ng cash advance',
+      cashAdvanceSourceEmptyHint:
+        'Walang nahanap na tugmang Check Voucher — gumawa muna ng isa na may debit line na ang Account Title ay eksaktong "Cash Advance".',
+      cashAdvanceAmount: 'Halaga ng Cash Advance',
+      cashAdvanceDate: 'Petsa ng Cash Advance',
+      totalAmountSpent: 'Kabuuang Nagastos',
+      amountRefunded: 'Halagang Ni-refund',
+      refundOrNumber: 'O.R. No. ng Refund',
+      refundDate: 'Petsa ng Refund',
+      cashAdvanceAutoLinesNote:
+        'Awtomatikong bubuuin ang account lines mula sa Summary of Expenses kapag na-log na ang mga gastos — gamitin ang receipt icon sa Vouchers list matapos i-save ang voucher na ito.',
+      autoCalculatedField: 'Awtomatikong kinukuwenta mula sa Summary of Expenses.'
     },
     toast: {
       missingFields: 'Kailangan ang payee at kahit isang account line na may halaga',
@@ -1365,14 +1421,32 @@ const tl = {
       title: 'Aprubahan ang Voucher',
       message: 'Aprubahan ang voucher {{number}}?'
     },
-    confirmPost: {
-      title: 'I-post ang Voucher',
-      message:
-        'I-post ang voucher {{number}} sa cash disbursement journal? Hindi na ito maaaring bawiin.'
-    },
     confirmDelete: {
       title: 'Burahin ang Voucher',
       message: 'Burahin ang voucher {{number}}? Hindi na ito maaaring bawiin.'
+    }
+  },
+  expenseSummary: {
+    title: 'Expense Summary',
+    subtitle: 'Detalyadong resibo backup para sa voucher {{number}}',
+    field: {
+      date: 'Petsa',
+      particulars: 'Mga Detalye',
+      particularsPlaceholder: 'hal. Cupcakes and Juice',
+      orNumber: 'OR No.',
+      category: 'Kategorya',
+      categoryPlaceholder: 'hal. Meals and Snacks',
+      amount: 'Halaga'
+    },
+    addItem: 'Magdagdag ng Item',
+    total: 'Kabuuan',
+    exportButton: 'I-export',
+    exportTooltip: 'I-export ang expense summary',
+    toast: {
+      saved: 'Na-save ang expense summary',
+      excelGenerated: 'Nagawa na ang Excel file sa opisyal na format ng Council',
+      pdfGenerated: 'Nagawa na ang PDF file',
+      wordGenerated: 'Nagawa na ang Word document'
     }
   },
   ptdg: {
@@ -1407,6 +1481,8 @@ const tl = {
       purposePlaceholder: 'hal. Regional Committee Meeting',
       eventDate: 'Date of Event/Activity',
       eventDatePlaceholder: 'hal. September 5, 2026',
+      executiveDirector: 'Regional Executive Director',
+      executiveDirectorPlaceholder: 'hal. Juan Dela Cruz',
       projectedSources: 'Projected Sources',
       projectedExpenses: 'Projected Expenses',
       particularsPlaceholder: 'Particulars',
@@ -1422,6 +1498,8 @@ const tl = {
       decision: 'Desisyon',
       approvedAmount: 'Naaprubahang Halaga',
       remarks: 'Mga Puna',
+      executiveDirector: 'Regional Executive Director',
+      executiveDirectorPlaceholder: 'hal. Juan Dela Cruz',
       saveButton: 'I-save ang Desisyon'
     },
     toast: {
@@ -1438,6 +1516,55 @@ const tl = {
     confirmDelete: {
       title: 'Burahin ang Application',
       message: 'Burahin ang PTDG application {{number}}? Hindi na ito maaaring bawiin.'
+    }
+  },
+  councilDeposits: {
+    title: 'Council Deposits (RHQ)',
+    subtitle:
+      'PTDG, MMAF at Josefa Llanes Escoda Memento Fund — mga deposito ng Konseho na nasa Regional Office.',
+    notRecordedYet:
+      'Wala pang naitala — magdagdag ng snapshot kapag na-encode na ng accountant ang RHQ statement.',
+    editButton: 'I-edit ang mga Figure',
+    newButton: 'Bagong Snapshot',
+    selectDate: 'Petsa Noong',
+    undatedOption: 'Walang petsa',
+    noSnapshots: 'Wala pang snapshot',
+    exportTooltip: 'I-export ang report',
+    table: {
+      fund: 'Council Deposits',
+      nationalEvent: 'National Event',
+      regionalEvent: 'Regional Event',
+      councilEvent: 'Council Event',
+      internationalEvent: 'International Event',
+      total: 'Total',
+      grandTotal: 'TOTAL',
+      noBreakdown: '—',
+      noFunds: 'Wala pang fund line — i-click ang Edit Figures para magdagdag.'
+    },
+    editModal: {
+      title: 'I-edit ang Council Deposits',
+      newTitle: 'Bagong Council Deposits Snapshot',
+      subtitle: 'I-encode ang mga figure mula sa pinakabagong deposits statement ng RHQ.',
+      asOfDate: 'Petsa Noong',
+      fundNamePlaceholder: 'hal. PTDG - Girl',
+      byEventType: 'Ayon sa Event Type',
+      lumpSum: 'Lump Sum',
+      addFund: 'Magdagdag ng Fund Line',
+      preparedBy: 'Inihanda ni',
+      notedBy: 'Nabatid ni',
+      namePlaceholder: 'Buong pangalan',
+      titlePlaceholder: 'Posisyon/Titulo'
+    },
+    confirmDelete: {
+      title: 'Burahin ang Snapshot',
+      message: 'Permanenteng mabubura ang Council Deposits snapshot na ito. Magpatuloy?'
+    },
+    toast: {
+      saved: 'Na-update ang Council Deposits',
+      deleted: 'Nabura ang snapshot',
+      excelGenerated: 'Nagawa ang Excel file',
+      pdfGenerated: 'Nagawa ang PDF file',
+      wordGenerated: 'Nagawa ang Word document'
     }
   },
   invoices: {
@@ -1989,7 +2116,8 @@ const tl = {
     },
     editModal: {
       titleDefault: 'I-edit ang User',
-      titleWithName: 'I-edit si {{fullName}}'
+      titleWithName: 'I-edit si {{fullName}}',
+      birthDateLabel: 'Petsa ng Kaarawan'
     },
     permissionsModal: {
       titleDefault: 'Mga Permission ng Role',
@@ -2191,6 +2319,98 @@ const tl = {
     confirmDelete: {
       title: 'Burahin ang Training Report',
       message: 'Buburahin ang "{{title}}"? Hindi na ito mababawi.'
+    }
+  },
+  trainingProfiles: {
+    title: 'Mga Profile ng Pagsasanay',
+    subtitle: 'Council Profile at Training Information para sa mga Troop Leader at Field Adviser',
+    newButton: 'Bagong Profile',
+    editTitle: 'I-edit ang Profile',
+    exportLabel: 'I-export ang Training Profile',
+    exportButton: 'I-export',
+    searchPlaceholder: 'Maghanap ayon sa pangalan, paaralan, o distrito…',
+    table: {
+      name: 'Pangalan',
+      school: 'Paaralan',
+      district: 'Distrito',
+      level: 'Level',
+      roles: 'Posisyon/Tungkulin',
+      contactNumber: 'Numero ng Contact',
+      email: 'Email Address',
+      homeAddress: 'Tirahan',
+      completedTrainings: 'Natapos na Training',
+      ageLevelSpecialization: 'Age-Level Specialization',
+      completedCertificates: 'Natapos na Certificate',
+      birthday: 'Kaarawan',
+      firstRegistrationDate: 'Unang Petsa ng Rehistrasyon',
+      totalYearsInScouting: 'Kabuuang Taon sa Scouting',
+      empty: 'Walang nakitang training profile'
+    },
+    level: {
+      elementary: 'Elementarya',
+      highSchool: 'High School'
+    },
+    role: {
+      troop_leader: 'Troop Leader',
+      district_field_adviser: 'District Field Adviser',
+      field_adviser: 'Field Adviser',
+      assisting_trainer: 'Assisting Trainer',
+      credentialed_trainer: 'Credentialed Trainer',
+      diplomad: 'Diplomad'
+    },
+    training: {
+      basic_leadership_course: 'Basic Leadership Course',
+      age_level_specialization_course: 'Age-Level Specialization Course',
+      outdoor_leadership_course: 'Outdoor Leadership Course',
+      campers_permit_course: "Camper's Permit Course",
+      quarter_master_course: 'Quarter Master Course',
+      training_for_trainers: 'Training for Trainers'
+    },
+    ageLevel: {
+      star: 'Star',
+      twinkler: 'Twinkler',
+      junior: 'Junior',
+      senior: 'Senior'
+    },
+    certificate: {
+      camp_craft_certificate: 'Camp Craft Certificate',
+      campers_permit_certificate: "Camper's Permit Certificate"
+    },
+    form: {
+      name: 'Pangalan (Unang Pangalan, Gitnang Inisyal, Apelyido)',
+      birthday: 'Kaarawan',
+      school: 'Paaralan',
+      district: 'Distrito',
+      level: 'Level',
+      contactNumber: 'Numero ng Contact',
+      email: 'Email Address',
+      homeAddress: 'Tirahan',
+      roles: 'Posisyon/Tungkulin sa GSP Ilocos Sur Council',
+      completedTrainings: 'Natapos na Training',
+      otherCompletedTraining: 'Iba pa (pakisulat)',
+      ageLevelSpecialization: 'Para sa mga Nakatapos ng Age-Level Specialization Course Lamang',
+      ageLevelSpecializationPlaceholder: 'Piliin ang age level',
+      completedCertificates: 'Natapos na Certificate',
+      firstRegistrationDate: 'Unang Petsa ng Rehistrasyon',
+      totalYearsInScouting: 'Kabuuang Taon sa Scouting',
+      createButton: 'Gumawa ng Profile'
+    },
+    toast: {
+      missingFields: 'Kailangan ang Pangalan, Paaralan, at Distrito',
+      created: 'Nagawa ang training profile',
+      updated: 'Na-update ang training profile',
+      deleted: 'Nabura ang training profile',
+      exportedExcel: 'Na-export ang training profile sa Excel',
+      exportedPdf: 'Na-export ang training profile bilang PDF',
+      exportedWord: 'Na-export ang training profile bilang Word document',
+      noneToExport: 'Walang training profile na pwedeng i-export',
+      listExportedExcel: 'Na-export ang mga training profile sa Excel',
+      listExportedPdf: 'Na-export ang mga training profile bilang PDF',
+      listExportedWord: 'Na-export ang mga training profile bilang Word document'
+    },
+    confirmDelete: {
+      title: 'Burahin ang Training Profile',
+      message: 'Buburahin ang training profile para kay {{name}}? Hindi na ito mababawi.'
     }
   },
   programReports: {

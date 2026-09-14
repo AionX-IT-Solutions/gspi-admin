@@ -16,6 +16,7 @@ import {
 import { TableToolbar } from '@/shared/components/ui/TableToolbar'
 import { actionsColumn } from '@/shared/lib/columnHelpers'
 import { formatDate } from '@/shared/lib/utils'
+import { useTrainingProfilesStore } from '@/features/trainingProfiles/store/trainingProfiles.store'
 import { useTroopsStore } from '../store/troops.store'
 import { useTroopProfile } from '../hooks/useTroopProfile'
 import { ScoutMemberFormModal } from '../components/ScoutMemberFormModal'
@@ -30,6 +31,13 @@ export function TroopProfile() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const troop = useTroopsStore((s) => s.troops.find((tr) => tr.id === id) ?? null)
+  const trainingProfiles = useTrainingProfilesStore((s) => s.profiles)
+  const leaderProfile = troop?.leaderProfileId
+    ? (trainingProfiles.find((p) => p.id === troop.leaderProfileId) ?? null)
+    : null
+  const assistantLeaderProfile = troop?.assistantLeaderProfileId
+    ? (trainingProfiles.find((p) => p.id === troop.assistantLeaderProfileId) ?? null)
+    : null
 
   const {
     canManage,
@@ -50,6 +58,9 @@ export function TroopProfile() {
     deleteTarget,
     setDeleteTarget,
     handleConfirmDelete,
+    forceDeleteTarget,
+    setForceDeleteTarget,
+    handleConfirmForceDelete,
     handleRenew,
     paymentTarget,
     setPaymentTarget,
@@ -189,12 +200,32 @@ export function TroopProfile() {
               {t('troops.form.leaderName')}
             </div>
             <div style={{ fontSize: 14 }}>{troop.leaderName}</div>
+            {leaderProfile ? (
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                {t('troops.form.trainingsCompletedCount', {
+                  count: leaderProfile.completedTrainings.length
+                })}
+              </div>
+            ) : (
+              troop.leaderName && (
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                  {t('troops.profile.notLinkedToProfile')}
+                </div>
+              )
+            )}
           </div>
           <div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
               {t('troops.form.assistantLeaderName')}
             </div>
             <div style={{ fontSize: 14 }}>{troop.assistantLeaderName || '—'}</div>
+            {assistantLeaderProfile && (
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                {t('troops.form.trainingsCompletedCount', {
+                  count: assistantLeaderProfile.completedTrainings.length
+                })}
+              </div>
+            )}
           </div>
           <div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
@@ -317,6 +348,18 @@ export function TroopProfile() {
         danger
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!forceDeleteTarget}
+        title={t('troops.roster.confirmForceDelete.title')}
+        message={t('troops.roster.confirmForceDelete.message', {
+          name: forceDeleteTarget?.fullName ?? ''
+        })}
+        confirmLabel={t('common.delete')}
+        danger
+        onConfirm={handleConfirmForceDelete}
+        onCancel={() => setForceDeleteTarget(null)}
       />
     </div>
   )

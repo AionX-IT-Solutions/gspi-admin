@@ -12,6 +12,7 @@ interface PtdgDecisionModalProps {
     status: 'approved' | 'disapproved'
     regionalApprovedAmount?: number
     regionalRemarks?: string
+    regionalExecutiveDirector?: string
   }) => void
 }
 
@@ -20,12 +21,14 @@ export function PtdgDecisionModal({ application, onClose, onDecide }: PtdgDecisi
   const [decision, setDecision] = useState<'approved' | 'disapproved'>('approved')
   const [approvedAmount, setApprovedAmount] = useState(0)
   const [remarks, setRemarks] = useState('')
+  const [executiveDirector, setExecutiveDirector] = useState('')
 
   useEffect(() => {
     if (application) {
       setDecision('approved')
       setApprovedAmount(ptdgAmountRequested(application))
       setRemarks('')
+      setExecutiveDirector(application.regionalExecutiveDirector ?? '')
     }
   }, [application])
 
@@ -47,7 +50,8 @@ export function PtdgDecisionModal({ application, onClose, onDecide }: PtdgDecisi
               onDecide({
                 status: decision,
                 regionalApprovedAmount: decision === 'approved' ? approvedAmount : undefined,
-                regionalRemarks: remarks.trim() || undefined
+                regionalRemarks: remarks.trim() || undefined,
+                regionalExecutiveDirector: executiveDirector.trim() || undefined
               })
             }
           >
@@ -79,6 +83,13 @@ export function PtdgDecisionModal({ application, onClose, onDecide }: PtdgDecisi
         )}
         <FormField label={t('ptdg.decisionModal.remarks')}>
           <FieldTextArea value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+        </FormField>
+        <FormField label={t('ptdg.decisionModal.executiveDirector')}>
+          <FieldInput
+            value={executiveDirector}
+            onChange={(e) => setExecutiveDirector(e.target.value)}
+            placeholder={t('ptdg.decisionModal.executiveDirectorPlaceholder')}
+          />
         </FormField>
       </div>
     </Modal>

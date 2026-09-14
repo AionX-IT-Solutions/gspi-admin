@@ -23,11 +23,11 @@ interface TroopsState {
 
   addTroop: (troop: Troop) => void
   updateTroop: (id: string, patch: Partial<Troop>) => void
-  deleteTroop: (id: string) => void
+  deleteTroop: (id: string, force?: boolean) => void
 
   addScoutMember: (member: ScoutMember) => void
   updateScoutMember: (id: string, patch: Partial<ScoutMember>) => void
-  deleteScoutMember: (id: string) => void
+  deleteScoutMember: (id: string, force?: boolean) => void
   renewScoutMember: (id: string, membershipYear: string) => void
   addMemberPayment: (memberId: string, payment: MemberPayment) => void
 }
@@ -74,11 +74,14 @@ export const useTroopsStore = create<TroopsState>()((set, get) => ({
   // Blocked once any member has payment history — Daily Collections derives its per-day
   // totals live from scoutMembers[].payments, so deleting one would retroactively shrink an
   // already-reconciled prior day's report. Deactivate the troop/member instead (isActive),
-  // which keeps that history intact.
-  deleteTroop: (id) => {
+  // which keeps that history intact. `force` is the deliberate override for when a hard
+  // delete is truly wanted anyway (e.g. test/erroneous data) — the caller is responsible
+  // for warning the user about the Daily Collections impact before setting it.
+  deleteTroop: (id, force = false) => {
     const troop = get().troops.find((t) => t.id === id)
     const orphanedMembers = get().scoutMembers.filter((m) => m.troopId === id)
-    if (orphanedMembers.some((m) => (m.payments?.length ?? 0) > 0)) return
+    const hasPayments = orphanedMembers.some((m) => (m.payments?.length ?? 0) > 0)
+    if (hasPayments && !force) return
     set((s) => ({
       troops: s.troops.filter((t) => t.id !== id),
       scoutMembers: s.scoutMembers.filter((m) => m.troopId !== id)
@@ -89,7 +92,7 @@ export const useTroopsStore = create<TroopsState>()((set, get) => ({
       action: 'troop_deleted',
       actorName: actorName(),
       entityType: 'troop',
-      summary: `Troop ${troop?.troopNumber ?? id} and its ${orphanedMembers.length} member(s) deleted.`
+      summary: `Troop ${troop?.troopNumber ?? id} and its ${orphanedMembers.length} member(s) deleted.${hasPayments ? ' Force-deleted despite recorded member payments.' : ''}`
     })
   },
 
@@ -117,17 +120,19 @@ export const useTroopsStore = create<TroopsState>()((set, get) => ({
       summary: `${member?.fullName ?? id} updated.`
     })
   },
-  // Same guard as deleteTroop above — a member with payment history can't be hard-deleted.
-  deleteScoutMember: (id) => {
+  // Same guard as deleteTroop above — a member with payment history can't be hard-deleted
+  // unless the caller explicitly forces it (see deleteTroop's comment).
+  deleteScoutMember: (id, force = false) => {
     const member = get().scoutMembers.find((m) => m.id === id)
-    if ((member?.payments?.length ?? 0) > 0) return
+    const hasPayments = (member?.payments?.length ?? 0) > 0
+    if (hasPayments && !force) return
     set((s) => ({ scoutMembers: s.scoutMembers.filter((m) => m.id !== id) }))
     deleteDocById('scoutMembers', id)
     appendAuditLog({
       action: 'scout_member_deleted',
       actorName: actorName(),
       entityType: 'scout_member',
-      summary: `${member?.fullName ?? id} removed.`
+      summary: `${member?.fullName ?? id} removed.${hasPayments ? ' Force-deleted despite recorded payments.' : ''}`
     })
   },
   renewScoutMember: (id, membershipYear) => {

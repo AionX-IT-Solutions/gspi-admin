@@ -28,6 +28,7 @@ interface PtdgState {
       status: 'approved' | 'disapproved'
       regionalApprovedAmount?: number
       regionalRemarks?: string
+      regionalExecutiveDirector?: string
     }
   ) => void
 }
@@ -98,6 +99,8 @@ export const usePtdgStore = create<PtdgState>()((set, get) => ({
               status: decision.status,
               regionalApprovedAmount: decision.regionalApprovedAmount,
               regionalRemarks: decision.regionalRemarks,
+              regionalExecutiveDirector:
+                decision.regionalExecutiveDirector ?? a.regionalExecutiveDirector,
               regionalDecisionDate: new Date().toISOString()
             }
           : a

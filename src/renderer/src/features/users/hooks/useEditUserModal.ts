@@ -4,13 +4,17 @@ import { useToast } from '@/app/hooks/useToast'
 import { usePermissionsStore } from '@/app/store/permissions.store'
 import { resolveRoleAssignment, type RoleId } from '@/app/lib/permissions'
 import type { StaffUser } from '../store/users.store'
-import { setStaffUserFullName, updateStaffUserDirect } from '../lib/staffUserFunctions'
+import {
+  setStaffUserFullName,
+  setStaffUserBirthDate,
+  updateStaffUserDirect
+} from '../lib/staffUserFunctions'
 
 export function useEditUserModal(target: StaffUser | null, onClose: () => void) {
   const { t } = useTranslation()
   const toast = useToast()
   const customRoles = usePermissionsStore((s) => s.customRoles)
-  const [form, setForm] = useState({ fullName: '', role: 'cashier' as RoleId })
+  const [form, setForm] = useState({ fullName: '', role: 'cashier' as RoleId, birthDate: '' })
   const [saving, setSaving] = useState(false)
 
   // The custom role's own id (if any), not its resolved base role — so the dropdown
@@ -20,11 +24,16 @@ export function useEditUserModal(target: StaffUser | null, onClose: () => void) 
 
   useEffect(() => {
     if (target) {
-      setForm({ fullName: target.fullName, role: target.customRoleId ?? target.role })
+      setForm({
+        fullName: target.fullName,
+        role: target.customRoleId ?? target.role,
+        birthDate: target.birthDate ?? ''
+      })
     }
   }, [target])
 
   const roleChanged = !!target && form.role !== initialRoleSelection
+  const birthDateChanged = !!target && form.birthDate !== (target.birthDate ?? '')
 
   async function handleSave() {
     if (!target) return
@@ -33,8 +42,9 @@ export function useEditUserModal(target: StaffUser | null, onClose: () => void) 
       toast.error(t('users.toast.fullNameRequired'))
       return
     }
+    const fullNameChanged = fullName !== target.fullName
 
-    if (!roleChanged && fullName === target.fullName) {
+    if (!roleChanged && !fullNameChanged && !birthDateChanged) {
       onClose()
       return
     }
@@ -59,9 +69,12 @@ export function useEditUserModal(target: StaffUser | null, onClose: () => void) 
           return
         }
         toast.success(t('users.toast.roleUpdated', { fullName }))
-      } else {
+      } else if (fullNameChanged) {
         await setStaffUserFullName(target.uid, fullName)
         toast.success(t('users.toast.fullNameUpdated', { fullName }))
+      }
+      if (birthDateChanged) {
+        await setStaffUserBirthDate(target.uid, form.birthDate)
       }
       onClose()
     } catch {

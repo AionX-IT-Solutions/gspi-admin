@@ -22,6 +22,7 @@ export interface PtdgApplication {
   regionalApprovedAmount?: number
   regionalRemarks?: string
   regionalDecisionDate?: string
+  regionalExecutiveDirector?: string
   createdAt: string
   createdBy: string
 }

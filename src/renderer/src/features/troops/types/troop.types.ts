@@ -5,7 +5,13 @@ export interface Troop {
   /** Age-based program level (e.g. Star Scout, Junior, Cadette, Senior, Ambassador) — free text, council-defined. */
   level: string
   leaderName: string
+  // Optional link to that leader's own Training Profile record (features/trainingProfiles)
+  // — lets the Troop page surface whether the assigned leader has completed the
+  // trainings/certificates the role calls for. Older troops (or a leader who isn't in
+  // the registry yet) simply have no link; `leaderName` stays the display name either way.
+  leaderProfileId?: string
   assistantLeaderName?: string
+  assistantLeaderProfileId?: string
   school?: string
   barangay?: string
   meetingPlace?: string

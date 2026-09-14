@@ -42,16 +42,15 @@ function candidateKeyPaths(): string[] {
   return paths
 }
 
-let resolvedKeyPath: string | null | undefined
 let adminApp: App | null = null
 let authClient: Auth | null = null
 let dbClient: Firestore | null = null
 
+// Not cached: an admin can drop serviceAccountKey.json next to the exe while the app is
+// already running (no reinstall/restart needed), so re-check the filesystem every call —
+// existsSync is cheap and this only runs when the Add/Edit User modal opens.
 function resolveKeyPath(): string | null {
-  if (resolvedKeyPath === undefined) {
-    resolvedKeyPath = candidateKeyPaths().find((p) => existsSync(p)) ?? null
-  }
-  return resolvedKeyPath
+  return candidateKeyPaths().find((p) => existsSync(p)) ?? null
 }
 
 function isAvailable(): boolean {

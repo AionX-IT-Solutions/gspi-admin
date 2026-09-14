@@ -54,7 +54,10 @@ export function Troops() {
     handleConfirmToggleActive,
     deleteTarget,
     setDeleteTarget,
-    handleConfirmDelete
+    handleConfirmDelete,
+    forceDeleteTarget,
+    setForceDeleteTarget,
+    handleConfirmForceDelete
   } = useTroops()
   const hydrate = useTroopsStore((s) => s.hydrate)
 
@@ -219,6 +222,18 @@ export function Troops() {
         danger
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!forceDeleteTarget}
+        title={t('troops.confirmForceDelete.title')}
+        message={t('troops.confirmForceDelete.message', {
+          troopNumber: forceDeleteTarget?.troopNumber ?? ''
+        })}
+        confirmLabel={t('common.delete')}
+        danger
+        onConfirm={handleConfirmForceDelete}
+        onCancel={() => setForceDeleteTarget(null)}
       />
     </motion.div>
   )

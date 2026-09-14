@@ -70,3 +70,9 @@ export async function setStaffUserFullName(uid: string, fullName: string): Promi
 export async function setStaffUserPhoto(uid: string, photoUrl: string): Promise<void> {
   await updateDoc(doc(db, 'users', uid), { photoUrl, updatedAt: serverTimestamp() })
 }
+
+/** Birthdate is non-sensitive (unlike role/password), so — like renaming — Firestore rules
+ *  let admin/super_admin write it directly, no CLI/service-account round-trip needed. */
+export async function setStaffUserBirthDate(uid: string, birthDate: string): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), { birthDate, updatedAt: serverTimestamp() })
+}

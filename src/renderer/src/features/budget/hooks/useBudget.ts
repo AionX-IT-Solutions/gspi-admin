@@ -20,7 +20,7 @@ import {
   exportBudgetPdf,
   type BudgetReportData
 } from '../lib/budgetReportExport'
-import type { BudgetCategory } from '../types/budget.types'
+import type { BudgetCategory, BudgetSection } from '../types/budget.types'
 import { nextFiscalYearLabel } from '@/shared/lib/fiscalYear'
 
 export function useBudget() {
@@ -32,6 +32,7 @@ export function useBudget() {
   const canManage = hasPermission('manage:budget')
   const allCategories = useBudgetStore((s) => s.categories)
   const updateCategory = useBudgetStore((s) => s.updateCategory)
+  const addCategoryAction = useBudgetStore((s) => s.addCategory)
   const createFiscalYearAction = useBudgetStore((s) => s.createFiscalYear)
 
   const sales = usePOSStore((s) => s.sales)
@@ -44,6 +45,16 @@ export function useBudget() {
 
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null)
   const [selectedFiscalYear, setSelectedFiscalYear] = useState('')
+  // `null` context = the page-level "Add Line" button (everything editable); a set
+  // context = the per-subgroup "+ Add Line" action (section/group/subGroup locked to
+  // that row's bucket). `showAddLine` is separate so the modal can close (hiding its
+  // fields) without losing the last-used context mid-animation.
+  const [showAddLine, setShowAddLine] = useState(false)
+  const [addLineContext, setAddLineContext] = useState<{
+    section: BudgetSection
+    group: string
+    subGroup: string
+  } | null>(null)
 
   const availableFiscalYears = useMemo(
     () => [...new Set(allCategories.map((c) => c.fiscalYear))].sort(),
@@ -67,6 +78,24 @@ export function useBudget() {
   const netBudgeted = incomeTotals.totalBudgeted - expenseTotals.totalBudgeted
   const netActual = incomeTotals.totalActual - expenseTotals.totalActual
 
+  // Suggestion lists for the Add Line modal's Group/SubGroup fields — existing labels
+  // for this fiscal year, so a typo doesn't silently start a stray duplicate bucket.
+  const groupsBySection = useMemo<Record<BudgetSection, string[]>>(
+    () => ({
+      income: [...new Set(categories.filter((c) => c.section === 'income').map((c) => c.group))],
+      expense: [...new Set(categories.filter((c) => c.section === 'expense').map((c) => c.group))]
+    }),
+    [categories]
+  )
+  const subGroupsByGroup = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const c of categories) {
+      if (!c.subGroup) continue
+      map.set(c.group, [...new Set([...(map.get(c.group) ?? []), c.subGroup])])
+    }
+    return map
+  }, [categories])
+
   // Reference figures pulled live from POS/Rentals/Vouchers/Payroll/Troop payments for
   // whichever budget lines have a confident real-data match — offered in the Edit modal as a
   // one-click fill, never silently overwriting the council-approved manual actuals.
@@ -89,6 +118,30 @@ export function useBudget() {
     updateCategory(id, edit)
     toast.success(t('budget.toast.updated'))
     setEditingCategory(null)
+  }
+
+  function openAddLine(
+    context: { section: BudgetSection; group: string; subGroup: string } | null
+  ) {
+    setAddLineContext(context)
+    setShowAddLine(true)
+  }
+
+  function handleAddLine(input: {
+    section: BudgetSection
+    group: string
+    subGroup: string
+    name: string
+    budgetedAmount: number
+  }) {
+    if (!canManage) return
+    if (!input.name.trim() || !input.group.trim() || input.budgetedAmount <= 0) {
+      toast.error(t('budget.toast.addLineMissingFields'))
+      return
+    }
+    addCategoryAction({ ...input, fiscalYear })
+    toast.success(t('budget.toast.categoryAdded'))
+    setShowAddLine(false)
   }
 
   function handleCreateFiscalYear(newFiscalYear: string) {
@@ -154,6 +207,13 @@ export function useBudget() {
     editingCategory,
     setEditingCategory,
     handleSaveCategory,
+    showAddLine,
+    setShowAddLine,
+    addLineContext,
+    openAddLine,
+    handleAddLine,
+    groupsBySection,
+    subGroupsByGroup,
     preview,
     handleView,
     handleExportExcel,

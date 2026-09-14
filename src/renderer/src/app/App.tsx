@@ -95,6 +95,11 @@ const Vouchers = lazy(() =>
   import('@/features/vouchers/pages/Vouchers').then((m) => ({ default: m.Vouchers }))
 )
 const Ptdg = lazy(() => import('@/features/ptdg/pages/Ptdg').then((m) => ({ default: m.Ptdg })))
+const CouncilDeposits = lazy(() =>
+  import('@/features/councilDeposits/pages/CouncilDeposits').then((m) => ({
+    default: m.CouncilDeposits
+  }))
+)
 const Rentals = lazy(() =>
   import('@/features/rentals/pages/Rentals').then((m) => ({ default: m.Rentals }))
 )
@@ -122,6 +127,11 @@ const ProgramReports = lazy(() =>
 const TrainingReports = lazy(() =>
   import('@/features/trainingReports/pages/TrainingReports').then((m) => ({
     default: m.TrainingReports
+  }))
+)
+const TrainingProfiles = lazy(() =>
+  import('@/features/trainingProfiles/pages/TrainingProfiles').then((m) => ({
+    default: m.TrainingProfiles
   }))
 )
 
@@ -313,6 +323,14 @@ function AuthenticatedShell() {
                   }
                 />
                 <Route
+                  path="/council-deposits"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.councilDeposits}>
+                      <CouncilDeposits />
+                    </RequirePermission>
+                  }
+                />
+                <Route
                   path="/rentals"
                   element={
                     <RequirePermission permission={MODULE_PERMISSIONS.rentals}>
@@ -413,6 +431,14 @@ function AuthenticatedShell() {
                   element={
                     <RequirePermission permission={MODULE_PERMISSIONS.trainingReports}>
                       <TrainingReports />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/training-profiles"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.trainingProfiles}>
+                      <TrainingProfiles />
                     </RequirePermission>
                   }
                 />

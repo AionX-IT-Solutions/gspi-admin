@@ -5,16 +5,21 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs))
 }
 
+/** Local `YYYY-MM-DD` for an arbitrary Date — see todayLocalIso for why this can't be
+ *  `date.toISOString().slice(0, 10)` (that's the UTC calendar date, not the Philippines' one). */
+export function localIsoFromDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 /** Local `YYYY-MM-DD` for "today" — never use `new Date().toISOString().slice(0, 10)` for this;
  *  that gives the UTC calendar date, which still reads as "yesterday" in the Philippines (UTC+8)
  *  from midnight until 8:00 AM local time, silently misdating anything defaulted or bucketed by
  *  it during that window (a new record's default date, a report's day filter, etc.). */
 export function todayLocalIso(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  return localIsoFromDate(new Date())
 }
 
 /** Local `YYYY-MM-DD` for "N days ago" — see todayLocalIso for why this can't be

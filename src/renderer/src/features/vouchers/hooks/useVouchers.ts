@@ -63,25 +63,28 @@ export function useVouchers() {
     )
   }, [vouchers, search])
 
+  // A liquidating Journal Voucher cross-references the Check Voucher that granted the
+  // cash advance — resolved here (rather than baked into the voucher itself) since it's
+  // just the other voucher's own number, always current.
+  function relatedVoucherNumberOf(v: Voucher): string | undefined {
+    return v.relatedVoucherId
+      ? vouchers.find((x) => x.id === v.relatedVoucherId)?.voucherNumber
+      : undefined
+  }
+
   function statusLabel(status: VoucherStatus) {
     if (status === 'pending') return t('common.pending')
     if (status === 'approved') return t('common.approved')
-    if (status === 'posted') return t('vouchers.status.posted')
     return t('common.cancelled')
-  }
-
-  function nextStatus(v: Voucher): VoucherStatus {
-    return v.status === 'pending' ? 'approved' : 'posted'
   }
 
   function handleConfirmAdvance() {
     if (!advanceTarget || !canManage) return
-    const next = nextStatus(advanceTarget)
-    decideVoucher(advanceTarget.id, next)
+    decideVoucher(advanceTarget.id, 'approved')
     toast.success(
       t('vouchers.toast.statusChanged', {
         number: advanceTarget.voucherNumber,
-        status: statusLabel(next)
+        status: statusLabel('approved')
       })
     )
     setAdvanceTarget(null)
@@ -92,25 +95,25 @@ export function useVouchers() {
     const doc =
       v.voucherType === 'check_voucher'
         ? await buildDisbursementVoucherPdfDoc(v)
-        : await buildJournalVoucherPdfDoc(v)
+        : await buildJournalVoucherPdfDoc(v, relatedVoucherNumberOf(v))
     preview.openPreview(doc)
   }
 
   function handleExportExcel(v: Voucher) {
     if (v.voucherType === 'check_voucher') exportDisbursementVoucher(v)
-    else exportJournalVoucher(v)
+    else exportJournalVoucher(v, relatedVoucherNumberOf(v))
     toast.success(t('vouchers.toast.excelGenerated'))
   }
 
   function handleExportPdf(v: Voucher) {
     if (v.voucherType === 'check_voucher') exportDisbursementVoucherPdf(v)
-    else exportJournalVoucherPdf(v)
+    else exportJournalVoucherPdf(v, relatedVoucherNumberOf(v))
     toast.success(t('vouchers.toast.pdfGenerated'))
   }
 
   function handleExportWord(v: Voucher) {
     if (v.voucherType === 'check_voucher') exportDisbursementVoucherDocx(v)
-    else exportJournalVoucherDocx(v)
+    else exportJournalVoucherDocx(v, relatedVoucherNumberOf(v))
     toast.success(t('vouchers.toast.wordGenerated'))
   }
 

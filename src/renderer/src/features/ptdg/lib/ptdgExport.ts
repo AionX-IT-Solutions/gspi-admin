@@ -282,10 +282,14 @@ export async function buildPtdgPdfDoc(app: PtdgApplication) {
   addSignatories(doc, y, [
     {
       label: 'CERTIFIED CORRECT:',
-      name: signatories.accountingClerk.toUpperCase(),
+      name: '',
       role: 'Accounting Clerk'
     },
-    { label: 'APPROVED BY:', name: '', role: 'Regional Executive Director' }
+    {
+      label: 'APPROVED BY:',
+      name: (app.regionalExecutiveDirector ?? '').toUpperCase(),
+      role: 'Regional Executive Director'
+    }
   ])
 
   return doc
@@ -437,7 +441,7 @@ export async function exportPtdgApplication(app: PtdgApplication) {
   sheet.getCell(r, 2).value = 'CERTIFIED CORRECT:'
   sheet.getCell(r, 4).value = 'APPROVED BY:'
   r += 3
-  sheet.getCell(r, 2).value = signatories.accountingClerk.toUpperCase()
+  sheet.getCell(r, 4).value = (app.regionalExecutiveDirector ?? '').toUpperCase()
   r++
   sheet.getCell(r, 2).value = 'Accounting Clerk'
   sheet.getCell(r, 4).value = 'Regional Executive Director'
@@ -527,10 +531,14 @@ export async function exportPtdgDocx(app: PtdgApplication) {
     signatoryTable([
       {
         label: 'CERTIFIED CORRECT:',
-        name: signatories.accountingClerk.toUpperCase(),
+        name: '',
         role: 'Accounting Clerk'
       },
-      { label: 'APPROVED BY:', name: '', role: 'Regional Executive Director' }
+      {
+        label: 'APPROVED BY:',
+        name: (app.regionalExecutiveDirector ?? '').toUpperCase(),
+        role: 'Regional Executive Director'
+      }
     ])
   ]
   await saveDocx(children, filenameFor(app, 'docx'))

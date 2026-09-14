@@ -51,6 +51,28 @@ export function groupCategories(
   return groups
 }
 
+// The Council's real budget document labels each section's grand-total row differently
+// from a generic "{group} Total" — the Operations/Capital groups read "Total Operating/
+// Capital Income|Expense", while the residual "Other" group just reads "Other Income|
+// Expense" with no "Total" prefix. Note expense's own group order/naming differs from
+// income's (II. OTHER EXPENSES / III. CAPITAL OUTLAY, swapped vs. income's II/III) — this
+// maps by meaning, not by roman-numeral position.
+const GROUP_TOTAL_LABELS: Record<string, string> = {
+  'income:I. OPERATIONS': 'Total Operating Income',
+  'income:II. CAPITAL': 'Total Capital Income',
+  'income:III. OTHER INCOME': 'Other Income',
+  'expense:I. OPERATIONS': 'Total Operating Expense',
+  'expense:II. OTHER EXPENSES': 'Other Expense',
+  'expense:III. CAPITAL OUTLAY': 'Total Capital Expense'
+}
+
+/** Custom grand-total label for a group, or `null` for any group outside the fixed set
+ *  above (e.g. one added later via Add Budget Line) — callers fall back to a generic
+ *  "{group} Total" in that case. */
+export function groupTotalLabel(section: BudgetSection, group: string): string | null {
+  return GROUP_TOTAL_LABELS[`${section}:${group}`] ?? null
+}
+
 export interface BudgetSectionTotals {
   totalBudgeted: number
   totalActual: number

@@ -19,6 +19,9 @@ import { useProgramReportSectionMetaStore } from '@/features/programReports/stor
 import { useTrainingReportsStore } from '@/features/trainingReports/store/trainingReports.store'
 import { useAnnouncementsStore } from '@/features/announcements/store/announcements.store'
 import { useBudgetStore } from '@/features/budget/store/budget.store'
+import { useCouncilDepositsStore } from '@/features/councilDeposits/store/councilDeposits.store'
+import { useExpenseSummaryStore } from '@/features/expenseSummary/store/expenseSummary.store'
+import { useTrainingProfilesStore } from '@/features/trainingProfiles/store/trainingProfiles.store'
 
 /**
  * Loads every module's data from Firestore once per session (each store seeds its own
@@ -47,6 +50,9 @@ export function useFirestoreSync() {
   const hydrateTrainingReports = useTrainingReportsStore((s) => s.hydrate)
   const hydrateAnnouncements = useAnnouncementsStore((s) => s.hydrate)
   const hydrateBudget = useBudgetStore((s) => s.hydrate)
+  const hydrateCouncilDeposits = useCouncilDepositsStore((s) => s.hydrate)
+  const hydrateExpenseSummary = useExpenseSummaryStore((s) => s.hydrate)
+  const hydrateTrainingProfiles = useTrainingProfilesStore((s) => s.hydrate)
 
   useEffect(() => {
     hydrateHR()
@@ -69,6 +75,9 @@ export function useFirestoreSync() {
     hydrateTrainingReports()
     hydrateAnnouncements()
     hydrateBudget()
+    hydrateCouncilDeposits()
+    hydrateExpenseSummary()
+    hydrateTrainingProfiles()
   }, [
     hydrateHR,
     hydrateAccounting,
@@ -89,6 +98,9 @@ export function useFirestoreSync() {
     hydrateProgramReportSectionMeta,
     hydrateTrainingReports,
     hydrateAnnouncements,
-    hydrateBudget
+    hydrateBudget,
+    hydrateCouncilDeposits,
+    hydrateExpenseSummary,
+    hydrateTrainingProfiles
   ])
 }

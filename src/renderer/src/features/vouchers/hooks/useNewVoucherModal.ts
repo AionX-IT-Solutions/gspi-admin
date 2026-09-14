@@ -1,104 +1,195 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVouchersStore } from '../store/vouchers.store'
 import { useToast } from '@/app/hooks/useToast'
 import { usePermissions } from '@/app/hooks/usePermissions'
-import type { ModeOfPayment, Voucher, VoucherType } from '../types/vouchers.types'
+import { suggestVoucherNumber } from '../lib/voucherNumber'
+import { isCashAdvanceDisbursement } from '../lib/expenseVouchers'
+import type {
+  ModeOfPayment,
+  Voucher,
+  VoucherAccountLine,
+  VoucherType
+} from '../types/vouchers.types'
 
 export interface VoucherAccountLineForm {
   account: string
+  description: string
   amount: number
 }
+
+type AccountLineSide = 'debitLines' | 'creditLines'
 
 function todayIso() {
   return new Date().toISOString()
 }
 
 function emptyAccountLine(): VoucherAccountLineForm {
-  return { account: '', amount: 0 }
+  return { account: '', description: '', amount: 0 }
 }
 
-export type VoucherDirection = 'debit' | 'credit'
-
-function emptyForm() {
+function emptyForm(suggestedVoucherNumber: string) {
   return {
     voucherType: 'check_voucher' as VoucherType,
-    // Only a Journal Voucher can be 'credit' (a receipt) — a Check Voucher is always a
-    // disbursement, so this stays 'debit' whenever voucherType is 'check_voucher' (see
-    // setVoucherType below).
-    direction: 'debit' as VoucherDirection,
+    voucherNumber: suggestedVoucherNumber,
     modeOfPayment: 'cash' as ModeOfPayment,
     checkNumber: '',
     payee: '',
     payeeAddress: '',
     bankAccountRef: '',
     particulars: '',
-    accountLines: [emptyAccountLine()]
+    debitLines: [emptyAccountLine()],
+    creditLines: [emptyAccountLine()],
+    relatedVoucherId: '',
+    cashAdvanceAmount: 0,
+    cashAdvanceDate: '',
+    amountRefunded: 0,
+    refundOrNumber: '',
+    refundDate: '',
+    totalAmountSpent: 0
   }
 }
 
+// Splits a saved voucher's single accountLines array back into its debit-side and
+// credit-side rows for editing — a real double-entry voucher can carry both at once.
+function linesFromSide(
+  lines: VoucherAccountLine[],
+  side: 'debit' | 'credit'
+): VoucherAccountLineForm[] {
+  const rows = lines
+    .filter((l) => l[side] > 0)
+    .map((l) => ({ account: l.account, description: l.description ?? '', amount: l[side] }))
+  return rows.length > 0 ? rows : [emptyAccountLine()]
+}
+
 function formFromVoucher(voucher: Voucher) {
-  const isCredit = voucher.accountLines.some((l) => l.credit > 0)
   return {
     voucherType: voucher.voucherType,
-    direction: (isCredit ? 'credit' : 'debit') as VoucherDirection,
+    voucherNumber: voucher.voucherNumber,
     modeOfPayment: voucher.modeOfPayment,
     checkNumber: voucher.checkNumber ?? '',
     payee: voucher.payee,
     payeeAddress: voucher.payeeAddress ?? '',
     bankAccountRef: voucher.bankAccountRef ?? '',
     particulars: voucher.particulars,
-    accountLines:
-      voucher.accountLines.length > 0
-        ? voucher.accountLines.map((l) => ({ account: l.account, amount: l.debit || l.credit }))
-        : [emptyAccountLine()]
+    debitLines: linesFromSide(voucher.accountLines, 'debit'),
+    creditLines: linesFromSide(voucher.accountLines, 'credit'),
+    relatedVoucherId: voucher.relatedVoucherId ?? '',
+    cashAdvanceAmount: voucher.cashAdvanceAmount ?? 0,
+    cashAdvanceDate: voucher.cashAdvanceDate ?? '',
+    amountRefunded: voucher.amountRefunded ?? 0,
+    refundOrNumber: voucher.refundOrNumber ?? '',
+    refundDate: voucher.refundDate ?? '',
+    totalAmountSpent: voucher.totalAmountSpent ?? 0
   }
 }
 
 export function useNewVoucherModal(
+  open: boolean,
   onOpenChange: (open: boolean) => void,
   editTarget?: Voucher | null
 ) {
   const { t } = useTranslation()
   const toast = useToast()
   const { hasPermission } = usePermissions()
+  const vouchers = useVouchersStore((s) => s.vouchers)
   const addVoucher = useVouchersStore((s) => s.addVoucher)
   const updateVoucher = useVouchersStore((s) => s.updateVoucher)
-  const [form, setForm] = useState(editTarget ? formFromVoucher(editTarget) : emptyForm())
+  const [form, setForm] = useState(
+    editTarget
+      ? formFromVoucher(editTarget)
+      : emptyForm(suggestVoucherNumber(vouchers, 'check_voucher'))
+  )
 
-  const totalAmount = form.accountLines.reduce((sum, l) => sum + (l.amount || 0), 0)
+  // Radix's controlled Dialog only calls onOpenChange for its own internally-triggered
+  // close events (Escape, overlay click, Dialog.Close) — never when the *parent* flips
+  // `open` to true to launch Add/Edit, so that can't be where the form gets (re)seeded.
+  // This re-syncs it every time the modal actually becomes visible instead.
+  useEffect(() => {
+    if (!open) return
+    setForm(
+      editTarget
+        ? formFromVoucher(editTarget)
+        : emptyForm(suggestVoucherNumber(vouchers, 'check_voucher'))
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editTarget])
 
-  function addAccountLine() {
-    setForm((f) => ({ ...f, accountLines: [...f.accountLines, emptyAccountLine()] }))
-  }
+  const totalDebit = form.debitLines.reduce((sum, l) => sum + (l.amount || 0), 0)
+  const totalCredit = form.creditLines.reduce((sum, l) => sum + (l.amount || 0), 0)
 
-  function removeAccountLine(index: number) {
+  // A Journal Voucher liquidating a cash advance never has its account lines hand-typed
+  // here — they're generated from the Summary of Expenses once receipts are logged (see
+  // useExpenseSummaryModal's handleSave), so the manual Account Titles sections are
+  // replaced by a note instead for this case.
+  const isCashAdvanceLiquidation = form.voucherType === 'journal_voucher' && !!form.relatedVoucherId
+
+  // Every Check Voucher on record that actually granted a cash advance — the only
+  // vouchers a Journal Voucher's liquidation section can reference back to.
+  const cashAdvanceSources = vouchers.filter(isCashAdvanceDisbursement)
+
+  function setCashAdvanceSource(voucherId: string) {
+    const source = cashAdvanceSources.find((v) => v.id === voucherId)
     setForm((f) => ({
       ...f,
-      accountLines:
-        f.accountLines.length > 1 ? f.accountLines.filter((_, i) => i !== index) : f.accountLines
+      relatedVoucherId: voucherId,
+      cashAdvanceAmount: source ? source.amount : f.cashAdvanceAmount,
+      cashAdvanceDate: source ? source.date.slice(0, 10) : f.cashAdvanceDate
     }))
   }
 
-  function updateAccountLine(index: number, patch: Partial<VoucherAccountLineForm>) {
+  function setVoucherType(voucherType: VoucherType) {
     setForm((f) => ({
       ...f,
-      accountLines: f.accountLines.map((l, i) => (i === index ? { ...l, ...patch } : l))
+      voucherType,
+      // The number belongs to a different sequence per type — re-suggest it, but only
+      // for a brand-new voucher; an existing voucher's number never changes here.
+      voucherNumber: editTarget ? f.voucherNumber : suggestVoucherNumber(vouchers, voucherType)
+    }))
+  }
+
+  function addLine(side: AccountLineSide) {
+    setForm((f) => ({ ...f, [side]: [...f[side], emptyAccountLine()] }))
+  }
+
+  function removeLine(side: AccountLineSide, index: number) {
+    setForm((f) => ({
+      ...f,
+      [side]: f[side].length > 1 ? f[side].filter((_, i) => i !== index) : f[side]
+    }))
+  }
+
+  function updateLine(
+    side: AccountLineSide,
+    index: number,
+    patch: Partial<VoucherAccountLineForm>
+  ) {
+    setForm((f) => ({
+      ...f,
+      [side]: f[side].map((l, i) => (i === index ? { ...l, ...patch } : l))
     }))
   }
 
   function handleSubmit() {
     if (!hasPermission('manage:vouchers')) return
-    const validLines = form.accountLines.filter((l) => l.account.trim() && l.amount > 0)
-    if (!form.payee.trim() || validLines.length === 0) {
+    const validDebitLines = form.debitLines.filter((l) => l.account.trim() && l.amount > 0)
+    // A Check Voucher's credit side often still goes unitemized (falls back to
+    // `bankAccountRef` as a single implicit credit line in the export) — itemizing it
+    // here is optional, not exclusive to a Journal Voucher.
+    const validCreditLines = form.creditLines.filter((l) => l.account.trim() && l.amount > 0)
+    // A cash-advance liquidation JV is allowed to save with zero manual lines — they get
+    // generated once its Summary of Expenses is saved (see isCashAdvanceLiquidation above).
+    if (
+      !form.payee.trim() ||
+      (!isCashAdvanceLiquidation && validDebitLines.length === 0 && validCreditLines.length === 0)
+    ) {
       toast.error(t('vouchers.toast.missingFields'))
       return
     }
-    const amount = validLines.reduce((sum, l) => sum + l.amount, 0)
-    // A Check Voucher is always a disbursement — 'credit' direction only ever applies to a
-    // Journal Voucher, enforced here too in case form state somehow got out of sync with the
-    // voucherType selector.
-    const effectiveDirection = form.voucherType === 'check_voucher' ? 'debit' : form.direction
+    const totalDebitValid = validDebitLines.reduce((sum, l) => sum + l.amount, 0)
+    const totalCreditValid = validCreditLines.reduce((sum, l) => sum + l.amount, 0)
+    const isJournalVoucher = form.voucherType === 'journal_voucher'
+    const hasCashAdvance = isJournalVoucher && form.cashAdvanceAmount > 0
 
     const payload = {
       voucherType: form.voucherType,
@@ -108,43 +199,59 @@ export function useNewVoucherModal(
       payee: form.payee.trim(),
       payeeAddress: form.payeeAddress.trim() || undefined,
       bankAccountRef: form.bankAccountRef.trim() || undefined,
-      amount,
+      amount: Math.max(totalDebitValid, totalCreditValid),
       particulars: form.particulars.trim(),
-      accountLines: validLines.map((l) => ({
-        account: l.account.trim(),
-        debit: effectiveDirection === 'debit' ? l.amount : 0,
-        credit: effectiveDirection === 'credit' ? l.amount : 0
-      }))
+      accountLines: [
+        ...validDebitLines.map((l) => ({
+          account: l.account.trim(),
+          description: l.description.trim() || undefined,
+          debit: l.amount,
+          credit: 0
+        })),
+        ...validCreditLines.map((l) => ({
+          account: l.account.trim(),
+          description: l.description.trim() || undefined,
+          debit: 0,
+          credit: l.amount
+        }))
+      ],
+      relatedVoucherId: hasCashAdvance ? form.relatedVoucherId || undefined : undefined,
+      cashAdvanceAmount: hasCashAdvance ? form.cashAdvanceAmount : undefined,
+      cashAdvanceDate: hasCashAdvance ? form.cashAdvanceDate || undefined : undefined,
+      amountRefunded: hasCashAdvance ? form.amountRefunded : undefined,
+      refundOrNumber: hasCashAdvance ? form.refundOrNumber.trim() || undefined : undefined,
+      refundDate: hasCashAdvance ? form.refundDate || undefined : undefined,
+      totalAmountSpent: hasCashAdvance ? form.totalAmountSpent : undefined
     }
 
     if (editTarget) {
       updateVoucher(editTarget.id, payload)
       toast.success(t('vouchers.toast.updated'))
     } else {
-      const prefix = form.voucherType === 'check_voucher' ? 'CV' : 'JV'
       addVoucher({
-        voucherNumber: `${new Date().getFullYear()} - ${String(new Date().getMonth() + 1).padStart(2, '0')} - ${prefix}${Math.floor(Math.random() * 90000 + 10000)}`,
+        voucherNumber:
+          form.voucherNumber.trim() || suggestVoucherNumber(vouchers, form.voucherType),
         date: todayIso(),
         ...payload
       })
       toast.success(t('vouchers.toast.created'))
     }
     onOpenChange(false)
-    setForm(emptyForm())
-  }
-
-  function resetForm() {
-    setForm(editTarget ? formFromVoucher(editTarget) : emptyForm())
+    setForm(emptyForm(suggestVoucherNumber(vouchers, 'check_voucher')))
   }
 
   return {
     form,
     setForm,
-    totalAmount,
-    addAccountLine,
-    removeAccountLine,
-    updateAccountLine,
-    handleSubmit,
-    resetForm
+    setVoucherType,
+    totalDebit,
+    totalCredit,
+    isCashAdvanceLiquidation,
+    addLine,
+    removeLine,
+    updateLine,
+    cashAdvanceSources,
+    setCashAdvanceSource,
+    handleSubmit
   }
 }

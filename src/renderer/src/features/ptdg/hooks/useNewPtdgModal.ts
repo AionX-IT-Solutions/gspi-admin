@@ -15,7 +15,8 @@ function emptyForm() {
     purpose: '',
     eventDate: '',
     projectedSources: [] as PtdgLineItem[],
-    projectedExpenses: [] as PtdgLineItem[]
+    projectedExpenses: [] as PtdgLineItem[],
+    regionalExecutiveDirector: ''
   }
 }
 
@@ -24,7 +25,8 @@ function formFromApplication(application: PtdgApplication) {
     purpose: application.purpose,
     eventDate: application.eventDate,
     projectedSources: application.projectedSources,
-    projectedExpenses: application.projectedExpenses
+    projectedExpenses: application.projectedExpenses,
+    regionalExecutiveDirector: application.regionalExecutiveDirector ?? ''
   }
 }
 
@@ -84,6 +86,7 @@ export function useNewPtdgModal(
       eventDate: form.eventDate.trim(),
       projectedSources: validSources,
       projectedExpenses: validExpenses,
+      regionalExecutiveDirector: form.regionalExecutiveDirector.trim() || undefined,
       status
     }
 

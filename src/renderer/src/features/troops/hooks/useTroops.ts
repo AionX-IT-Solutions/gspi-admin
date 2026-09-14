@@ -26,6 +26,7 @@ export function useTroops() {
   const [editTarget, setEditTarget] = useState<Troop | null>(null)
   const [toggleTarget, setToggleTarget] = useState<Troop | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Troop | null>(null)
+  const [forceDeleteTarget, setForceDeleteTarget] = useState<Troop | null>(null)
   const [search, setSearch] = useState('')
 
   const currentMembershipYear = useMemo(() => getMembershipYearLabel(startMonth), [startMonth])
@@ -63,27 +64,39 @@ export function useTroops() {
     setToggleTarget(null)
   }
 
-  const handleConfirmDelete = () => {
-    if (!deleteTarget || !canManage) return
-    const deleted = deleteTarget
-    const orphanedMembers = scoutMembers.filter((m) => m.troopId === deleted.id)
-    if (orphanedMembers.some((m) => (m.payments?.length ?? 0) > 0)) {
-      toast.error(t('troops.toast.cannotDeleteHasPayments', { troopNumber: deleted.troopNumber }))
-      setDeleteTarget(null)
-      return
-    }
-    deleteTroop(deleted.id)
-    toast.success(t('troops.toast.deleted', { troopNumber: deleted.troopNumber }), {
+  function commitDeleteTroop(target: Troop, force: boolean) {
+    const orphanedMembers = scoutMembers.filter((m) => m.troopId === target.id)
+    deleteTroop(target.id, force)
+    toast.success(t('troops.toast.deleted', { troopNumber: target.troopNumber }), {
       duration: 6000,
       action: {
         label: t('common.undo'),
         onClick: () => {
-          addTroop(deleted)
+          addTroop(target)
           orphanedMembers.forEach(addScoutMember)
         }
       }
     })
+  }
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget || !canManage) return
+    const target = deleteTarget
     setDeleteTarget(null)
+    const orphanedMembers = scoutMembers.filter((m) => m.troopId === target.id)
+    if (orphanedMembers.some((m) => (m.payments?.length ?? 0) > 0)) {
+      // Payment history is on the line — a second, explicit confirmation instead of
+      // silently blocking, so a real cleanup need isn't a dead end.
+      setForceDeleteTarget(target)
+      return
+    }
+    commitDeleteTroop(target, false)
+  }
+
+  const handleConfirmForceDelete = () => {
+    if (!forceDeleteTarget || !canManage) return
+    commitDeleteTroop(forceDeleteTarget, true)
+    setForceDeleteTarget(null)
   }
 
   const filteredTroops = useMemo(() => {
@@ -115,6 +128,9 @@ export function useTroops() {
     handleConfirmToggleActive,
     deleteTarget,
     setDeleteTarget,
-    handleConfirmDelete
+    handleConfirmDelete,
+    forceDeleteTarget,
+    setForceDeleteTarget,
+    handleConfirmForceDelete
   }
 }

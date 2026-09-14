@@ -27,7 +27,8 @@ import {
   UserCog2,
   Settings as SettingsIcon,
   Usb,
-  Info
+  Info,
+  Landmark
 } from 'lucide-react'
 
 /**
@@ -65,8 +66,8 @@ export const manualSections: ManualSection[] = [
         key: 'dashboard',
         icon: <LayoutDashboard size={16} />,
         summary: {
-          en: 'A snapshot of the whole council: sales, collections, low-stock items, attendance, pending leave, and the latest announcements.',
-          tl: 'Buod ng buong konseho: benta, koleksyon, mababang stock, attendance, nakabinbing leave, at pinakabagong anunsyo.'
+          en: 'A snapshot of the whole council: sales, collections, low-stock items, attendance, pending leave, upcoming birthdays, and the latest announcements.',
+          tl: 'Buod ng buong konseho: benta, koleksyon, mababang stock, attendance, nakabinbing leave, paparating na kaarawan, at pinakabagong anunsyo.'
         },
         steps: {
           en: [
@@ -78,6 +79,14 @@ export const manualSections: ManualSection[] = [
             'Mag-sign in — dadalhin ka rito automatic maliban kung ibang home page ang role mo (Cashier → Point of Sale, HR → Employees).',
             'Tingnan ang mga summary card kung may kailangang aksyon, hal. mababang stock o nakabinbing leave request.',
             'Gamitin ang "View all" sa kahit anong card para diretso sa module na iyon.'
+          ]
+        },
+        tips: {
+          en: [
+            'Upcoming Birthdays pulls from every registry with a birthdate on file — Troop Members, Training Profiles, Employees, and User Accounts — showing anyone with a birthday today or within the next 30 days. It only appears once at least one is found.'
+          ],
+          tl: [
+            'Ang Upcoming Birthdays ay kinukuha mula sa bawat registry na may naitalang kaarawan — Troop Members, Training Profiles, Employees, at User Accounts — ipinapakita ang sinumang may kaarawan ngayon o sa susunod na 30 araw. Lalabas lang ito kapag may nakitang kahit isa.'
           ]
         }
       },
@@ -281,11 +290,13 @@ export const manualSections: ManualSection[] = [
         tips: {
           en: [
             'Sub-totals and group totals (e.g. Total Operating Income, Total Capital Expense) are bold both on screen and in every exported format.',
-            'A lightning-bolt icon next to a line item means the app already has a live figure for it (from POS sales, rental bookings, vouchers, payroll, or cash receipts) — open Edit to review and apply it; it never overwrites your entry on its own.'
+            'A lightning-bolt icon next to a line item means the app already has a live figure for it (from POS sales, rental bookings, vouchers, payroll, or cash receipts) — open Edit to review and apply it; it never overwrites your entry on its own.',
+            "Every export prints each line item's own Jul-Jun monthly breakdown, and closes Income and Expenses out with their own SUMMARY recap (Operations/Capital/Other, then a Grand Total) — matching the Council's own paper budget form."
           ],
           tl: [
             'Bold ang mga sub-total at group total (hal. Total Operating Income, Total Capital Expense) sa screen at sa lahat ng na-export na format.',
-            'Ang lightning-bolt icon sa tabi ng isang line item ay nangangahulugang may live figure na ang app para dito (mula sa POS sales, rental booking, voucher, payroll, o cash receipt) — buksan ang Edit para suriin at ilapat ito; hindi ito automatic na papalit sa iyong entry.'
+            'Ang lightning-bolt icon sa tabi ng isang line item ay nangangahulugang may live figure na ang app para dito (mula sa POS sales, rental booking, voucher, payroll, o cash receipt) — buksan ang Edit para suriin at ilapat ito; hindi ito automatic na papalit sa iyong entry.',
+            'Isinasama ng bawat export ang buwanang breakdown (Jul-Jun) ng bawat line item, at tinatapos ang Income at Expenses ng sarili nilang SUMMARY (Operations/Capital/Other, tapos Grand Total) — tulad ng orihinal na paper budget form ng Council.'
           ]
         }
       },
@@ -316,24 +327,28 @@ export const manualSections: ManualSection[] = [
         },
         steps: {
           en: [
-            "Create a Disbursement Voucher for each payment out: who it's paid to, the amount, and what it covers.",
-            'To record incoming cash instead — a grant, membership fee, or other receipt not already covered by Point of Sale, Invoices, or a Troop payment — create a Journal Voucher and set Entry Type to "Receipt (Credit)".',
+            "Create a Disbursement Voucher for each payment out: who it's paid to, the amount, and what it covers. Voucher No. is suggested automatically but editable, to match a pre-numbered paper voucher already written by hand.",
+            'To record incoming cash instead — a grant, membership fee, or other receipt not already covered by Point of Sale, Invoices, or a Troop payment — create a Journal Voucher and enter it under Account Titles (Credit) instead of (Debit). A Disbursement Voucher can itemize its credit side too (e.g. splitting between a bank account and a payable) instead of relying on the single Bank Account field.',
+            'Add an optional Description next to any account title — it prints on the export as "Account - Description" (e.g. "Salary - March 16-31, 2026").',
+            'Liquidating a cash advance? On a Journal Voucher, use the Cash Advance Liquidation section: pick the Disbursement Voucher that released the advance, then enter Total Amount Spent, Amount Refunded, and the refund O.R. number/date.',
             'Attach or reference supporting documents so the entry is audit-ready.'
           ],
           tl: [
-            'Gumawa ng Disbursement Voucher para sa bawat binayaran: kanino binayaran, magkano, at para saan.',
-            'Para magrekord ng papasok na pera — grant, membership fee, o ibang resibo na hindi pa saklaw ng Point of Sale, Invoices, o troop payment — gumawa ng Journal Voucher at itakda ang Entry Type sa "Receipt (Credit)".',
+            'Gumawa ng Disbursement Voucher para sa bawat binayaran: kanino binayaran, magkano, at para saan. Automatic na iminumungkahi ang Voucher No. pero pwedeng i-edit, para tumugma sa numero na nakasulat na sa pre-numbered na papel na voucher.',
+            'Para magrekord ng papasok na pera — grant, membership fee, o ibang resibo na hindi pa saklaw ng Point of Sale, Invoices, o troop payment — gumawa ng Journal Voucher at ilagay ito sa Account Titles (Credit) sa halip na (Debit). Pwede ring i-itemize ang credit side ng isang Disbursement Voucher (hal. hatiin sa bank account at payable) sa halip na umasa lang sa iisang Bank Account field.',
+            'Magdagdag ng opsyonal na Description sa tabi ng kahit anong account title — lalabas ito sa export bilang "Account - Description" (hal. "Salary - March 16-31, 2026").',
+            'Nag-liliquidate ng cash advance? Sa Journal Voucher, gamitin ang Cash Advance Liquidation section: piliin ang Disbursement Voucher na naglabas ng advance, pagkatapos ilagay ang Total Amount Spent, Amount Refunded, at ang O.R. number/date ng refund.',
             'Mag-attach o mag-refer ng supporting documents para audit-ready ang entry.'
           ]
         },
         tips: {
           en: [
             "Account Titles (Debit) on a Disbursement Voucher is a dropdown of the current fiscal year's budget expense lines, not free text — this keeps every voucher matched to a real budget category so it can post automatically to the Council Budget's actuals.",
-            'Only a Posted voucher counts — an Approved-but-not-yet-Posted one is not yet treated as money that actually moved, on either the disbursement or receipt side.'
+            'Only an Approved voucher counts — a Pending one is not yet treated as money that actually moved, on either the disbursement or receipt side.'
           ],
           tl: [
             'Ang Account Titles (Debit) sa Disbursement Voucher ay dropdown ng budget expense lines ng kasalukuyang fiscal year, hindi free text — para tama ang pagtugma ng bawat voucher sa tunay na budget category at automatic itong nakapag-post sa actuals ng Council Budget.',
-            'Posted na voucher lang ang binibilang — ang Approved pa lang pero hindi pa Posted ay hindi pa itinuturing na pera na aktwal na gumalaw, maging disbursement man o receipt.'
+            'Approved na voucher lang ang binibilang — ang Pending pa ay hindi pa itinuturing na pera na aktwal na gumalaw, maging disbursement man o receipt.'
           ]
         }
       },
@@ -366,11 +381,11 @@ export const manualSections: ManualSection[] = [
         },
         steps: {
           en: [
-            "Receipts and disbursements here aren't entered directly — they roll up automatically from Point of Sale, Invoices, Rentals, Troop payments, and posted Vouchers (see Vouchers for recording a receipt that isn't covered elsewhere).",
+            "Receipts and disbursements here aren't entered directly — they roll up automatically from Point of Sale, Invoices, Rentals, Troop payments, and approved Vouchers (see Vouchers for recording a receipt that isn't covered elsewhere).",
             "The account's current balance recalculates automatically — you never type that number in directly."
           ],
           tl: [
-            'Hindi dito direktang inilalagay ang mga receipt at disbursement — awtomatiko itong buhat sa Point of Sale, Invoices, Rentals, troop payments, at Posted na Vouchers (tingnan ang Vouchers para magrekord ng receipt na wala pang saklaw dito).',
+            'Hindi dito direktang inilalagay ang mga receipt at disbursement — awtomatiko itong buhat sa Point of Sale, Invoices, Rentals, troop payments, at Approved na Vouchers (tingnan ang Vouchers para magrekord ng receipt na wala pang saklaw dito).',
             'Automatic na nagre-recalculate ang current balance ng account — hindi mo ito direktang tina-type.'
           ]
         }
@@ -384,15 +399,15 @@ export const manualSections: ManualSection[] = [
         },
         steps: {
           en: [
-            'Click "New Application" and fill in the purpose/event and its date, then list Projected Sources (other funding already lined up) and Projected Expenses — Amount Requested is the gap between the two, computed automatically.',
+            'Click "New Application" and fill in the purpose/event and its date, then list Projected Sources (other funding already lined up) and Projected Expenses — Amount Requested is the gap between the two, computed automatically. Regional Executive Director is optional here if you already know who currently holds the post.',
             "Save as Draft to keep working on it later, or Submit once it's ready to send to the Region.",
-            'Once the Region mails back its decision, open "Record Decision" on a Submitted application to mark it Approved (with the approved amount and any remarks) or Disapproved.',
+            'Once the Region mails back its decision, open "Record Decision" on a Submitted application to mark it Approved (with the approved amount and any remarks) or Disapproved — this is also where you can set or correct the Regional Executive Director\'s name if it wasn\'t entered earlier.',
             'Use the export icon on any application to View, or download it as Excel, PDF, or Word.'
           ],
           tl: [
-            'I-click ang "New Application" at punan ang purpose/event at petsa nito, pagkatapos ilista ang Projected Sources (ibang pondo na nakahanda) at Projected Expenses — automatic na kinakalkula ang Amount Requested bilang agwat sa dalawa.',
+            'I-click ang "New Application" at punan ang purpose/event at petsa nito, pagkatapos ilista ang Projected Sources (ibang pondo na nakahanda) at Projected Expenses — automatic na kinakalkula ang Amount Requested bilang agwat sa dalawa. Opsyonal ang Regional Executive Director dito kung alam mo na kung sino ang kasalukuyang nanunungkulan.',
             'I-save bilang Draft kung ituloy pa mamaya, o I-submit kapag handa na ipadala sa Region.',
-            'Kapag dumating na ang desisyon ng Region, buksan ang "Record Decision" sa isang Submitted application para markahan itong Approved (kasama ang approved amount at remarks) o Disapproved.',
+            'Kapag dumating na ang desisyon ng Region, buksan ang "Record Decision" sa isang Submitted application para markahan itong Approved (kasama ang approved amount at remarks) o Disapproved — dito mo rin pwedeng itakda o iwasto ang pangalan ng Regional Executive Director kung hindi pa nailagay dati.',
             'Gamitin ang export icon sa kahit anong application para View, o i-download bilang Excel, PDF, o Word.'
           ]
         },
@@ -404,6 +419,38 @@ export const manualSections: ManualSection[] = [
           tl: [
             'Hiwalay ito sa Council Budget — hindi kailanman nakikita ang PTDG amounts dito, dahil pera ito ng Region, hindi ng konseho.',
             'Accountant lang ang makakagawa, mag-edit, magtanggal, o magrekord ng desisyon; ang Manager ay makakatingin lang.'
+          ]
+        }
+      },
+      {
+        key: 'councilDeposits',
+        icon: <Landmark size={16} />,
+        summary: {
+          en: "PTDG, MMAF & Josefa Llanes Escoda Memento Fund balances retained at the Regional Office — a manually re-entered snapshot of RHQ's own periodic statement, not a live ledger.",
+          tl: 'Balanse ng PTDG, MMAF, at Josefa Llanes Escoda Memento Fund na hawak ng Regional Office — snapshot na manually inilagay mula sa panaka-nakang statement ng RHQ, hindi live na ledger.'
+        },
+        steps: {
+          en: [
+            'Each RHQ statement becomes its own dated snapshot — click "New Snapshot" whenever one arrives, rather than overwriting the last one.',
+            'Use the As of Date dropdown to switch between every snapshot on file; the table and every export always reflect whichever one is selected.',
+            "Add, edit, or remove fund lines freely inside a snapshot — the four standard funds (PTDG - Girl, PTDG - Adult, MMAF, Escoda Memento Fund) are pre-filled as a starting point, but the list isn't fixed.",
+            'Mark a fund line "By Event Type" if RHQ broke it down by National/Regional/Council/International event, or "Lump Sum" if it reported a single figure with no breakdown.'
+          ],
+          tl: [
+            'Ang bawat RHQ statement ay nagiging sarili nitong dated snapshot — i-click ang "New Snapshot" tuwing may dumarating, sa halip na patungan ang huling isa.',
+            'Gamitin ang As of Date dropdown para lumipat sa bawat naitalang snapshot; palaging susundin ng table at ng export ang napiling snapshot.',
+            'Magdagdag, mag-edit, o magtanggal ng fund line nang malaya sa loob ng isang snapshot — paunang naka-fill na ang apat na standard na pondo (PTDG - Girl, PTDG - Adult, MMAF, Escoda Memento Fund) bilang panimula, pero hindi ito fixed na listahan.',
+            'Markahan ang isang fund line na "By Event Type" kung hinati ito ng RHQ ayon sa National/Regional/Council/International event, o "Lump Sum" kung iisang figure lang ang inireport nang walang breakdown.'
+          ]
+        },
+        tips: {
+          en: [
+            'Figures show as ₱0.00 until an accountant encodes the first snapshot — this is expected, not an error.',
+            "Only Accountants (plus Admin/Super Admin) can view or manage this module by default — unlike PTDG, Managers don't get view access here."
+          ],
+          tl: [
+            "Lalabas na ₱0.00 ang mga figure hangga't hindi pa na-encode ng accountant ang unang snapshot — inaasahan ito, hindi error.",
+            'Accountant lang (kasama ang Admin/Super Admin) ang may access sa module na ito by default — hindi tulad ng PTDG, walang view access dito ang Manager.'
           ]
         }
       }
@@ -513,11 +560,13 @@ export const manualSections: ManualSection[] = [
         steps: {
           en: [
             "Open an employee's profile to view or update their employment details and documents.",
-            "This is separate from their login account under Users — changing role/login here doesn't apply; that's handled in Users."
+            "This is separate from their login account under Users — changing role/login here doesn't apply; that's handled in Users.",
+            "Set a Birth Date if you have it — it's optional, but feeds the Dashboard's Upcoming Birthdays widget."
           ],
           tl: [
             'Buksan ang profile ng empleyado para tingnan o i-update ang detalye ng trabaho at dokumento.',
-            'Iba ito sa kanilang login account sa Users — ang pagbabago ng role/login ay hindi dito ginagawa; sa Users iyon.'
+            'Iba ito sa kanilang login account sa Users — ang pagbabago ng role/login ay hindi dito ginagawa; sa Users iyon.',
+            'Ilagay ang Birth Date kung meron — opsyonal ito, pero ginagamit sa Upcoming Birthdays widget ng Dashboard.'
           ]
         }
       },
@@ -544,10 +593,12 @@ export const manualSections: ManualSection[] = [
         },
         tips: {
           en: [
-            "The Status field in Add/Edit Attendance is only used as typed for Absent or Leave — for any other status, the app recalculates it automatically from the clock-in/out times you enter, so it can't drift from what actually happened."
+            "The Status field in Add/Edit Attendance is only used as typed for Absent or Leave — for any other status, the app recalculates it automatically from the clock-in/out times you enter, so it can't drift from what actually happened.",
+            'The Overtime status only shows once someone works 4+ hours past 5:00 PM in one day — the same bar that has to be cleared to earn any Compensatory Time Off. A clock-out a few minutes late (e.g. walking to the biometric scanner) just reads Present, not Overtime.'
           ],
           tl: [
-            'Ang Status field sa Add/Edit Attendance ay ginagamit lang nang direkta kapag Absent o Leave — sa ibang status, awtomatiko itong kino-compute ng app mula sa time in/out na inilagay mo, kaya hindi ito lalayo sa totoong nangyari.'
+            'Ang Status field sa Add/Edit Attendance ay ginagamit lang nang direkta kapag Absent o Leave — sa ibang status, awtomatiko itong kino-compute ng app mula sa time in/out na inilagay mo, kaya hindi ito lalayo sa totoong nangyari.',
+            'Lalabas lang ang Overtime status kapag 4+ oras na ang lampas sa 5:00 PM sa isang araw — ang parehong minimum bago makakuha ng Compensatory Time Off. Kung ilang minuto lang ang huli sa clock-out (hal. naglalakad papunta sa biometric scanner), Present lang ang lalabas, hindi Overtime.'
           ]
         }
       },
@@ -706,13 +757,13 @@ export const manualSections: ManualSection[] = [
           en: [
             'Add a new staff account with their email, full name, and role.',
             "Use Enable/Disable to suspend a departed or temporarily inactive staff member's access without deleting their history.",
-            'Rename a user or update their status directly; a role change goes through the Edit User dialog.',
+            "Rename a user, set their birth date (feeds the Dashboard's Upcoming Birthdays), or update their status directly; a role change goes through the Edit User dialog.",
             'Scroll down to Role Permissions to view or fine-tune exactly which modules each role (built-in or custom) can view/manage, or to create a custom role with its own label.'
           ],
           tl: [
             'Magdagdag ng bagong staff account kasama ang email, buong pangalan, at role.',
             'Gamitin ang Enable/Disable para suspindihin ang access ng nag-resign o pansamantalang hindi aktibong staff nang hindi tinatanggal ang history nila.',
-            'Palitan ang pangalan o i-update ang status nang diretso; ang pagbabago ng role ay sa Edit User dialog dinadaan.',
+            'Palitan ang pangalan, itakda ang kaarawan (ginagamit sa Upcoming Birthdays ng Dashboard), o i-update ang status nang diretso; ang pagbabago ng role ay sa Edit User dialog dinadaan.',
             'I-scroll pababa sa Role Permissions para tingnan o i-fine-tune kung anong module ang makikita/magagawa ng bawat role (built-in man o custom), o gumawa ng custom role na may sariling label.'
           ]
         },
@@ -791,8 +842,14 @@ export const manualSections: ManualSection[] = [
           ]
         },
         tips: {
-          en: ['Only Super Admin and Admin can open this page by default.'],
-          tl: ['Super Admin at Admin lang ang may access dito by default.']
+          en: [
+            'Only Super Admin and Admin can open this page by default.',
+            'The terminal itself keeps recognizing faces and logging scans even while the app is closed. Reopening the app (or reconnecting here) automatically catches up on anything missed — up to the last 7 days — so a scan from while you were closed still gets its correct clock-in/out date.'
+          ],
+          tl: [
+            'Super Admin at Admin lang ang may access dito by default.',
+            'Patuloy pa ring kikilalanin ng terminal ang mga mukha at ilo-log ang mga scan kahit sarado ang app. Ang muling pagbukas ng app (o pag-reconnect dito) ay awtomatikong nagcacatch-up sa anumang na-miss — hanggang 7 araw pababa — kaya tama pa rin ang petsa ng time in/out kahit sarado ang app noong nag-scan.'
+          ]
         }
       },
       {

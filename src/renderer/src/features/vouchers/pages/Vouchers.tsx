@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Check, Pencil, Plus, Send, Ticket, Trash2 } from 'lucide-react'
+import { Check, Pencil, Plus, Receipt, Ticket, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
@@ -17,6 +17,8 @@ import { ExportMenu } from '@/shared/components/ui/ExportMenu'
 import { DocumentPreviewModal } from '@/shared/components/ui/DocumentPreviewModal'
 import { RefreshButton } from '@/shared/components/ui/RefreshButton'
 import { formatCurrency, formatDate } from '@/shared/lib/utils'
+import { ExpenseSummaryModal } from '@/features/expenseSummary/components/ExpenseSummaryModal'
+import { useExpenseSummaryModal } from '@/features/expenseSummary/hooks/useExpenseSummaryModal'
 import type { Voucher, VoucherStatus, VoucherType } from '../types/vouchers.types'
 import { NewVoucherModal } from '../components/NewVoucherModal'
 import { useVouchers } from '../hooks/useVouchers'
@@ -32,10 +34,9 @@ const pageVariants = {
   exit: { opacity: 0, y: -10, transition: { duration: 0.2 } }
 }
 
-const STATUS_VARIANT: Record<VoucherStatus, 'warning' | 'primary' | 'success' | 'outline'> = {
+const STATUS_VARIANT: Record<VoucherStatus, 'warning' | 'success' | 'outline'> = {
   pending: 'warning',
-  approved: 'primary',
-  posted: 'success',
+  approved: 'success',
   cancelled: 'outline'
 }
 
@@ -72,6 +73,7 @@ export function Vouchers() {
     previewVoucher
   } = useVouchers()
   const hydrate = useVouchersStore((s) => s.hydrate)
+  const expenseSummary = useExpenseSummaryModal()
 
   const columns: Column<Voucher>[] = [
     { key: 'voucherNumber', header: t('vouchers.table.number') },
@@ -109,14 +111,24 @@ export function Vouchers() {
             onExportPdf={() => handleExportPdf(r)}
             onExportWord={() => handleExportWord(r)}
           />
-          {canManage && (r.status === 'pending' || r.status === 'approved') && (
+          {(r.voucherType === 'check_voucher' || r.cashAdvanceAmount !== undefined) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => expenseSummary.open(r)}
+              title={t('vouchers.table.expenseSummaryTooltip')}
+            >
+              <Receipt size={13} />
+            </Button>
+          )}
+          {canManage && r.status === 'pending' && (
             <Button
               size="sm"
               variant="secondary"
-              leftIcon={r.status === 'pending' ? <Check size={12} /> : <Send size={12} />}
+              leftIcon={<Check size={12} />}
               onClick={() => setAdvanceTarget(r)}
             >
-              {r.status === 'pending' ? t('vouchers.actions.approve') : t('vouchers.actions.post')}
+              {t('vouchers.actions.approve')}
             </Button>
           )}
           {canManage && (
@@ -190,21 +202,11 @@ export function Vouchers() {
 
       <ConfirmDialog
         open={!!advanceTarget}
-        title={
-          advanceTarget?.status === 'pending'
-            ? t('vouchers.confirmApprove.title')
-            : t('vouchers.confirmPost.title')
-        }
-        message={
-          advanceTarget?.status === 'pending'
-            ? t('vouchers.confirmApprove.message', { number: advanceTarget?.voucherNumber ?? '' })
-            : t('vouchers.confirmPost.message', { number: advanceTarget?.voucherNumber ?? '' })
-        }
-        confirmLabel={
-          advanceTarget?.status === 'pending'
-            ? t('vouchers.actions.approve')
-            : t('vouchers.actions.post')
-        }
+        title={t('vouchers.confirmApprove.title')}
+        message={t('vouchers.confirmApprove.message', {
+          number: advanceTarget?.voucherNumber ?? ''
+        })}
+        confirmLabel={t('vouchers.actions.approve')}
         onConfirm={handleConfirmAdvance}
         onCancel={() => setAdvanceTarget(null)}
       />
@@ -227,6 +229,31 @@ export function Vouchers() {
         onDownloadExcel={() => previewVoucher && handleExportExcel(previewVoucher)}
         onDownloadPdf={() => previewVoucher && handleExportPdf(previewVoucher)}
         onDownloadWord={() => previewVoucher && handleExportWord(previewVoucher)}
+      />
+
+      <ExpenseSummaryModal
+        voucher={expenseSummary.target}
+        items={expenseSummary.items}
+        canManage={expenseSummary.canManage}
+        onClose={expenseSummary.close}
+        onAdd={expenseSummary.addItem}
+        onRemove={expenseSummary.removeItem}
+        onUpdate={expenseSummary.updateItem}
+        onSave={expenseSummary.handleSave}
+        onView={expenseSummary.handleView}
+        onExportExcel={expenseSummary.handleExportExcel}
+        onExportPdf={expenseSummary.handleExportPdf}
+        onExportWord={expenseSummary.handleExportWord}
+      />
+
+      <DocumentPreviewModal
+        open={expenseSummary.preview.open}
+        onClose={expenseSummary.preview.closePreview}
+        url={expenseSummary.preview.url}
+        title={expenseSummary.target?.voucherNumber}
+        onDownloadExcel={expenseSummary.handleExportExcel}
+        onDownloadPdf={expenseSummary.handleExportPdf}
+        onDownloadWord={expenseSummary.handleExportWord}
       />
     </motion.div>
   )

@@ -130,6 +130,10 @@ export function ColumnsButton<T>({
               top: menuPos.top,
               right: menuPos.right,
               zIndex: 9999,
+              // See ExportMenu.tsx — Radix Dialog disables body pointer-events while a
+              // modal is open, and this dropdown is portaled outside the dialog's own
+              // content node, so it needs its own override to stay clickable there.
+              pointerEvents: 'auto',
               background: 'var(--popover-bg)',
               border: '1px solid var(--popover-border)',
               borderRadius: 10,

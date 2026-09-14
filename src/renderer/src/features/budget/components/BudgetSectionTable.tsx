@@ -3,7 +3,7 @@ import { Pencil, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Tooltip } from '@/shared/components/ui/Tooltip'
 import { formatCurrency } from '@/shared/lib/utils'
-import { actualToDate, type BudgetGroupSummary } from '../lib/budgetCalculations'
+import { actualToDate, groupTotalLabel, type BudgetGroupSummary } from '../lib/budgetCalculations'
 import type { AutoActualSourceKey } from '../lib/budgetAutoActuals'
 import type { BudgetCategory, BudgetSection } from '../types/budget.types'
 
@@ -54,6 +54,8 @@ interface BudgetSectionTableProps {
   groups: BudgetGroupSummary[]
   canManage: boolean
   onEdit: (category: BudgetCategory) => void
+  /** Opens the Add Line modal locked to this exact group/subGroup bucket. */
+  onAddLine: (group: string, subGroup: string) => void
   /** Category ids with a live figure computed from real POS/Rentals/Vouchers/Payroll
    *  data, mapped to which specific source rule matched — shown as a small indicator
    *  (with a tooltip naming the source) so it's clear which lines are wired up and
@@ -66,6 +68,7 @@ export function BudgetSectionTable({
   groups,
   canManage,
   onEdit,
+  onAddLine,
   autoActualSourceByCategory
 }: BudgetSectionTableProps) {
   const { t } = useTranslation()
@@ -156,6 +159,23 @@ export function BudgetSectionTable({
                   </div>
                 )
               })}
+              {canManage && (
+                <button
+                  onClick={() => onAddLine(group.group, sg.subGroup)}
+                  style={{
+                    display: 'block',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--accent-primary)',
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    padding: '4px 0 4px 8px'
+                  }}
+                >
+                  + {t('budget.table.addLine')}
+                </button>
+              )}
               <div
                 style={{
                   display: 'grid',
@@ -199,7 +219,8 @@ export function BudgetSectionTable({
             }}
           >
             <span style={groupTotalStyle}>
-              {t('budget.table.groupTotal', { group: group.group })}
+              {groupTotalLabel(section, group.group) ??
+                t('budget.table.groupTotal', { group: group.group })}
             </span>
             <span style={{ ...amountStyle, fontWeight: 700 }}>
               {formatCurrency(group.totalBudgeted)}

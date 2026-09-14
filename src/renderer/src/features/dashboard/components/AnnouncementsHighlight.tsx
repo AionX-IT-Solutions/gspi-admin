@@ -25,10 +25,14 @@ export function AnnouncementsHighlight() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: 0.05 }}
-      style={{ marginBottom: 20 }}
+      transition={{ duration: 0.35, delay: 0.1 }}
+      style={{ minWidth: 0, height: '100%' }}
     >
-      <Card glow={top.priority === 'urgent' ? 'rose' : 'amber'} padding="0px">
+      <Card
+        glow={top.priority === 'urgent' ? 'rose' : 'amber'}
+        padding="0px"
+        style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+      >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '18px 20px' }}>
           <div
             style={{

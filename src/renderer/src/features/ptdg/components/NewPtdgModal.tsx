@@ -69,6 +69,13 @@ export function NewPtdgModal({ open, onOpenChange, editTarget }: NewPtdgModalPro
             placeholder={t('ptdg.form.eventDatePlaceholder')}
           />
         </FormField>
+        <FormField label={t('ptdg.form.executiveDirector')}>
+          <FieldInput
+            value={form.regionalExecutiveDirector}
+            onChange={(e) => setForm((f) => ({ ...f, regionalExecutiveDirector: e.target.value }))}
+            placeholder={t('ptdg.form.executiveDirectorPlaceholder')}
+          />
+        </FormField>
 
         <FormField label={t('ptdg.form.projectedSources')}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

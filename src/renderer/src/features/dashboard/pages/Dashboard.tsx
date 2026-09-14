@@ -5,6 +5,7 @@ import { Card } from '@/shared/components/ui/Card'
 import { Button } from '@/shared/components/ui/Button'
 import { formatCurrency } from '@/shared/lib/utils'
 import { AnnouncementsHighlight } from '../components/AnnouncementsHighlight'
+import { BirthdaysHighlight } from '../components/BirthdaysHighlight'
 import { BudgetHighlight } from '../components/BudgetHighlight'
 import { StatCard, type StatCardProps } from '../components/StatCard'
 import { CashFlowChart } from '../components/CashFlowChart'
@@ -119,8 +120,21 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Announcements — pinned/latest, kept prominent right under the header */}
-      <AnnouncementsHighlight />
+      {/* Birthdays + Announcements — both kept prominent right under the header, side by
+          side on wide windows and stacked (birthdays first) once the window narrows past
+          fitting both at a readable width. auto-fit collapses to one column cleanly when
+          either highlight has nothing to show (each renders null when empty). */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+          gap: '20px',
+          marginBottom: '20px'
+        }}
+      >
+        <BirthdaysHighlight />
+        <AnnouncementsHighlight />
+      </div>
 
       {/* Stats Grid */}
       <div

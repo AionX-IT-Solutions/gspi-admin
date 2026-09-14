@@ -37,12 +37,13 @@ service cloud.firestore {
 
     // Staff directory — profile documents mirroring Firebase Auth users, created/edited
     // only by the Admin SDK CLI scripts. The client-writable exceptions are toggling
-    // `isActive` (Enable/Disable) and `fullName` (rename), scoped so no other field —
-    // especially `role` — can be smuggled into the same write.
+    // `isActive` (Enable/Disable), `fullName` (rename), and `birthDate` (Dashboard's
+    // Upcoming Birthdays widget) — scoped so no other field, especially `role`, can be
+    // smuggled into the same write.
     match /users/{uid} {
       allow read: if isOwner(uid) || hasAnyRole(['super_admin', 'admin']);
       allow update: if (hasAnyRole(['super_admin', 'admin'])
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isActive', 'fullName', 'updatedAt']))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isActive', 'fullName', 'birthDate', 'updatedAt']))
         || (isOwner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photoUrl', 'updatedAt']));
       allow create, delete: if false;
     }
@@ -114,6 +115,11 @@ service cloud.firestore {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
     }
     match /trainingReports/{id} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
+    }
+    // Per-person credential registry (Troop Leaders, Field Advisers, Trainers) — same
+    // role gate as trainingReports since it's edited by the same HR/program staff.
+    match /trainingProfiles/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr', 'manager']);
     }
 
@@ -240,6 +246,20 @@ service cloud.firestore {
     match /ptdgApplications/{id} {
       allow read: if isSignedIn();
       allow write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
+    }
+
+    // Council Deposits (RHQ) — PTDG/MMAF/Escoda Memento Fund balances retained at the
+    // Regional Office, manually re-entered from RHQ's own periodic statement. Single
+    // doc ("current"), same role gate as the rest of the Accounting module.
+    match /councilDeposits/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasAnyRole(['super_admin', 'admin', 'accountant']);
+    }
+
+    // Expense Summary — itemized receipt-level backup for a Journal Voucher's cash-advance
+    // liquidation (one doc per voucher, id === voucherId). Same role gate as vouchers itself.
+    match /expenseSummaries/{id} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'accountant', 'manager']);
     }
 
     // Audit Log — append-only from any signed-in user (every module writes to it), but

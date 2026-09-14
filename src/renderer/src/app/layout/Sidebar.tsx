@@ -35,7 +35,9 @@ import {
   Megaphone,
   Wallet2,
   CalendarRange,
-  Award
+  Award,
+  Landmark,
+  IdCard
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -163,6 +165,12 @@ const navGroups: NavGroup[] = [
         labelKey: 'sidebar.nav.ptdg',
         icon: <Award size={16} />,
         permission: MODULE_PERMISSIONS.ptdg
+      },
+      {
+        path: '/council-deposits',
+        labelKey: 'sidebar.nav.councilDeposits',
+        icon: <Landmark size={16} />,
+        permission: MODULE_PERMISSIONS.councilDeposits
       }
     ]
   },
@@ -170,6 +178,12 @@ const navGroups: NavGroup[] = [
     titleKey: 'sidebar.groups.councilPrograms',
     icon: <Tent size={16} />,
     items: [
+      {
+        path: '/training-profiles',
+        labelKey: 'sidebar.nav.trainingProfiles',
+        icon: <IdCard size={16} />,
+        permission: MODULE_PERMISSIONS.trainingProfiles
+      },
       {
         path: '/troops',
         labelKey: 'sidebar.nav.troops',

@@ -128,7 +128,7 @@ export function ActivityCalendarView() {
                   onClick={() => selectDay(day.dateKey)}
                   style={{
                     width: '100%',
-                    minHeight: 96,
+                    minHeight: 104,
                     padding: 6,
                     textAlign: 'left',
                     display: 'flex',
@@ -155,8 +155,9 @@ export function ActivityCalendarView() {
                     <span
                       key={a.id}
                       style={{
-                        fontSize: 10,
-                        padding: '2px 6px',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: '3px 7px',
                         borderRadius: 6,
                         background: ACTIVITY_CATEGORY_COLOR[a.category].bg,
                         color: ACTIVITY_CATEGORY_COLOR[a.category].text,
@@ -169,7 +170,7 @@ export function ActivityCalendarView() {
                     </span>
                   ))}
                   {extraCount > 0 && (
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                       {t('activities.calendar.moreCount', { count: extraCount })}
                     </span>
                   )}

@@ -13,6 +13,7 @@ import { DocumentPreviewModal } from '@/shared/components/ui/DocumentPreviewModa
 import { formatCurrency } from '@/shared/lib/utils'
 import { BudgetSectionTable } from '../components/BudgetSectionTable'
 import { EditBudgetCategoryModal } from '../components/EditBudgetCategoryModal'
+import { AddBudgetCategoryModal } from '../components/AddBudgetCategoryModal'
 import { useBudget } from '../hooks/useBudget'
 import { useBudgetStore } from '../store/budget.store'
 
@@ -46,6 +47,13 @@ export function Budget() {
     editingCategory,
     setEditingCategory,
     handleSaveCategory,
+    showAddLine,
+    setShowAddLine,
+    addLineContext,
+    openAddLine,
+    handleAddLine,
+    groupsBySection,
+    subGroupsByGroup,
     preview,
     handleView,
     handleExportExcel,
@@ -81,6 +89,16 @@ export function Budget() {
                 options={availableFiscalYears.map((y) => ({ value: y, label: y }))}
                 style={{ width: 140 }}
               />
+            )}
+            {canManage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Plus size={13} />}
+                onClick={() => openAddLine(null)}
+              >
+                {t('budget.addLineButton')}
+              </Button>
             )}
             {canManage && (
               <Button
@@ -182,6 +200,7 @@ export function Budget() {
                 groups={incomeGroups}
                 canManage={canManage}
                 onEdit={setEditingCategory}
+                onAddLine={(group, subGroup) => openAddLine({ section: 'income', group, subGroup })}
                 autoActualSourceByCategory={autoActualSourceByCategory}
               />
             </Card>
@@ -199,6 +218,7 @@ export function Budget() {
               groups={expenseGroups}
               canManage={canManage}
               onEdit={setEditingCategory}
+              onAddLine={(group, subGroup) => openAddLine({ section: 'expense', group, subGroup })}
               autoActualSourceByCategory={autoActualSourceByCategory}
             />
           </Card>
@@ -212,6 +232,15 @@ export function Budget() {
         }
         onClose={() => setEditingCategory(null)}
         onSave={handleSaveCategory}
+      />
+
+      <AddBudgetCategoryModal
+        open={showAddLine}
+        context={addLineContext}
+        groupsBySection={groupsBySection}
+        subGroupsByGroup={subGroupsByGroup}
+        onClose={() => setShowAddLine(false)}
+        onSave={handleAddLine}
       />
 
       <DocumentPreviewModal

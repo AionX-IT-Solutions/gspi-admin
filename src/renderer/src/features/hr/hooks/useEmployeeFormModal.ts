@@ -27,6 +27,7 @@ function emptyForm() {
     email: '',
     phone: '',
     hireDate: todayLocalIso(),
+    birthDate: '',
     salary: 0,
     managerId: '',
     userId: '',
@@ -49,6 +50,7 @@ function formFromEmployee(emp: Employee) {
     email: emp.email,
     phone: emp.phone,
     hireDate: emp.hireDate,
+    birthDate: emp.birthDate ?? '',
     salary: emp.salary,
     managerId: emp.managerId ?? '',
     userId: emp.userId ?? '',
@@ -84,8 +86,13 @@ export function useEmployeeFormModal(
       toast.error(t('employees.toast.validationRequired'))
       return
     }
-    const { managerId, userId, ...rest } = form
-    const payload = { ...rest, managerId: managerId || undefined, userId: userId || undefined }
+    const { managerId, userId, birthDate, ...rest } = form
+    const payload = {
+      ...rest,
+      managerId: managerId || undefined,
+      userId: userId || undefined,
+      birthDate: birthDate || undefined
+    }
     if (editTarget) {
       updateEmployee(editTarget.id, payload)
       toast.success(t('employees.toast.updated'))

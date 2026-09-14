@@ -16,6 +16,9 @@ interface StoredConfig {
   passwordEncryptedBase64?: string
   /** Fallback only, for the rare case safeStorage is unavailable on this machine. */
   passwordPlain?: string
+  /** ISO timestamp through which attendance events have been captured (live or backfilled) —
+   *  lets a fresh connection know exactly how far back it needs to catch up. */
+  lastEventSyncTime?: string
 }
 
 function configPath(): string {
@@ -73,6 +76,18 @@ export function getConfigSummary(): HikvisionDeviceConfigSummary | null {
   }
 }
 
+/** How far back a fresh connection should catch up on — `null` if never connected before. */
+export function getLastEventSyncTime(): string | null {
+  return loadStored()?.lastEventSyncTime ?? null
+}
+
+/** No-ops if no device is configured yet — there's nothing to stamp a sync checkpoint onto. */
+export function setLastEventSyncTime(iso: string): void {
+  const existing = loadStored()
+  if (!existing) return
+  saveStored({ ...existing, lastEventSyncTime: iso })
+}
+
 /** Saves host/port/username always; only touches the stored password when a new one is provided. */
 export function saveConfig(input: HikvisionDeviceConfigInput): void {
   const existing = loadStored()
@@ -82,7 +97,8 @@ export function saveConfig(input: HikvisionDeviceConfigInput): void {
     useHttps: input.useHttps,
     username: input.username,
     passwordEncryptedBase64: existing?.passwordEncryptedBase64,
-    passwordPlain: existing?.passwordPlain
+    passwordPlain: existing?.passwordPlain,
+    lastEventSyncTime: existing?.lastEventSyncTime
   }
 
   if (input.password) {

@@ -111,6 +111,12 @@ export function ExportMenu({
               top: menuPos.top,
               right: menuPos.right,
               zIndex: 9999,
+              // Radix Dialog sets `document.body { pointer-events: none }` while a modal
+              // is open, re-enabling it only on the dialog's own content node — this
+              // dropdown is portaled straight to <body> as a sibling, not a descendant of
+              // that node, so without this override it renders but is entirely inert when
+              // opened from inside a Modal.
+              pointerEvents: 'auto',
               background: 'var(--popover-bg)',
               border: '1px solid var(--popover-border)',
               borderRadius: 10,
