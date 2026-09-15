@@ -49,6 +49,15 @@ export function Users() {
   } = useUsers()
   const refetch = useUsersStore((s) => s.refetch)
   const customRoles = usePermissionsStore((s) => s.customRoles)
+  const hydratePermissions = usePermissionsStore((s) => s.hydrate)
+
+  // Also re-pulls Role Permissions/custom roles, not just the users list — a custom role
+  // added on another device/session otherwise stays invisible here (in both the Role
+  // Permissions list below and the Add/Edit User role dropdowns) until hydratePermissions
+  // runs again, which otherwise only happens once per app launch.
+  async function handleRefresh() {
+    await Promise.all([refetch(), hydratePermissions(true)])
+  }
 
   const columns: Column<UserRow>[] = [
     { key: 'fullName', header: t('users.table.fullName') },
@@ -117,7 +126,7 @@ export function Users() {
         icon={<UserCog2 size={18} />}
         actions={
           <>
-            <RefreshButton onRefresh={refetch} />
+            <RefreshButton onRefresh={handleRefresh} />
             <Button
               variant="primary"
               size="sm"
