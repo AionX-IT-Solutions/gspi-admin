@@ -17,7 +17,7 @@ interface ExpenseSummaryState {
   summaries: ExpenseSummary[]
   hydrated: boolean
   hydrate: (force?: boolean) => Promise<void>
-  saveSummary: (voucherId: string, items: ExpenseSummaryItem[]) => void
+  saveSummary: (voucherId: string, items: ExpenseSummaryItem[], budgetCategory: string) => void
   deleteSummary: (voucherId: string) => void
 }
 
@@ -38,10 +38,11 @@ export const useExpenseSummaryStore = create<ExpenseSummaryState>((set, get) => 
 
   // One summary per voucher — `id` is the voucher's own id, so saving always overwrites
   // that voucher's single record instead of accumulating duplicates.
-  saveSummary: (voucherId, items) => {
+  saveSummary: (voucherId, items, budgetCategory) => {
     const record: ExpenseSummary = {
       id: voucherId,
       voucherId,
+      budgetCategory,
       items,
       updatedAt: new Date().toISOString()
     }

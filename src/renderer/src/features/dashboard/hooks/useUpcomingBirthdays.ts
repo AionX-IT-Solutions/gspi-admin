@@ -3,8 +3,14 @@ import { useTroopsStore } from '@/features/troops/store/troops.store'
 import { useTrainingProfilesStore } from '@/features/trainingProfiles/store/trainingProfiles.store'
 import { useHRStore } from '@/features/hr/store/hr.store'
 import { useUsersStore } from '@/features/users/store/users.store'
+import { useCouncilBoardStore } from '@/features/councilBoard/store/councilBoard.store'
 
-export type BirthdayCategory = 'troopMember' | 'trainingProfile' | 'userAccount' | 'employee'
+export type BirthdayCategory =
+  | 'troopMember'
+  | 'trainingProfile'
+  | 'userAccount'
+  | 'employee'
+  | 'councilBoard'
 
 export interface UpcomingBirthday {
   id: string
@@ -16,8 +22,9 @@ export interface UpcomingBirthday {
   turningAge: number | null
 }
 
-// Wide enough to give real advance notice without turning into a long, low-signal list.
-const WINDOW_DAYS = 30
+// Short lead time by design — the widget is a reminder to prep for a birthday this week,
+// not a long-range calendar.
+const WINDOW_DAYS = 3
 
 /** Days from `today` (inclusive, so a birthday today is 0) to this year's or next year's
  *  occurrence of `birthDate`'s month/day, whichever hasn't passed yet. */
@@ -52,14 +59,16 @@ function turningAge(birthDate: string, daysUntil: number, today: Date): number |
 }
 
 /**
- * Pulls upcoming birthdays (today through the next 30 days) from every person-registry this
- * app tracks a birthdate for — Troop Members, Training Profiles, Employees, and User Accounts
- * — for the Dashboard's Upcoming Birthdays widget. Sorted soonest first.
+ * Pulls upcoming birthdays (today through the next 3 days) from every person-registry this
+ * app tracks a birthdate for — Troop Members, Training Profiles, Employees, Council Board
+ * members, and User Accounts — for the Dashboard's Upcoming Birthdays widget. Sorted soonest
+ * first.
  */
 export function useUpcomingBirthdays(): UpcomingBirthday[] {
   const scoutMembers = useTroopsStore((s) => s.scoutMembers)
   const trainingProfiles = useTrainingProfilesStore((s) => s.profiles)
   const employees = useHRStore((s) => s.employees)
+  const boardMembers = useCouncilBoardStore((s) => s.members)
   const users = useUsersStore((s) => s.users)
   const subscribeUsers = useUsersStore((s) => s.subscribe)
 
@@ -103,8 +112,9 @@ export function useUpcomingBirthdays(): UpcomingBirthday[] {
     employees
       .filter((e) => e.isActive)
       .forEach((e) => addEntry(e.id, e.fullName, 'employee', e.birthDate))
+    boardMembers.forEach((m) => addEntry(m.id, m.fullName, 'councilBoard', m.birthDate))
     users.forEach((u) => addEntry(u.id, u.fullName, 'userAccount', u.birthDate))
 
     return entries.sort((a, b) => a.daysUntil - b.daysUntil)
-  }, [scoutMembers, trainingProfiles, employees, users])
+  }, [scoutMembers, trainingProfiles, employees, boardMembers, users])
 }

@@ -9,6 +9,7 @@ import { formatCurrency } from '@/shared/lib/utils'
 import { useBanksStore, bankDisplayName } from '@/features/scrd/store/banks.store'
 import { useAccountingStore } from '@/features/accounting/store/accounting.store'
 import { useBudgetStore } from '@/features/budget/store/budget.store'
+import { stripCategoryNumbering } from '../lib/expenseVouchers'
 import type { ModeOfPayment, Voucher, VoucherType } from '../types/vouchers.types'
 import { useNewVoucherModal, type VoucherAccountLineForm } from '../hooks/useNewVoucherModal'
 
@@ -69,7 +70,7 @@ export function NewVoucherModal({ open, onOpenChange, editTarget }: NewVoucherMo
       budgetCategories
         .filter((c) => c.fiscalYear === latestFiscalYear && c.section === 'expense')
         .sort((a, b) => a.order - b.order)
-        .map((c) => c.name),
+        .map((c) => stripCategoryNumbering(c.name)),
     [budgetCategories, latestFiscalYear]
   )
   // A Check Voucher's credit side is usually the bank/cash account the payment came

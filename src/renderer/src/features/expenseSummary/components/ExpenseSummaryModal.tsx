@@ -1,17 +1,23 @@
+import { useMemo } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
 import { FieldInput } from '@/shared/components/ui/FormField'
+import { SuggestInput } from '@/shared/components/ui/SuggestInput'
 import { ExportMenu } from '@/shared/components/ui/ExportMenu'
 import { formatCurrency } from '@/shared/lib/utils'
 import type { Voucher } from '@/features/vouchers/types/vouchers.types'
+import { stripCategoryNumbering } from '@/features/vouchers/lib/expenseVouchers'
+import { useBudgetStore } from '@/features/budget/store/budget.store'
 import { expenseSummaryTotal, type ExpenseSummaryItem } from '../types/expenseSummary.types'
 
 interface ExpenseSummaryModalProps {
   voucher: Voucher | null
   items: ExpenseSummaryItem[]
   canManage: boolean
+  budgetCategory: string
+  onBudgetCategoryChange: (value: string) => void
   onClose: () => void
   onAdd: () => void
   onRemove: (id: string) => void
@@ -27,6 +33,8 @@ export function ExpenseSummaryModal({
   voucher,
   items,
   canManage,
+  budgetCategory,
+  onBudgetCategoryChange,
   onClose,
   onAdd,
   onRemove,
@@ -40,13 +48,32 @@ export function ExpenseSummaryModal({
   const { t } = useTranslation()
   const total = expenseSummaryTotal(items)
 
+  // Suggests the current fiscal year's Council Budget expense categories for the single
+  // "charge to" pick below — a cash advance is normally issued for one purpose (e.g. a
+  // training), so this is chosen once per liquidation rather than per item. See
+  // linkedBudgetCategoryName (expenseVouchers.ts) and budgetAutoActuals.ts's
+  // cash-advance-liquidation matching for how this links back to a real Budget line.
+  const budgetCategories = useBudgetStore((s) => s.categories)
+  const latestFiscalYear = useMemo(
+    () => [...new Set(budgetCategories.map((c) => c.fiscalYear))].sort().at(-1),
+    [budgetCategories]
+  )
+  const budgetCategorySuggestions = useMemo(
+    () =>
+      budgetCategories
+        .filter((c) => c.fiscalYear === latestFiscalYear && c.section === 'expense')
+        .sort((a, b) => a.order - b.order)
+        .map((c) => stripCategoryNumbering(c.name)),
+    [budgetCategories, latestFiscalYear]
+  )
+
   return (
     <Modal
       open={!!voucher}
       onOpenChange={(o) => !o && onClose()}
       title={t('expenseSummary.title')}
       description={voucher ? t('expenseSummary.subtitle', { number: voucher.voucherNumber }) : ''}
-      size="lg"
+      size="xl"
       footer={
         <>
           <Button variant="secondary" size="sm" onClick={onClose}>
@@ -69,6 +96,27 @@ export function ExpenseSummaryModal({
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ marginBottom: 4 }}>
+          <span
+            style={{
+              display: 'block',
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              marginBottom: 4
+            }}
+          >
+            {t('expenseSummary.field.budgetCategory')}
+          </span>
+          <SuggestInput
+            value={budgetCategory}
+            onChange={onBudgetCategoryChange}
+            suggestions={budgetCategorySuggestions}
+            placeholder={t('expenseSummary.field.budgetCategoryPlaceholder')}
+            style={{ width: 320 }}
+          />
+        </div>
         <div
           style={{
             display: 'flex',

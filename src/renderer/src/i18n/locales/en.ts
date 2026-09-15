@@ -82,6 +82,7 @@ const en = {
       products: 'Inventory',
       members: 'Members',
       employees: 'Employees',
+      councilBoard: 'Council Board',
       troops: 'Troops',
       activities: 'Activities',
       attendance: 'Attendance',
@@ -209,6 +210,7 @@ const en = {
       troopMember: 'Troop Member',
       trainingProfile: 'Training Profile',
       employee: 'Employee',
+      councilBoard: 'Council Board',
       userAccount: 'User Account'
     },
     announcementsTitle: 'Announcements',
@@ -586,7 +588,7 @@ const en = {
     form: {
       troopNumber: 'Troop #',
       level: 'Level',
-      levelPlaceholder: 'e.g. Star Scout, Junior, Cadette, Senior, Ambassador',
+      levelPlaceholder: 'Select level',
       troopName: 'Troop Name',
       leaderName: 'Troop Leader',
       leaderNamePlaceholder: 'Type a name, or pick from Training Profiles',
@@ -939,13 +941,66 @@ const en = {
   orgChart: {
     title: 'Organizational Chart',
     subtitle: '{{count}} active employee(s) — click anyone to open their profile',
+    boardSubtitle: '{{count}} Council Board member(s)',
     empty:
       'No active employees yet — add employees and set who each one reports to in the Employee form.',
     directReportsCount: '{{count}} direct report(s)',
     editLayout: 'Edit Layout',
     doneEditing: 'Done Editing',
-    editHint: 'Drag an employee card onto another to change who they report to.',
+    editHint: 'Drag a card onto another to change who they report to.',
     unassignDropZone: 'Drop here to remove a reporting manager'
+  },
+  councilBoard: {
+    title: 'Council Board',
+    subtitle: 'The council’s governing board — trustees and officers.',
+    addButton: 'Add Board Member',
+    searchPlaceholder: 'Search board members…',
+    table: {
+      name: 'Name',
+      position: 'Position',
+      contactNumber: 'Contact Number',
+      email: 'Email',
+      birthDate: 'Birth Date',
+      empty: 'No Council Board members yet.'
+    },
+    addModal: { title: 'Add Board Member' },
+    editModal: { title: 'Edit Board Member' },
+    form: {
+      fullName: 'Full Name',
+      position: 'Position',
+      positionPlaceholder: 'e.g. Council President, Board Chairperson, Trustee',
+      reportsTo: 'Reports To',
+      noSuperior: 'None (top of the Board)',
+      contactNumber: 'Contact Number',
+      email: 'Email',
+      birthDate: 'Birth Date'
+    },
+    toast: {
+      missingFields: 'Full name and position are required',
+      created: '"{{name}}" added to the Council Board',
+      updated: 'Board member updated',
+      deleted: 'Board member deleted'
+    },
+    confirmDelete: {
+      title: 'Delete Board Member',
+      message: 'Delete "{{name}}" from the Council Board? This cannot be undone.'
+    },
+    profile: {
+      viewProfile: 'View Profile',
+      changePhoto: 'Change photo',
+      uploadingPhoto: 'Uploading…',
+      removePhoto: 'Remove photo',
+      confirmDeletePhoto: {
+        title: 'Remove Photo',
+        message: "Remove this board member's photo? This cannot be undone."
+      },
+      toast: {
+        photoUpdated: 'Photo updated',
+        photoFailed: 'Failed to upload photo',
+        photoRemoved: 'Photo removed',
+        photoRemoveFailed: 'Failed to remove photo'
+      }
+    }
   },
   biometricKiosk: {
     title: 'Biometric Enrollment',
@@ -1305,7 +1360,9 @@ const en = {
       campingFees:
         'Linked from Troop camping payments (Roster) plus approved Journal Voucher receipts recorded as Camping Fees.',
       payroll: 'Linked from paid Payroll entries.',
-      voucherMatch: 'Linked from approved Disbursement Vouchers with a matching Account Title.'
+      voucherMatch: 'Linked from approved Disbursement Vouchers with a matching Account Title.',
+      cashAdvanceLiquidation:
+        'Linked from an approved Journal Voucher liquidating a Cash Advance, itemized under a matching Account Title.'
     },
     toast: {
       updated: 'Budget line updated',
@@ -1425,6 +1482,8 @@ const en = {
     title: 'Expense Summary',
     subtitle: 'Itemized receipt backup for voucher {{number}}',
     field: {
+      budgetCategory: 'Charge to (Council Budget)',
+      budgetCategoryPlaceholder: 'e.g. 6. Trainings',
       date: 'Date',
       particulars: 'Particulars',
       particularsPlaceholder: 'e.g. Cupcakes and Juice',

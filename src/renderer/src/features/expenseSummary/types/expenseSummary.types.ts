@@ -16,6 +16,12 @@ export interface ExpenseSummaryItem {
 export interface ExpenseSummary {
   id: string
   voucherId: string
+  // Which Council Budget expense line this whole cash advance charges to (e.g. "6.
+  // Trainings") — picked once per liquidation rather than per item, since a cash advance
+  // is normally issued for one purpose even though its receipts are itemized individually.
+  // '' on records saved before this field existed. See deriveCashAdvanceLiquidation, which
+  // prefixes each item's category with this to link the JV's debit lines back to Budget.
+  budgetCategory: string
   items: ExpenseSummaryItem[]
   updatedAt: string
 }

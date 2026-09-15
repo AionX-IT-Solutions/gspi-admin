@@ -61,6 +61,14 @@ const Products = lazy(() =>
 const Members = lazy(() =>
   import('@/features/pos/pages/Members').then((m) => ({ default: m.Members }))
 )
+const CouncilBoard = lazy(() =>
+  import('@/features/councilBoard/pages/CouncilBoard').then((m) => ({ default: m.CouncilBoard }))
+)
+const CouncilBoardProfile = lazy(() =>
+  import('@/features/councilBoard/pages/CouncilBoardProfile').then((m) => ({
+    default: m.CouncilBoardProfile
+  }))
+)
 const Employees = lazy(() =>
   import('@/features/hr/pages/Employees').then((m) => ({ default: m.Employees }))
 )
@@ -239,6 +247,22 @@ function AuthenticatedShell() {
                   element={
                     <RequirePermission permission={MODULE_PERMISSIONS.employees}>
                       <EmployeeProfile />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/council-board"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.councilBoard}>
+                      <CouncilBoard />
+                    </RequirePermission>
+                  }
+                />
+                <Route
+                  path="/council-board/:id"
+                  element={
+                    <RequirePermission permission={MODULE_PERMISSIONS.councilBoard}>
+                      <CouncilBoardProfile />
                     </RequirePermission>
                   }
                 />

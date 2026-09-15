@@ -23,6 +23,37 @@ interface RolePermissionsDoc {
   permissions: Permission[]
 }
 
+// Every module added after this store's very first release, whose default-on roles should
+// pick up the new permission automatically rather than staying invisible until someone
+// remembers to flip it on by hand. Checked against BOTH this device's own persisted store
+// (see migrate() below) and whatever's already sitting in the shared `rolePermissions`
+// Firestore collection (see hydrate() below) — a doc written before a suffix was added here
+// won't have it, so it'd otherwise silently overwrite an already-migrated local default the
+// moment hydrate() merges remote over local. Extend this list every time a new default-on
+// module permission is added; never remove an old entry.
+const AUTO_BACKFILL_SUFFIXES = [
+  ':goals',
+  ':orgChart',
+  ':troops',
+  ':visitors',
+  ':devices',
+  ':facilityCalendar',
+  ':announcements',
+  ':budget',
+  ':activities',
+  ':ptdg',
+  ':councilBoard'
+]
+
+/** Adds any of `role`'s default permissions matching AUTO_BACKFILL_SUFFIXES that `existing`
+ *  is missing. Returns `existing` unchanged (same reference) when there's nothing to add. */
+function backfillNewDefaults(role: UserRole, existing: Permission[]): Permission[] {
+  const additions = DEFAULT_ROLE_PERMISSIONS[role].filter(
+    (p) => !existing.includes(p) && AUTO_BACKFILL_SUFFIXES.some((suffix) => p.endsWith(suffix))
+  )
+  return additions.length > 0 ? [...existing, ...additions] : existing
+}
+
 function actorName() {
   return useAppStore.getState().currentUser?.fullName ?? 'System'
 }
@@ -67,6 +98,42 @@ export const usePermissionsStore = create<PermissionsState>()(
           const rolePermissions = { ...get().rolePermissions }
           for (const doc of docs) rolePermissions[doc.id] = doc.permissions ?? []
 
+          // A remote doc written before a module in AUTO_BACKFILL_SUFFIXES existed just
+          // overwrote this device's already-migrated local default for that role (see the
+          // comment on AUTO_BACKFILL_SUFFIXES) — reconcile every built-in role's merged
+          // result against its defaults the same way migrate() does. Applied locally
+          // regardless of who's signed in, so this session sees the right permissions
+          // immediately either way.
+          const backfilled: Record<string, Permission[]> = {}
+          for (const role of USER_ROLES) {
+            const merged = backfillNewDefaults(role, rolePermissions[role] ?? [])
+            if (merged !== rolePermissions[role]) {
+              rolePermissions[role] = merged
+              backfilled[role] = merged
+            }
+          }
+
+          // Firestore rules only let super_admin/admin write `rolePermissions` — every other
+          // role would just hit permission-denied here, so only they push the backfill (and
+          // the "never seen by Firestore" catch-up below) back up for other devices/gspi-app
+          // to converge on. Both pushes are best-effort: wrapped so a write failure can't
+          // abort the local `set()` below and leave this session's own permissions stale.
+          const canWriteRolePermissions = ['super_admin', 'admin'].includes(
+            useAppStore.getState().currentUser?.role ?? ''
+          )
+
+          if (canWriteRolePermissions && Object.keys(backfilled).length > 0) {
+            try {
+              await Promise.all(
+                Object.entries(backfilled).map(([id, permissions]) =>
+                  persistFirestoreDoc('rolePermissions', id, { permissions })
+                )
+              )
+            } catch (err) {
+              reportHydrateFailure('[permissions.store] Failed to push permission backfill', err)
+            }
+          }
+
           // Push up any role this machine knows about locally (built-in or custom)
           // that Firestore has never seen — e.g. a custom role created while this
           // collection already had other docs in it, so the old "only seed when the
@@ -74,18 +141,50 @@ export const usePermissionsStore = create<PermissionsState>()(
           // role's checklist silently never reaches Firestore, so every other
           // signed-in device (including gspi-app) sees it as having no permissions
           // at all instead of what was actually checked here.
-          const missingLocally = Object.entries(get().rolePermissions).filter(
-            ([id]) => !remoteIds.has(id)
-          )
+          const missingLocally = canWriteRolePermissions
+            ? Object.entries(get().rolePermissions).filter(([id]) => !remoteIds.has(id))
+            : []
           if (missingLocally.length > 0) {
-            await Promise.all(
-              missingLocally.map(([id, permissions]) =>
-                persistFirestoreDoc('rolePermissions', id, { permissions })
+            try {
+              await Promise.all(
+                missingLocally.map(([id, permissions]) =>
+                  persistFirestoreDoc('rolePermissions', id, { permissions })
+                )
               )
-            )
+            } catch (err) {
+              reportHydrateFailure('[permissions.store] Failed to push new roles', err)
+            }
           }
 
-          set({ rolePermissions, hydrated: true })
+          // Custom role *definitions* (id/label/baseRole) — unlike the checklist above,
+          // these previously only ever lived in this device's local storage (zustand
+          // persist), never in Firestore, so a role added on one machine silently
+          // vanished from the Role Permissions screen (and the Add User role dropdown)
+          // on every other machine/session even though its checklist kept working.
+          // Merge remote in (source of truth going forward) and push up any local-only
+          // role Firestore hasn't seen yet, mirroring the reconciliation above.
+          const customRoleDocs = await hydrateCollection<CustomRole>('customRoles')
+          const remoteCustomRoleIds = new Set(customRoleDocs.map((r) => r.id))
+          const localOnlyCustomRoles = canWriteRolePermissions
+            ? get().customRoles.filter((r) => !remoteCustomRoleIds.has(r.id))
+            : []
+          if (localOnlyCustomRoles.length > 0) {
+            try {
+              await Promise.all(
+                localOnlyCustomRoles.map((r) =>
+                  persistFirestoreDoc('customRoles', r.id, {
+                    label: r.label,
+                    baseRole: r.baseRole
+                  })
+                )
+              )
+            } catch (err) {
+              reportHydrateFailure('[permissions.store] Failed to push new custom roles', err)
+            }
+          }
+          const customRoles = [...customRoleDocs, ...localOnlyCustomRoles]
+
+          set({ rolePermissions, customRoles, hydrated: true })
         } catch (err) {
           reportHydrateFailure('[permissions.store] Failed to hydrate', err)
         }
@@ -133,6 +232,7 @@ export const usePermissionsStore = create<PermissionsState>()(
           rolePermissions: { ...s.rolePermissions, [id]: [] }
         }))
         persistFirestoreDoc('rolePermissions', id, { permissions: [] })
+        persistFirestoreDoc('customRoles', id, { label: trimmed, baseRole })
         appendAuditLog({
           action: 'role_created',
           actorName: actorName(),
@@ -148,6 +248,7 @@ export const usePermissionsStore = create<PermissionsState>()(
           customRoles: s.customRoles.map((r) => (r.id === id ? { ...r, baseRole } : r))
         }))
         if (role) {
+          persistFirestoreDoc('customRoles', id, { label: role.label, baseRole })
           appendAuditLog({
             action: 'role_base_role_updated',
             actorName: actorName(),
@@ -165,6 +266,7 @@ export const usePermissionsStore = create<PermissionsState>()(
           return { customRoles: s.customRoles.filter((r) => r.id !== id), rolePermissions }
         })
         deleteDocById('rolePermissions', id)
+        deleteDocById('customRoles', id)
         if (role) {
           appendAuditLog({
             action: 'role_deleted',
@@ -181,7 +283,7 @@ export const usePermissionsStore = create<PermissionsState>()(
         rolePermissions: state.rolePermissions,
         customRoles: state.customRoles
       }),
-      version: 13,
+      version: 14,
       migrate: (persistedState) => {
         const state = persistedState as PermissionsState
         const rolePermissions = { ...state.rolePermissions }
@@ -191,22 +293,7 @@ export const usePermissionsStore = create<PermissionsState>()(
             rolePermissions[role] = [...DEFAULT_ROLE_PERMISSIONS[role]]
             continue
           }
-          const existing = rolePermissions[role]
-          const newDefaults = DEFAULT_ROLE_PERMISSIONS[role].filter(
-            (p) =>
-              !existing.includes(p) &&
-              (p.endsWith(':goals') ||
-                p.endsWith(':orgChart') ||
-                p.endsWith(':troops') ||
-                p.endsWith(':visitors') ||
-                p.endsWith(':devices') ||
-                p.endsWith(':facilityCalendar') ||
-                p.endsWith(':announcements') ||
-                p.endsWith(':budget') ||
-                p.endsWith(':activities') ||
-                p.endsWith(':ptdg'))
-          )
-          rolePermissions[role] = [...existing, ...newDefaults]
+          rolePermissions[role] = backfillNewDefaults(role, rolePermissions[role])
         }
         // v7: custom roles now require a `baseRole` (see CustomRole in lib/permissions.ts) —
         // backfill 'admin' for any role persisted before this existed. Best-effort guess, not

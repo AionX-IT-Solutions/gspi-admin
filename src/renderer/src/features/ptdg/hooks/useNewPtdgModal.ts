@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePtdgStore } from '../store/ptdg.store'
 import { generatePtdgNumber } from '../lib/ptdgNumber'
@@ -31,6 +31,7 @@ function formFromApplication(application: PtdgApplication) {
 }
 
 export function useNewPtdgModal(
+  open: boolean,
   onOpenChange: (open: boolean) => void,
   editTarget?: PtdgApplication | null
 ) {
@@ -40,7 +41,14 @@ export function useNewPtdgModal(
   const applications = usePtdgStore((s) => s.applications)
   const addApplication = usePtdgStore((s) => s.addApplication)
   const updateApplication = usePtdgStore((s) => s.updateApplication)
-  const [form, setForm] = useState(editTarget ? formFromApplication(editTarget) : emptyForm())
+  const [form, setForm] = useState(emptyForm())
+
+  // Re-seeds every time the modal opens (not merely mounts) — `editTarget` can point to a
+  // different application (or none, for "New") across separate opens of this same modal
+  // instance, so a useState initializer alone would only ever capture the very first value.
+  useEffect(() => {
+    if (open) setForm(editTarget ? formFromApplication(editTarget) : emptyForm())
+  }, [open, editTarget])
 
   function addSourceLine() {
     setForm((f) => ({ ...f, projectedSources: [...f.projectedSources, emptyLine()] }))
@@ -101,10 +109,6 @@ export function useNewPtdgModal(
     setForm(emptyForm())
   }
 
-  function resetForm() {
-    setForm(editTarget ? formFromApplication(editTarget) : emptyForm())
-  }
-
   return {
     form,
     setForm,
@@ -117,7 +121,6 @@ export function useNewPtdgModal(
     sourcesSubtotal,
     expensesTotal,
     amountRequested,
-    handleSave,
-    resetForm
+    handleSave
   }
 }

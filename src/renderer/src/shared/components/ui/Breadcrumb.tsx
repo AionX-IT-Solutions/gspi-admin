@@ -18,6 +18,7 @@ const routeLabelKeys: Record<string, string> = {
   products: 'sidebar.nav.products',
   members: 'sidebar.nav.members',
   employees: 'sidebar.nav.employees',
+  'council-board': 'sidebar.nav.councilBoard',
   troops: 'sidebar.nav.troops',
   attendance: 'sidebar.nav.attendance',
   enrollment: 'sidebar.nav.enrollment',

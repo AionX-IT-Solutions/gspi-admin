@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { FieldInput } from './FormField'
 
 export interface SuggestInputProps {
@@ -6,12 +6,20 @@ export interface SuggestInputProps {
   onChange: (value: string) => void
   suggestions: string[]
   placeholder?: string
+  /** Overrides the wrapper's default `flex: 1` — e.g. to fit a fixed-width table column. */
+  style?: CSSProperties
 }
 
 // Free-text input with a searchable, scrollable suggestion list — pick an existing value
 // or type a new one. A native <datalist> renders as an unstyled, unbounded browser popup
 // that clashes with the rest of the form, so this rolls its own.
-export function SuggestInput({ value, onChange, suggestions, placeholder }: SuggestInputProps) {
+export function SuggestInput({
+  value,
+  onChange,
+  suggestions,
+  placeholder,
+  style
+}: SuggestInputProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -32,7 +40,7 @@ export function SuggestInput({ value, onChange, suggestions, placeholder }: Sugg
   }, [suggestions, value])
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', flex: 1 }}>
+    <div ref={containerRef} style={{ position: 'relative', flex: 1, ...style }}>
       <FieldInput
         value={value}
         onChange={(e) => {

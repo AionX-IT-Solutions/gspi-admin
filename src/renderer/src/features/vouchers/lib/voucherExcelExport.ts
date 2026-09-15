@@ -7,7 +7,8 @@ import { amountToWords } from '@/shared/lib/numberToWords'
 import {
   isCashAdvanceDisbursement,
   hasCashAdvance,
-  cashAdvanceReimbursement
+  cashAdvanceReimbursement,
+  stripCategoryNumbering
 } from '../lib/expenseVouchers'
 import type { Voucher, VoucherAccountLine } from '../types/vouchers.types'
 import {
@@ -71,10 +72,14 @@ function hasExplicitCreditLines(voucher: Voucher): boolean {
   return voucher.accountLines.some((l) => l.credit > 0)
 }
 
-// "Salary - March 16-31, 2026" — the account title with its optional description
-// appended, exactly as it should read on the printed voucher.
+// "Salary - March 16-31, 2026" — the account title (its Council Budget category's leading
+// workbook ordinal stripped, same as NewVoucherModal's own suggestion list — an account
+// picked before that stripping existed, or hand-typed with a number, would otherwise still
+// print one) with its optional description appended, exactly as it should read on the
+// printed voucher.
 function accountLabel(line: VoucherAccountLine): string {
-  return line.description?.trim() ? `${line.account} - ${line.description.trim()}` : line.account
+  const account = stripCategoryNumbering(line.account)
+  return line.description?.trim() ? `${account} - ${line.description.trim()}` : account
 }
 
 function acknowledgmentText(voucher: Voucher): string {

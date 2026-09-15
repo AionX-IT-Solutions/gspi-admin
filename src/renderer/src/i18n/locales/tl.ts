@@ -82,6 +82,7 @@ const tl = {
       products: 'Inventory',
       members: 'Mga Miyembro',
       employees: 'Mga Empleyado',
+      councilBoard: 'Council Board',
       troops: 'Mga Troop',
       activities: 'Mga Aktibidad',
       attendance: 'Attendance',
@@ -209,6 +210,7 @@ const tl = {
       troopMember: 'Troop Member',
       trainingProfile: 'Training Profile',
       employee: 'Empleyado',
+      councilBoard: 'Council Board',
       userAccount: 'User Account'
     },
     announcementsTitle: 'Mga Anunsyo',
@@ -594,7 +596,7 @@ const tl = {
     form: {
       troopNumber: 'Troop #',
       level: 'Level',
-      levelPlaceholder: 'hal. Star Scout, Junior, Cadette, Senior, Ambassador',
+      levelPlaceholder: 'Piliin ang level',
       troopName: 'Pangalan ng Troop',
       leaderName: 'Troop Leader',
       leaderNamePlaceholder: 'Mag-type ng pangalan, o pumili mula sa Training Profiles',
@@ -949,14 +951,66 @@ const tl = {
     title: 'Organizational Chart',
     subtitle:
       '{{count}} aktibong empleyado — i-click ang kahit sino para buksan ang kanilang profile',
+    boardSubtitle: '{{count}} miyembro ng Council Board',
     empty:
       'Wala pang aktibong empleyado — magdagdag ng empleyado at itakda kung sino ang kanilang sinasagutan sa Employee form.',
     directReportsCount: '{{count}} direct report',
     editLayout: 'I-edit ang Layout',
     doneEditing: 'Tapos na',
-    editHint:
-      'I-drag ang card ng isang empleyado papunta sa iba para baguhin kung kanino sila nag-uulat.',
+    editHint: 'I-drag ang card papunta sa iba para baguhin kung kanino sila nag-uulat.',
     unassignDropZone: 'I-drop dito para tanggalin ang reporting manager'
+  },
+  councilBoard: {
+    title: 'Council Board',
+    subtitle: 'Ang lupon ng konseho — mga trustee at opisyal.',
+    addButton: 'Magdagdag ng Board Member',
+    searchPlaceholder: 'Maghanap ng board member…',
+    table: {
+      name: 'Pangalan',
+      position: 'Posisyon',
+      contactNumber: 'Contact Number',
+      email: 'Email',
+      birthDate: 'Kaarawan',
+      empty: 'Wala pang miyembro ng Council Board.'
+    },
+    addModal: { title: 'Magdagdag ng Board Member' },
+    editModal: { title: 'I-edit ang Board Member' },
+    form: {
+      fullName: 'Buong Pangalan',
+      position: 'Posisyon',
+      positionPlaceholder: 'hal. Council President, Board Chairperson, Trustee',
+      reportsTo: 'Sumasagot Kay',
+      noSuperior: 'Wala (pinakataas sa Board)',
+      contactNumber: 'Contact Number',
+      email: 'Email',
+      birthDate: 'Kaarawan'
+    },
+    toast: {
+      missingFields: 'Kailangan ang buong pangalan at posisyon',
+      created: 'Naidagdag si "{{name}}" sa Council Board',
+      updated: 'Na-update ang board member',
+      deleted: 'Natanggal ang board member'
+    },
+    confirmDelete: {
+      title: 'Tanggalin ang Board Member',
+      message: 'Tanggalin si "{{name}}" sa Council Board? Hindi na ito maaaring ibalik.'
+    },
+    profile: {
+      viewProfile: 'Tingnan ang Profile',
+      changePhoto: 'Palitan ang larawan',
+      uploadingPhoto: 'Ina-upload…',
+      removePhoto: 'Alisin ang larawan',
+      confirmDeletePhoto: {
+        title: 'Alisin ang Larawan',
+        message: 'Alisin ang larawan ng board member na ito? Hindi na ito maaaring ibalik.'
+      },
+      toast: {
+        photoUpdated: 'Na-update ang larawan',
+        photoFailed: 'Nabigo ang pag-upload ng larawan',
+        photoRemoved: 'Naalis ang larawan',
+        photoRemoveFailed: 'Nabigo ang pag-alis ng larawan'
+      }
+    }
   },
   biometricKiosk: {
     title: 'Biometric Enrollment',
@@ -1316,7 +1370,9 @@ const tl = {
       campingFees:
         'Kinuha mula sa Troop camping payments (Roster) kasama ang approved Journal Voucher receipts na naka-record bilang Camping Fees.',
       payroll: 'Kinuha mula sa mga bayad na (paid) Payroll entries.',
-      voucherMatch: 'Kinuha mula sa approved Disbursement Vouchers na may tugmang Account Title.'
+      voucherMatch: 'Kinuha mula sa approved Disbursement Vouchers na may tugmang Account Title.',
+      cashAdvanceLiquidation:
+        'Kinuha mula sa approved Journal Voucher na naglilikida ng Cash Advance, base sa item na may tugmang Account Title.'
     },
     toast: {
       updated: 'Na-update ang budget line',
@@ -1436,6 +1492,8 @@ const tl = {
     title: 'Expense Summary',
     subtitle: 'Detalyadong resibo backup para sa voucher {{number}}',
     field: {
+      budgetCategory: 'I-charge sa (Council Budget)',
+      budgetCategoryPlaceholder: 'hal. 6. Trainings',
       date: 'Petsa',
       particulars: 'Mga Detalye',
       particularsPlaceholder: 'hal. Cupcakes and Juice',

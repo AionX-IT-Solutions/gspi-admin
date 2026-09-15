@@ -83,10 +83,10 @@ export const manualSections: ManualSection[] = [
         },
         tips: {
           en: [
-            'Upcoming Birthdays pulls from every registry with a birthdate on file — Troop Members, Training Profiles, Employees, and User Accounts — showing anyone with a birthday today or within the next 30 days. It only appears once at least one is found.'
+            'Upcoming Birthdays pulls from every registry with a birthdate on file — Troop Members, Training Profiles, Employees, Council Board, and User Accounts — showing anyone with a birthday today or within the next 30 days. It only appears once at least one is found.'
           ],
           tl: [
-            'Ang Upcoming Birthdays ay kinukuha mula sa bawat registry na may naitalang kaarawan — Troop Members, Training Profiles, Employees, at User Accounts — ipinapakita ang sinumang may kaarawan ngayon o sa susunod na 30 araw. Lalabas lang ito kapag may nakitang kahit isa.'
+            'Ang Upcoming Birthdays ay kinukuha mula sa bawat registry na may naitalang kaarawan — Troop Members, Training Profiles, Employees, Council Board, at User Accounts — ipinapakita ang sinumang may kaarawan ngayon o sa susunod na 30 araw. Lalabas lang ito kapag may nakitang kahit isa.'
           ]
         }
       },
@@ -571,6 +571,26 @@ export const manualSections: ManualSection[] = [
         }
       },
       {
+        key: 'councilBoard',
+        icon: <Landmark size={16} />,
+        summary: {
+          en: "The council's governing board — trustees and officers, separate from paid staff.",
+          tl: 'Ang lupon ng konseho — mga trustee at opisyal, hiwalay sa may-sweldong staff.'
+        },
+        steps: {
+          en: [
+            'Add a board member with their position (e.g. Council President, Board Chairperson, Trustee) and, optionally, who they report to on the Board.',
+            'Set a Birth Date if you have it — feeds the Dashboard’s Upcoming Birthdays widget, same as Employees.',
+            'Their reporting line shows on the Organizational Chart above the Employees tree — the Board governs, staff report up through it.'
+          ],
+          tl: [
+            'Magdagdag ng board member kasama ang kanilang posisyon (hal. Council President, Board Chairperson, Trustee) at, opsyonal, kung kanino sila sumasagot sa Board.',
+            'Ilagay ang Birth Date kung meron — ginagamit sa Upcoming Birthdays widget ng Dashboard, kagaya ng Employees.',
+            'Ang reporting line nila ay lalabas sa Organizational Chart, sa itaas ng Employees tree — ang Board ang namamahala, ang staff ay umuulat pataas dito.'
+          ]
+        }
+      },
+      {
         key: 'attendance',
         icon: <Fingerprint size={16} />,
         summary: {
@@ -654,15 +674,17 @@ export const manualSections: ManualSection[] = [
         key: 'orgChart',
         icon: <Network size={16} />,
         summary: {
-          en: "A visual reporting-line chart of the council's staff.",
-          tl: 'Visual na chart ng reporting line ng staff ng konseho.'
+          en: 'A visual reporting-line chart of the council — its governing Board, then its staff.',
+          tl: 'Visual na chart ng reporting line ng konseho — ang namamahalang Board, tapos ang staff.'
         },
         steps: {
           en: [
-            "Open Organizational Chart to see who reports to whom, drawn from each employee's profile."
+            'The Council Board tier appears first (when it has any members), followed by the Employees tree — drawn from the Council Board and Employee profiles’ "Reports To" fields.',
+            'Turn on Edit Layout and drag a card onto another to change who they report to, or onto the drop zone to clear it — each tier only accepts drops if you can manage that tier.'
           ],
           tl: [
-            'Buksan ang Organizational Chart para makita kung sino ang nag-uulat kanino, batay sa profile ng bawat empleyado.'
+            'Lalabas muna ang Council Board (kapag may miyembro), sinusundan ng Employees tree — batay sa "Reports To" field ng profile ng Council Board at Employee.',
+            'I-on ang Edit Layout at i-drag ang card papunta sa iba para baguhin kung kanino sila umuulat, o papunta sa drop zone para alisin ito — tanggap lang ang drop sa bawat tier kung may access kang mamahala nito.'
           ]
         }
       }

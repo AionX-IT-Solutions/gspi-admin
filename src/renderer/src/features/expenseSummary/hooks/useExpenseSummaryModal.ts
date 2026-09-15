@@ -31,6 +31,7 @@ export function useExpenseSummaryModal() {
 
   const [target, setTarget] = useState<Voucher | null>(null)
   const [items, setItems] = useState<ExpenseSummaryItem[]>([])
+  const [budgetCategory, setBudgetCategory] = useState('')
 
   // The Check Voucher this JV's cash advance liquidation traces back to — the Council's
   // real Summary of Expenses cites it in its subtitle as "(CV #___)".
@@ -45,6 +46,7 @@ export function useExpenseSummaryModal() {
     if (!target) return
     const existing = summaries.find((s) => s.voucherId === target.id)
     setItems(existing && existing.items.length > 0 ? existing.items : [emptyExpenseSummaryItem()])
+    setBudgetCategory(existing?.budgetCategory ?? '')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target])
 
@@ -71,14 +73,19 @@ export function useExpenseSummaryModal() {
   function handleSave() {
     if (!target || !canManage) return
     const valid = items.filter((i) => i.particulars.trim() && i.amount > 0)
-    saveSummary(target.id, valid)
+    saveSummary(target.id, valid, budgetCategory)
     // The liquidating JV's own debit/credit lines are never hand-typed — they're a
     // mechanical consequence of these itemized receipts, recomputed on every save so the
     // JV always reflects exactly what's on file here.
     if (hasCashAdvance(target)) {
       updateVoucher(
         target.id,
-        deriveCashAdvanceLiquidation(target.cashAdvanceAmount ?? 0, valid, target.refundOrNumber)
+        deriveCashAdvanceLiquidation(
+          target.cashAdvanceAmount ?? 0,
+          valid,
+          target.refundOrNumber,
+          budgetCategory
+        )
       )
     }
     toast.success(t('expenseSummary.toast.saved'))
@@ -117,6 +124,8 @@ export function useExpenseSummaryModal() {
     addItem,
     removeItem,
     updateItem,
+    budgetCategory,
+    setBudgetCategory,
     handleSave,
     handleView,
     handleExportExcel,

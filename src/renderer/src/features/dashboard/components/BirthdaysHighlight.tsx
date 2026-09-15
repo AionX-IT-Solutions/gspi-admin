@@ -6,10 +6,14 @@ import { Badge } from '@/shared/components/ui/Badge'
 import { formatDate } from '@/shared/lib/utils'
 import { useUpcomingBirthdays, type BirthdayCategory } from '../hooks/useUpcomingBirthdays'
 
-const CATEGORY_VARIANT: Record<BirthdayCategory, 'primary' | 'cyan' | 'warning' | 'outline'> = {
+const CATEGORY_VARIANT: Record<
+  BirthdayCategory,
+  'primary' | 'cyan' | 'warning' | 'outline' | 'success'
+> = {
   troopMember: 'primary',
   trainingProfile: 'cyan',
   employee: 'warning',
+  councilBoard: 'success',
   userAccount: 'outline'
 }
 

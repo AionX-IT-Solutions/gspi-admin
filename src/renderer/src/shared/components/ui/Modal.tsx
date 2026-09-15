@@ -10,10 +10,10 @@ interface ModalProps {
   description?: string
   children?: ReactNode
   footer?: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'full'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
 }
 
-const sizeWidths = { sm: '400px', md: '520px', lg: '680px', full: '92vw' }
+const sizeWidths = { sm: '400px', md: '520px', lg: '680px', xl: '880px', full: '92vw' }
 
 export function Modal({
   open,

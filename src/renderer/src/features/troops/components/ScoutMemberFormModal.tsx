@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
-import { FormField, FieldInput } from '@/shared/components/ui/FormField'
-import type { ScoutMember } from '../types/troop.types'
+import { FormField, FieldInput, FieldSelect } from '@/shared/components/ui/FormField'
+import { troopLevelOptions, type ScoutMember } from '../types/troop.types'
 import { useScoutMemberFormModal } from '../hooks/useScoutMemberFormModal'
 
 interface ScoutMemberFormModalProps {
@@ -61,9 +61,10 @@ export function ScoutMemberFormModal({
           />
         </FormField>
         <FormField label={t('troops.roster.form.level')}>
-          <FieldInput
+          <FieldSelect
             value={form.level}
             onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))}
+            options={troopLevelOptions(form.level)}
             placeholder={t('troops.form.levelPlaceholder')}
           />
         </FormField>

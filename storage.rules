@@ -31,6 +31,12 @@ service firebase.storage {
       allow write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
 
+    // Council Board member profile photos — same role set as the `councilBoardMembers`
+    // Firestore collection.
+    match /councilBoardPhotos/{memberId}/{fileName} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
+    }
+
     // A user's own profile photo — self-service, mirroring the narrow `isActive`
     // exception on the `users/{uid}` Firestore document.
     match /userPhotos/{uid}/{fileName} {

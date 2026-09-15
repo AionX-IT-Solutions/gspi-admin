@@ -1,8 +1,32 @@
+// GSP's age-based program levels, offered as a dropdown on the Troop and roster forms.
+// Kept as plain strings (not a union type) so a pre-existing troop/member whose `level`
+// was typed in before this became a dropdown still displays and saves correctly.
+export const TROOP_LEVELS = [
+  'Star Scout',
+  'Junior Scout',
+  'Cadette Scout',
+  'Senior Scout',
+  'Ambassador Scout'
+] as const
+
+/** Dropdown options for a level field — includes `currentValue` as its own option when it's
+ *  set but isn't one of TROOP_LEVELS, so a legacy/custom value never gets silently dropped. */
+export function troopLevelOptions(currentValue?: string): { value: string; label: string }[] {
+  const options: { value: string; label: string }[] = TROOP_LEVELS.map((level) => ({
+    value: level,
+    label: level
+  }))
+  if (currentValue && !(TROOP_LEVELS as readonly string[]).includes(currentValue)) {
+    options.push({ value: currentValue, label: currentValue })
+  }
+  return options
+}
+
 export interface Troop {
   id: string
   troopNumber: string
   troopName?: string
-  /** Age-based program level (e.g. Star Scout, Junior, Cadette, Senior, Ambassador) — free text, council-defined. */
+  /** Age-based program level — one of TROOP_LEVELS, picked from a dropdown. */
   level: string
   leaderName: string
   // Optional link to that leader's own Training Profile record (features/trainingProfiles)
@@ -36,7 +60,7 @@ export interface ScoutMember {
   troopId: string
   fullName: string
   birthdate: string
-  /** Age-based program level, same free-text convention as Troop.level. */
+  /** Age-based program level — one of TROOP_LEVELS, same dropdown as Troop.level. */
   level?: string
   guardianName?: string
   guardianContact?: string

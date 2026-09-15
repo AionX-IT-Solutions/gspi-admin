@@ -57,11 +57,22 @@ service cloud.firestore {
       allow write: if hasAnyRole(['super_admin', 'admin']);
     }
 
+    // Custom role definitions (id/label/baseRole) added via the Role Permissions screen's
+    // "Add Role" — mirrored here so every device/session sees the same set of custom roles,
+    // not just the one that created them (see CustomRole in app/lib/permissions.ts).
+    match /customRoles/{roleId} {
+      allow read: if isSignedIn();
+      allow write: if hasAnyRole(['super_admin', 'admin']);
+    }
+
     // HR module: Employees, Attendance, Biometric Enrollments, Leave, Payroll. 'manager' is
     // deliberately absent from all of these — neither this app nor gspi-app's Role Permissions
     // ever grant Manager any HR visibility, so this rule now matches that instead of quietly
     // exceeding it.
     match /employees/{id} {
+      allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
+    }
+    match /councilBoardMembers/{id} {
       allow read, write: if hasAnyRole(['super_admin', 'admin', 'hr']);
     }
     match /attendance/{id} {

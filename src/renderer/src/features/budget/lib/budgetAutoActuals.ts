@@ -4,7 +4,13 @@ import type { Voucher } from '@/features/vouchers/types/vouchers.types'
 import type { PayrollEntry } from '@/features/hr/types/hr.types'
 import type { CashReceipt } from '@/features/scrd/types/cashReceipts.types'
 import type { MemberPaymentCategory, ScoutMember } from '@/features/troops/types/troop.types'
-import { getExpenseVouchers, voucherCategory } from '@/features/vouchers/lib/expenseVouchers'
+import {
+  getExpenseVouchers,
+  voucherCategory,
+  hasCashAdvance,
+  cashAdvanceLiquidationExpenseLines,
+  linkedBudgetCategoryName
+} from '@/features/vouchers/lib/expenseVouchers'
 import { fiscalMonthIndex } from '@/shared/lib/fiscalYear'
 import type { BudgetCategory } from '../types/budget.types'
 
@@ -85,6 +91,7 @@ export type AutoActualSourceKey =
   | 'campingFees'
   | 'payroll'
   | 'voucherMatch'
+  | 'cashAdvanceLiquidation'
 
 export interface AutoActualEntry {
   months: number[]
@@ -106,6 +113,14 @@ export function computeBudgetAutoActuals(
   if (!fiscalYear) return result
 
   const expenseVouchers = getExpenseVouchers(sources.vouchers)
+  // Journal Vouchers liquidating a Cash Advance (see deriveCashAdvanceLiquidation) — their
+  // itemized debit lines are real Council Budget expense spending too, just recorded on a
+  // JV instead of a Check Voucher, so they need their own matching pass below (a single
+  // liquidation JV can itemize spending across several different budget lines at once,
+  // unlike a Check Voucher's single GL account).
+  const liquidationVouchers = sources.vouchers.filter(
+    (v) => v.voucherType === 'journal_voucher' && v.status === 'approved' && hasCashAdvance(v)
+  )
 
   for (const category of categories) {
     if (category.fiscalYear !== fiscalYear) continue
@@ -178,10 +193,22 @@ export function computeBudgetAutoActuals(
         }
       } else {
         for (const v of expenseVouchers) {
-          if (normalizeCategoryName(voucherCategory(v)) !== normalized) continue
+          if (normalizeCategoryName(linkedBudgetCategoryName(voucherCategory(v))) !== normalized) {
+            continue
+          }
           sourceKey = 'voucherMatch'
           const idx = fiscalMonthIndex(v.date, fiscalYear)
           if (idx !== null) months[idx] += v.amount
+        }
+        for (const v of liquidationVouchers) {
+          for (const line of cashAdvanceLiquidationExpenseLines(v)) {
+            if (normalizeCategoryName(linkedBudgetCategoryName(line.account)) !== normalized) {
+              continue
+            }
+            sourceKey = 'cashAdvanceLiquidation'
+            const idx = fiscalMonthIndex(v.date, fiscalYear)
+            if (idx !== null) months[idx] += line.debit
+          }
         }
       }
     }

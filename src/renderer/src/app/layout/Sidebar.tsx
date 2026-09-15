@@ -221,6 +221,12 @@ const navGroups: NavGroup[] = [
         permission: MODULE_PERMISSIONS.employees
       },
       {
+        path: '/council-board',
+        labelKey: 'sidebar.nav.councilBoard',
+        icon: <Landmark size={16} />,
+        permission: MODULE_PERMISSIONS.councilBoard
+      },
+      {
         path: '/attendance',
         labelKey: 'sidebar.nav.attendance',
         icon: <Fingerprint size={16} />,

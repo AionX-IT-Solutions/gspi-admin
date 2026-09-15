@@ -27,17 +27,13 @@ export function NewPtdgModal({ open, onOpenChange, editTarget }: NewPtdgModalPro
     sourcesSubtotal,
     expensesTotal,
     amountRequested,
-    handleSave,
-    resetForm
-  } = useNewPtdgModal(onOpenChange, editTarget)
+    handleSave
+  } = useNewPtdgModal(open, onOpenChange, editTarget)
 
   return (
     <Modal
       open={open}
-      onOpenChange={(o) => {
-        onOpenChange(o)
-        if (o) resetForm()
-      }}
+      onOpenChange={onOpenChange}
       title={editTarget ? t('ptdg.editButton') : t('ptdg.newButton')}
       size="lg"
       footer={

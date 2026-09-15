@@ -22,6 +22,7 @@ import { useBudgetStore } from '@/features/budget/store/budget.store'
 import { useCouncilDepositsStore } from '@/features/councilDeposits/store/councilDeposits.store'
 import { useExpenseSummaryStore } from '@/features/expenseSummary/store/expenseSummary.store'
 import { useTrainingProfilesStore } from '@/features/trainingProfiles/store/trainingProfiles.store'
+import { useCouncilBoardStore } from '@/features/councilBoard/store/councilBoard.store'
 
 /**
  * Loads every module's data from Firestore once per session (each store seeds its own
@@ -53,6 +54,7 @@ export function useFirestoreSync() {
   const hydrateCouncilDeposits = useCouncilDepositsStore((s) => s.hydrate)
   const hydrateExpenseSummary = useExpenseSummaryStore((s) => s.hydrate)
   const hydrateTrainingProfiles = useTrainingProfilesStore((s) => s.hydrate)
+  const hydrateCouncilBoard = useCouncilBoardStore((s) => s.hydrate)
 
   useEffect(() => {
     hydrateHR()
@@ -78,6 +80,7 @@ export function useFirestoreSync() {
     hydrateCouncilDeposits()
     hydrateExpenseSummary()
     hydrateTrainingProfiles()
+    hydrateCouncilBoard()
   }, [
     hydrateHR,
     hydrateAccounting,
@@ -101,6 +104,7 @@ export function useFirestoreSync() {
     hydrateBudget,
     hydrateCouncilDeposits,
     hydrateExpenseSummary,
-    hydrateTrainingProfiles
+    hydrateTrainingProfiles,
+    hydrateCouncilBoard
   ])
 }

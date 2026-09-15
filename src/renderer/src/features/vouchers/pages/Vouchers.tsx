@@ -235,6 +235,8 @@ export function Vouchers() {
         voucher={expenseSummary.target}
         items={expenseSummary.items}
         canManage={expenseSummary.canManage}
+        budgetCategory={expenseSummary.budgetCategory}
+        onBudgetCategoryChange={expenseSummary.setBudgetCategory}
         onClose={expenseSummary.close}
         onAdd={expenseSummary.addItem}
         onRemove={expenseSummary.removeItem}

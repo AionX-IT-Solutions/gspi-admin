@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '@/shared/components/ui/Modal'
 import { Button } from '@/shared/components/ui/Button'
-import { FormField, FieldInput } from '@/shared/components/ui/FormField'
+import { FormField, FieldInput, FieldSelect } from '@/shared/components/ui/FormField'
 import type { TrainingProfile } from '@/features/trainingProfiles/types/trainingProfiles.types'
-import type { Troop } from '../types/troop.types'
+import { troopLevelOptions, type Troop } from '../types/troop.types'
 import { useTroopFormModal } from '../hooks/useTroopFormModal'
 
 interface TroopFormModalProps {
@@ -189,9 +189,10 @@ export function TroopFormModal({ open, onOpenChange, editTarget }: TroopFormModa
           />
         </FormField>
         <FormField label={t('troops.form.level')} required>
-          <FieldInput
+          <FieldSelect
             value={form.level}
             onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))}
+            options={troopLevelOptions(form.level)}
             placeholder={t('troops.form.levelPlaceholder')}
           />
         </FormField>
